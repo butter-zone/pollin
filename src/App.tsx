@@ -28,6 +28,9 @@ function App() {
     toggleGrid,
     setGridSize,
     toggleSnap,
+    addLibrary,
+    removeLibrary,
+    toggleLibrary,
   } = useCanvas();
 
   // keyboard shortcuts for tools
@@ -100,7 +103,7 @@ function App() {
 
       {/* DialKit-style floating control panel */}
       <ControlPanel
-        state={state}
+        state={state as any}
         onLineWidthChange={setLineWidth}
         onLineColorChange={setLineColor}
         onFillColorChange={setFillColor}
@@ -115,6 +118,9 @@ function App() {
         onDeleteSelected={handleDeleteSelected}
         onClearCanvas={handleClearCanvas}
         onExportPNG={handleExportPNG}
+        onAddLibrary={addLibrary}
+        onRemoveLibrary={removeLibrary}
+        onToggleLibrary={toggleLibrary}
       />
 
       {/* Bottom status bar */}

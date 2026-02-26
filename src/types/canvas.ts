@@ -131,6 +131,41 @@ export interface CanvasState {
   offsetY: number;
 }
 
+// ── Design System Library ───────────────────────────────
+export interface LibraryComponent {
+  id: string;
+  name: string;
+  category?: string;
+  description?: string;
+  preview?: string; // URL or data URI
+  code?: string; // React/HTML code snippet
+  props?: Record<string, unknown>;
+}
+
+export interface DesignLibrary {
+  id: string;
+  name: string;
+  description?: string;
+  source: 'builtin' | 'figma' | 'npm' | 'github' | 'other';
+  sourceUrl?: string;
+  components: LibraryComponent[];
+  active: boolean;
+}
+
+export interface ConversionContext {
+  isOpen: boolean;
+  type: 'sketch' | 'image' | null;
+  targetId?: string;
+  selectedLibraryId?: string;
+  prompt?: string;
+}
+
+// ── Extended Canvas State with Library Support ──────────
+export interface CanvasStateWithLibraries extends CanvasState {
+  libraries: DesignLibrary[];
+  conversionUI: ConversionContext;
+}
+
 export type CanvasAction =
   | { type: 'SET_TOOL'; payload: Tool }
   | { type: 'SET_DRAWING'; payload: boolean }
@@ -151,4 +186,10 @@ export type CanvasAction =
   | { type: 'SET_OBJECTS'; payload: CanvasObject[] }
   | { type: 'TOGGLE_GRID' }
   | { type: 'SET_GRID_SIZE'; payload: number }
-  | { type: 'TOGGLE_SNAP' };
+  | { type: 'TOGGLE_SNAP' }
+  | { type: 'ADD_LIBRARY'; payload: DesignLibrary }
+  | { type: 'REMOVE_LIBRARY'; payload: string }
+  | { type: 'TOGGLE_LIBRARY'; payload: string }
+  | { type: 'OPEN_CONVERSION'; payload: ConversionContext }
+  | { type: 'CLOSE_CONVERSION' }
+  | { type: 'SET_CONVERSION_PROMPT'; payload: string };

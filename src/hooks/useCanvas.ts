@@ -4,9 +4,14 @@ import {
   CanvasAction,
   CanvasObject,
   Tool,
+  DesignLibrary,
 } from '@/types/canvas';
 
-const initialState: CanvasState = {
+interface ExtendedCanvasState extends CanvasState {
+  libraries: DesignLibrary[];
+}
+
+const initialState: ExtendedCanvasState = {
   activeTool: 'pen',
   isDrawing: false,
   lineWidth: 2,
@@ -28,9 +33,11 @@ const initialState: CanvasState = {
   tool: 'pen',
   offsetX: 0,
   offsetY: 0,
+  // New: library management
+  libraries: [],
 };
 
-function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
+function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): ExtendedCanvasState {
   switch (action.type) {
     case 'SET_TOOL':
       return { ...state, activeTool: action.payload, tool: action.payload };
@@ -81,6 +88,22 @@ function canvasReducer(state: CanvasState, action: CanvasAction): CanvasState {
       return { ...state, gridSize: Math.max(5, Math.min(100, action.payload)) };
     case 'TOGGLE_SNAP':
       return { ...state, snapToGrid: !state.snapToGrid };
+    case 'ADD_LIBRARY':
+      return { ...state, libraries: [...state.libraries, action.payload] };
+    case 'REMOVE_LIBRARY':
+      return { ...state, libraries: state.libraries.filter((l) => l.id !== action.payload) };
+    case 'TOGGLE_LIBRARY':
+      return {
+        ...state,
+        libraries: state.libraries.map((l) =>
+          l.id === action.payload ? { ...l, active: !l.active } : l
+        ),
+      };
+    case 'OPEN_CONVERSION':
+    case 'CLOSE_CONVERSION':
+    case 'SET_CONVERSION_PROMPT':
+      // These will be handled by a separate ConversionUI state
+      return state;
     default:
       return state;
   }
@@ -165,6 +188,18 @@ export function useCanvas() {
     dispatch({ type: 'TOGGLE_SNAP' });
   }, []);
 
+  const addLibrary = useCallback((lib: DesignLibrary) => {
+    dispatch({ type: 'ADD_LIBRARY', payload: lib });
+  }, []);
+
+  const removeLibrary = useCallback((libId: string) => {
+    dispatch({ type: 'REMOVE_LIBRARY', payload: libId });
+  }, []);
+
+  const toggleLibrary = useCallback((libId: string) => {
+    dispatch({ type: 'TOGGLE_LIBRARY', payload: libId });
+  }, []);
+
   return {
     state,
     dispatch,
@@ -187,5 +222,8 @@ export function useCanvas() {
     toggleGrid,
     setGridSize,
     toggleSnap,
+    addLibrary,
+    removeLibrary,
+    toggleLibrary,
   };
 }

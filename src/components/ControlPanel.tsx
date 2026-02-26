@@ -1,5 +1,5 @@
 import { useState, type FC, type ReactNode } from 'react';
-import type { CanvasState, Tool } from '@/types/canvas';
+import type { CanvasState, Tool, DesignLibrary } from '@/types/canvas';
 
 /* ─── sub-components used inside the panel ──────────────────────────── */
 
@@ -119,7 +119,7 @@ const Action: FC<{
 /* ─── main panel ────────────────────────────────────────────────────── */
 
 interface ControlPanelProps {
-  state: CanvasState;
+  state: CanvasState & { libraries: DesignLibrary[] };
   onLineWidthChange: (w: number) => void;
   onLineColorChange: (c: string) => void;
   onFillColorChange: (c: string) => void;
@@ -134,6 +134,9 @@ interface ControlPanelProps {
   onDeleteSelected: () => void;
   onClearCanvas: () => void;
   onExportPNG: () => void;
+  onAddLibrary?: (lib: DesignLibrary) => void;
+  onRemoveLibrary?: (libId: string) => void;
+  onToggleLibrary?: (libId: string) => void;
 }
 
 export function ControlPanel({
@@ -152,8 +155,12 @@ export function ControlPanel({
   onDeleteSelected,
   onClearCanvas,
   onExportPNG,
+  onAddLibrary,
+  onRemoveLibrary,
+  onToggleLibrary,
 }: ControlPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [libUrl, setLibUrl] = useState('');
 
   const selectedObj = state.selectedIds.length === 1
     ? state.objects.find((o) => o.id === state.selectedIds[0])
@@ -202,6 +209,60 @@ export function ControlPanel({
               step={0.01}
               onChange={onOpacityChange}
             />
+          </Folder>
+
+          {/* ── Libraries ────────────────────────── */}
+          <Folder label={`Libraries (${state.libraries.length})`} defaultOpen={false}>
+            <div className="dk-row gap-2">
+              <input
+                type="text"
+                placeholder="Paste URL..."
+                value={libUrl}
+                onChange={(e) => setLibUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && libUrl.trim() && onAddLibrary) {
+                    onAddLibrary({
+                      id: `lib-${Date.now()}`,
+                      name: libUrl.split('/').pop() || 'Library',
+                      source: 'other',
+                      sourceUrl: libUrl,
+                      components: [],
+                      active: true,
+                    });
+                    setLibUrl('');
+                  }
+                }}
+                className="flex-1 px-2 py-1 text-xs rounded border border-[--c-border] bg-[--c-surface-2] text-[--c-text]"
+              />
+            </div>
+            {state.libraries.length === 0 ? (
+              <div className="dk-empty text-xs">No design systems added</div>
+            ) : (
+              <div className="divide-y divide-[--c-border]">
+                {state.libraries.map((lib) => (
+                  <div key={lib.id} className="py-2 flex items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-[--c-text] truncate">{lib.name}</p>
+                      <p className="text-xs text-[--c-text-muted]">{lib.components.length} components</p>
+                    </div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => onToggleLibrary?.(lib.id)}
+                        className="px-2 py-0.5 text-xs rounded bg-[--c-surface-3] text-[--c-text] hover:bg-[--c-surface-4]"
+                      >
+                        {lib.active ? '✓' : '○'}
+                      </button>
+                      <button
+                        onClick={() => onRemoveLibrary?.(lib.id)}
+                        className="px-2 py-0.5 text-xs rounded bg-[--c-danger]/10 text-[--c-danger] hover:bg-[--c-danger]/20"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Folder>
 
           {/* ── Shape ────────────────────────────── */}

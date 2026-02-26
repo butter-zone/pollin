@@ -367,6 +367,58 @@ export function Canvas({
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, [state.zoom, state.panX, state.panY, onSetZoom, onSetPan]);
 
+  // ── drag-drop image support ──────────────────────────
+  const onDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const onDrop = useCallback(
+    (e: React.DragEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = Array.from(e.dataTransfer.files);
+      const canvas = canvasRef.current!;
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const dropPos = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
+
+      files.forEach((file) => {
+        // only images
+        if (!file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const src = event.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            const imgObj: CanvasObject = {
+              id: uid(),
+              kind: 'image',
+              x: dropPos.x,
+              y: dropPos.y,
+              rotation: 0,
+              opacity: 1,
+              locked: false,
+              visible: true,
+              name: file.name,
+              timestamp: Date.now(),
+              src,
+              width: Math.min(img.width, 400),
+              height: Math.min(img.height, 300),
+            };
+            onAddObject(imgObj);
+          };
+          img.src = src;
+        };
+        reader.readAsDataURL(file);
+      });
+    },
+    [state, onAddObject],
+  );
+
   // ── cursor ───────────────────────────────────────────
   const cursor = (() => {
     if (isPanning.current || spaceHeld.current || state.activeTool === 'hand')
@@ -385,6 +437,8 @@ export function Canvas({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       role="img"
       aria-label="Infinite drawing canvas"
     />
@@ -494,6 +548,19 @@ function drawObject(
       ctx.stroke();
       break;
     }
+    case 'image': {
+      const img = obj as any;
+      const imgEl = new Image();
+      imgEl.onload = () => {
+        ctx.save();
+        ctx.translate(img.x, img.y);
+        ctx.rotate((img.rotation * Math.PI) / 180);
+        ctx.drawImage(imgEl, -img.width / 2, -img.height / 2, img.width, img.height);
+        ctx.restore();
+      };
+      imgEl.src = img.src;
+      break;
+    }
     default:
       break;
   }
@@ -576,8 +643,17 @@ function getObjectBounds(obj: CanvasObject): { x: number; y: number; width: numb
         height: Math.abs(obj.y2 - obj.y),
       };
     }
+    case 'image': {
+      const img = obj as any;
+      return {
+        x: img.x - img.width / 2,
+        y: img.y - img.height / 2,
+        width: img.width,
+        height: img.height,
+      };
+    }
     default:
-      return { x: obj.x, y: obj.y, width: 0, height: 0 };
+      return { x: 0, y: 0, width: 0, height: 0 };
   }
 }
 
