@@ -423,6 +423,7 @@ function App() {
           libraries={state.libraries}
           onClose={() => setConversionTarget(null)}
           onConvert={handleConvert}
+          onAddLibrary={addLibrary}
         />
       )}
 

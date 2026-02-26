@@ -12,6 +12,8 @@ interface ConversionDialogProps {
   onClose: () => void;
   /** Called when conversion is submitted */
   onConvert: (payload: ConversionPayload) => void;
+  /** Add a new library */
+  onAddLibrary: (library: DesignLibrary) => void;
 }
 
 export interface ConversionPayload {
@@ -29,6 +31,7 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
   libraries,
   onClose,
   onConvert,
+  onAddLibrary,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [selectedLib, setSelectedLib] = useState<string | null>(
@@ -37,6 +40,8 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
   const [fidelity, setFidelity] = useState<'wireframe' | 'polished'>('polished');
   const [framework, setFramework] = useState<'react' | 'html' | 'tailwind'>('react');
   const [isConverting, setIsConverting] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [showLinkInput, setShowLinkInput] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -63,7 +68,6 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
     });
   };
 
-  const activeLibs = libraries.filter((l) => l.active);
   const isSketch = target.kind === 'stroke';
   const label = isSketch ? 'Sketch' : 'Image';
 
@@ -113,23 +117,71 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
         {/* Design System Picker */}
         <div className="cv-section">
           <label className="cv-label">Design System</label>
-          <div className="cv-chips">
-            <button
-              className={`cv-chip ${selectedLib === null ? 'cv-chip--active' : ''}`}
-              onClick={() => setSelectedLib(null)}
-            >
-              None (raw HTML)
-            </button>
-            {activeLibs.map((lib) => (
-              <button
-                key={lib.id}
-                className={`cv-chip ${selectedLib === lib.id ? 'cv-chip--active' : ''}`}
-                onClick={() => setSelectedLib(lib.id)}
-              >
-                {lib.name}
-              </button>
+          <select
+            className="cv-select"
+            value={selectedLib ?? '__none__'}
+            onChange={(e) => setSelectedLib(e.target.value === '__none__' ? null : e.target.value)}
+          >
+            <option value="__none__">None (raw HTML)</option>
+            {libraries.map((lib) => (
+              <option key={lib.id} value={lib.id}>{lib.name}</option>
             ))}
-          </div>
+          </select>
+
+          {!showLinkInput ? (
+            <button
+              className="cv-link-lib-btn"
+              onClick={() => setShowLinkInput(true)}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Link a library
+            </button>
+          ) : (
+            <div className="cv-link-lib-row">
+              <input
+                type="text"
+                className="cv-link-lib-input"
+                placeholder="Paste GitHub, npm, or Figma URL…"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && linkUrl.trim()) {
+                    const lib: DesignLibrary = {
+                      id: `lib-${Date.now()}`,
+                      name: linkUrl.split('/').pop() || 'Library',
+                      description: 'Added from conversion dialog',
+                      source: 'other',
+                      sourceUrl: linkUrl,
+                      components: [],
+                      active: true,
+                    };
+                    onAddLibrary(lib);
+                    setSelectedLib(lib.id);
+                    setLinkUrl('');
+                    setShowLinkInput(false);
+                  }
+                  if (e.key === 'Escape') {
+                    setLinkUrl('');
+                    setShowLinkInput(false);
+                  }
+                }}
+                autoFocus
+              />
+              <button
+                className="dk-icon-btn dk-icon-btn--sm"
+                onClick={() => { setLinkUrl(''); setShowLinkInput(false); }}
+                title="Cancel"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Options row */}

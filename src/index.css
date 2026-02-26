@@ -1033,6 +1033,60 @@ canvas {
   color: oklch(1 0 0);
 }
 
+/* ── Design system select + link ───── */
+.cv-select {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease);
+}
+.cv-select:focus {
+  border-color: var(--c-accent);
+}
+
+.cv-link-lib-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--c-text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+.cv-link-lib-btn:hover {
+  color: var(--c-accent);
+}
+
+.cv-link-lib-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+.cv-link-lib-input {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--c-text);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+.cv-link-lib-input:focus {
+  border-color: var(--c-accent);
+}
+
 .cv-options {
   display: flex;
   gap: 16px;
