@@ -94,9 +94,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
           aria-pressed={panelMode === 'draw'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M2 22 16 8" />
-            <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z" />
-            <path d="M15 2a5 5 0 0 1 0 7l-3.5 3.5" />
+            <path d="M3 17c2-2 4-6 7-6s3 4 5 4 3-3 6-5" />
           </svg>
         </button>
       </div>
