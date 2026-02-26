@@ -221,7 +221,7 @@ export function Canvas({
       }
 
       if (['rect', 'ellipse', 'line'].includes(state.activeTool)) {
-        shapeStart.current = world;
+        shapeStart.current = state.snapToGrid ? snapPoint(world, state.gridSize) : world;
         return;
       }
 
@@ -255,7 +255,13 @@ export function Canvas({
         const dx = world.x - dragStart.current.x;
         const dy = world.y - dragStart.current.y;
         dragObjOrigins.current.forEach((origin, id) => {
-          onUpdateObject(id, { x: origin.x + dx, y: origin.y + dy });
+          let nx = origin.x + dx;
+          let ny = origin.y + dy;
+          if (state.snapToGrid) {
+            nx = snapToGrid(nx, state.gridSize);
+            ny = snapToGrid(ny, state.gridSize);
+          }
+          onUpdateObject(id, { x: nx, y: ny });
         });
         scheduleRender();
         return;
@@ -270,10 +276,11 @@ export function Canvas({
 
       // shape preview
       if (shapeStart.current && ['rect', 'ellipse', 'line'].includes(state.activeTool)) {
+        const end = state.snapToGrid ? snapPoint(world, state.gridSize) : world;
         shapePreview.current = buildShapePreview(
           state.activeTool as 'rect' | 'ellipse' | 'line',
           shapeStart.current,
-          world,
+          end,
           state,
         );
         scheduleRender();
@@ -387,6 +394,7 @@ export function Canvas({
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const dropPos = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
+      const snapped = state.snapToGrid ? snapPoint(dropPos, state.gridSize) : dropPos;
 
       files.forEach((file) => {
         // only images
@@ -400,8 +408,8 @@ export function Canvas({
             const imgObj: CanvasObject = {
               id: uid(),
               kind: 'image',
-              x: dropPos.x,
-              y: dropPos.y,
+              x: snapped.x,
+              y: snapped.y,
               rotation: 0,
               opacity: 1,
               locked: false,
@@ -449,6 +457,14 @@ export function Canvas({
 }
 
 // ── Drawing helpers ────────────────────────────────────
+function snapToGrid(value: number, gridSize: number): number {
+  return Math.round(value / gridSize) * gridSize;
+}
+
+function snapPoint(p: Point, gridSize: number): Point {
+  return { x: snapToGrid(p.x, gridSize), y: snapToGrid(p.y, gridSize) };
+}
+
 function drawGrid(
   ctx: CanvasRenderingContext2D,
   w: number,
@@ -464,20 +480,16 @@ function drawGrid(
   const endX = startX + w / zoom + gs;
   const endY = startY + h / zoom + gs;
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 0.5 / zoom;
+  // Dot radius scales with zoom but stays subtle
+  const dotRadius = Math.max(0.8, 1.2 / zoom);
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
 
   for (let x = startX; x < endX; x += gs) {
-    ctx.beginPath();
-    ctx.moveTo(x, startY);
-    ctx.lineTo(x, endY);
-    ctx.stroke();
-  }
-  for (let y = startY; y < endY; y += gs) {
-    ctx.beginPath();
-    ctx.moveTo(startX, y);
-    ctx.lineTo(endX, y);
-    ctx.stroke();
+    for (let y = startY; y < endY; y += gs) {
+      ctx.beginPath();
+      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 

@@ -27,9 +27,9 @@ const initialState: ExtendedCanvasState = {
   zoom: 1,
   panX: 0,
   panY: 0,
-  showGrid: false,
+  showGrid: true,
   gridSize: 20,
-  snapToGrid: false,
+  snapToGrid: true,
   // legacy compat
   tool: 'pen',
   offsetX: 0,

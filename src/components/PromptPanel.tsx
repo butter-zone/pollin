@@ -126,38 +126,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   return (
     <div className="pp">
-      {/* ── Model selector ─────────────────────────────── */}
-      <div className="pp-model-bar">
-        <button
-          className="pp-model-btn"
-          onClick={() => setShowModelPicker((v) => !v)}
-        >
-          <span className="pp-model-provider">{currentModel.provider}</span>
-          <span className="pp-model-name">{currentModel.name}</span>
-          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="pp-chevron">
-            <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
-
-      {showModelPicker && (
-        <div className="pp-model-dropdown">
-          {AVAILABLE_MODELS.map((m) => (
-            <button
-              key={m.id}
-              className={`pp-model-option ${m.id === selectedModel ? 'pp-model-option--active' : ''}`}
-              onClick={() => {
-                setSelectedModel(m.id);
-                setShowModelPicker(false);
-              }}
-            >
-              <span className="pp-model-option-name">{m.name}</span>
-              <span className="pp-model-option-desc">{m.description}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* ── Design system library selector ─────────────── */}
       {activeLibraries.length > 0 && (
         <div className="pp-lib-bar">
@@ -191,75 +159,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
         </div>
       )}
 
-      {/* ── Attachments preview ────────────────────────── */}
-      {attachments.length > 0 && (
-        <div className="pp-attachments">
-          {attachments.map((att) => (
-            <div key={att.id} className="pp-att">
-              <img src={att.dataUrl} alt={att.name} className="pp-att-img" />
-              <div className="pp-att-info">
-                <span className="pp-att-name">{att.name}</span>
-                <div className="pp-att-actions">
-                  <button className="pp-att-action" onClick={() => onImageToCanvas(att)} title="Add to canvas">
-                    📌
-                  </button>
-                  <button className="pp-att-action" onClick={() => removeAttachment(att.id)} title="Remove">
-                    ✕
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── Prompt input ───────────────────────────────── */}
-      <div className="pp-input-area">
-        <textarea
-          ref={textareaRef}
-          className="pp-textarea"
-          placeholder="Describe your design idea…"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={3}
-        />
-        <div className="pp-input-actions">
-          <button className="pp-icon-btn" onClick={handleFileSelect} title="Attach image as reference">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="16" />
-              <line x1="8" y1="12" x2="16" y2="12" />
-            </svg>
-          </button>
-          <button
-            className="pp-send-btn"
-            onClick={handleSubmit}
-            disabled={isGenerating || (!prompt.trim() && attachments.length === 0)}
-            title="Generate (Enter)"
-          >
-            {isGenerating ? (
-              <span className="pp-spinner" />
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
-
-      {/* ── Generation history ─────────────────────────── */}
+      {/* ── Generation history (scrollable middle area) ── */}
       {generations.length > 0 && (
         <div className="pp-history">
           <div className="pp-history-label">History</div>
@@ -284,6 +184,105 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           ))}
         </div>
       )}
+
+      {/* ── Attachments preview ────────────────────────── */}
+      {attachments.length > 0 && (
+        <div className="pp-attachments">
+          {attachments.map((att) => (
+            <div key={att.id} className="pp-att">
+              <img src={att.dataUrl} alt={att.name} className="pp-att-img" />
+              <div className="pp-att-info">
+                <span className="pp-att-name">{att.name}</span>
+                <div className="pp-att-actions">
+                  <button className="pp-att-action" onClick={() => onImageToCanvas(att)} title="Add to canvas">
+                    📌
+                  </button>
+                  <button className="pp-att-action" onClick={() => removeAttachment(att.id)} title="Remove">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Bottom input area ──────────────────────────── */}
+      <div className="pp-input-area">
+        {/* Model dropdown (opens upward) */}
+        {showModelPicker && (
+          <div className="pp-model-dropdown pp-model-dropdown--up">
+            {AVAILABLE_MODELS.map((m) => (
+              <button
+                key={m.id}
+                className={`pp-model-option ${m.id === selectedModel ? 'pp-model-option--active' : ''}`}
+                onClick={() => {
+                  setSelectedModel(m.id);
+                  setShowModelPicker(false);
+                }}
+              >
+                <span className="pp-model-option-name">{m.name}</span>
+                <span className="pp-model-option-desc">{m.description}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <textarea
+          ref={textareaRef}
+          className="pp-textarea"
+          placeholder="Describe your design idea…"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown}
+          rows={3}
+        />
+        <div className="pp-input-actions">
+          <button
+            className="pp-model-chip"
+            onClick={() => setShowModelPicker((v) => !v)}
+            title="Choose model"
+          >
+            <span className="pp-model-chip-name">{currentModel.name}</span>
+            <svg width="8" height="5" viewBox="0 0 10 6" fill="none" className="pp-chevron">
+              <path d="M1 5L5 1L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="pp-input-right">
+            <button className="pp-icon-btn" onClick={handleFileSelect} title="Attach image as reference">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="16" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </button>
+            <button
+              className="pp-send-btn"
+              onClick={handleSubmit}
+              disabled={isGenerating || (!prompt.trim() && attachments.length === 0)}
+              title="Generate (Enter)"
+            >
+              {isGenerating ? (
+                <span className="pp-spinner" />
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleFileChange}
+      />
     </div>
   );
 };
