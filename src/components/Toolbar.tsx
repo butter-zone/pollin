@@ -104,7 +104,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
       {/* ── Drawing tools (visible in draw mode) ─────── */}
       <div className={`toolbar-tools ${panelMode !== 'draw' ? 'toolbar-tools--hidden' : ''}`}>
         {drawTools.map((tool) => {
-          const isActive = activeTool === tool.id;
+          const isActive = panelMode === 'draw' && activeTool === tool.id;
           return (
             <button
               key={tool.id}
