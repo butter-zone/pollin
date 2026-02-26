@@ -6,8 +6,11 @@ import { StatusBar } from '@/components/StatusBar';
 import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
+import { PromptPanel } from '@/components/PromptPanel';
+import type { GenerationEntry, ImageAttachment } from '@/components/PromptPanel';
+import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
-import { convertToUI } from '@/services/conversion';
+import { convertToUI, generateFromPrompt } from '@/services/conversion';
 import type { ConversionPayload } from '@/components/ConversionDialog';
 import type { Tool, CanvasObject } from '@/types/canvas';
 
@@ -40,8 +43,30 @@ function App() {
     redo,
   } = useCanvas();
 
+  // ── Panel mode: prompt (default) vs draw ───────────────
+  const [panelMode, setPanelMode] = useState<PanelMode>('prompt');
+
   // ── Library panel toggle ──────────────────────────────
   const [showLibPanel, setShowLibPanel] = useState(false);
+
+  // ── Generation state ──────────────────────────────────
+  const [generations, setGenerations] = useState<GenerationEntry[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Switch to draw mode when a drawing tool shortcut is pressed
+  const handleToolChange = useCallback((tool: Tool) => {
+    setTool(tool);
+    if (['pen', 'rect', 'ellipse', 'line', 'eraser'].includes(tool)) {
+      setPanelMode('draw');
+    }
+  }, [setTool]);
+
+  const handlePanelModeChange = useCallback((mode: PanelMode) => {
+    setPanelMode(mode);
+    if (mode === 'prompt') {
+      setTool('select');
+    }
+  }, [setTool]);
 
   // keyboard shortcuts for tools + undo/redo/dup/select-all
   useEffect(() => {
@@ -101,11 +126,11 @@ function App() {
         e: 'eraser',
       };
       const tool = map[e.key.toLowerCase()];
-      if (tool) setTool(tool);
+      if (tool) handleToolChange(tool);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setTool, undo, redo, addObject, setSelection, state.selectedIds, state.objects]);
+  }, [handleToolChange, undo, redo, addObject, setSelection, state.selectedIds, state.objects]);
 
   const handleDeleteSelected = useCallback(() => {
     deleteObjects(state.selectedIds);
@@ -220,8 +245,77 @@ function App() {
     [],
   );
 
+  // ── Prompt-based generation ───────────────────────────
+  const handleGenerate = useCallback(
+    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
+      const genId = `gen-${Date.now()}`;
+      const entry: GenerationEntry = {
+        id: genId,
+        prompt,
+        model,
+        status: 'generating',
+        timestamp: Date.now(),
+        attachments,
+      };
+      setGenerations((prev) => [entry, ...prev]);
+      setIsGenerating(true);
+
+      try {
+        const result = await generateFromPrompt({
+          prompt,
+          model,
+          framework: 'react',
+          imageRefs: attachments.map((a) => a.dataUrl),
+          libraryId,
+        });
+
+        setGenerations((prev) =>
+          prev.map((g) =>
+            g.id === genId
+              ? { ...g, status: result.success ? 'done' : 'error', result: result.code }
+              : g,
+          ),
+        );
+
+        if (result.success) {
+          setConversionResult(result.code);
+        }
+      } catch {
+        setGenerations((prev) =>
+          prev.map((g) => (g.id === genId ? { ...g, status: 'error' } : g)),
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [],
+  );
+
+  // ── Add image attachment to canvas ────────────────────
+  const handleImageToCanvas = useCallback(
+    (att: ImageAttachment) => {
+      const imgObj: CanvasObject = {
+        id: `obj-${Date.now()}-img`,
+        kind: 'image',
+        x: state.panX + 200,
+        y: state.panY + 200,
+        rotation: 0,
+        opacity: 1,
+        locked: false,
+        visible: true,
+        name: att.name,
+        timestamp: Date.now(),
+        src: att.dataUrl,
+        width: Math.min(att.width, 400),
+        height: Math.min(att.height, 300),
+      };
+      addObject(imgObj);
+    },
+    [addObject, state.panX, state.panY],
+  );
+
   return (
-    <div className="app-layout" onContextMenu={handleContextMenu}>
+    <div className={`app-layout ${panelMode === 'prompt' ? 'app-layout--prompt' : 'app-layout--draw'}`} onContextMenu={handleContextMenu}>
       {/* Library panel toggle button */}
       <button
         className={`lib-toggle-btn${showLibPanel ? ' lib-toggle-btn--active' : ''}`}
@@ -231,8 +325,47 @@ function App() {
         📚
       </button>
 
-      {/* Left toolbar */}
-      <Toolbar activeTool={state.activeTool} onToolChange={setTool} />
+      {/* Left toolbar rail */}
+      <Toolbar
+        activeTool={state.activeTool}
+        panelMode={panelMode}
+        onToolChange={handleToolChange}
+        onPanelModeChange={handlePanelModeChange}
+      />
+
+      {/* Left panel: prompt OR drawing controls */}
+      <div className="left-panel">
+        {panelMode === 'prompt' ? (
+          <PromptPanel
+            libraries={state.libraries}
+            onGenerate={handleGenerate}
+            onImageToCanvas={handleImageToCanvas}
+            isGenerating={isGenerating}
+            generations={generations}
+          />
+        ) : (
+          <ControlPanel
+            state={state as any}
+            onLineWidthChange={setLineWidth}
+            onLineColorChange={setLineColor}
+            onFillColorChange={setFillColor}
+            onStrokeColorChange={setStrokeColor}
+            onStrokeWidthChange={setStrokeWidth}
+            onCornerRadiusChange={setCornerRadius}
+            onOpacityChange={setOpacity}
+            onToolChange={handleToolChange}
+            onToggleGrid={toggleGrid}
+            onSetGridSize={setGridSize}
+            onToggleSnap={toggleSnap}
+            onDeleteSelected={handleDeleteSelected}
+            onClearCanvas={handleClearCanvas}
+            onExportPNG={handleExportPNG}
+            onAddLibrary={addLibrary}
+            onRemoveLibrary={removeLibrary}
+            onToggleLibrary={toggleLibrary}
+          />
+        )}
+      </div>
 
       {/* Canvas area */}
       <div className="canvas-area">
@@ -247,28 +380,6 @@ function App() {
           onSetDrawing={setDrawing}
         />
       </div>
-
-      {/* DialKit-style floating control panel */}
-      <ControlPanel
-        state={state as any}
-        onLineWidthChange={setLineWidth}
-        onLineColorChange={setLineColor}
-        onFillColorChange={setFillColor}
-        onStrokeColorChange={setStrokeColor}
-        onStrokeWidthChange={setStrokeWidth}
-        onCornerRadiusChange={setCornerRadius}
-        onOpacityChange={setOpacity}
-        onToolChange={setTool}
-        onToggleGrid={toggleGrid}
-        onSetGridSize={setGridSize}
-        onToggleSnap={toggleSnap}
-        onDeleteSelected={handleDeleteSelected}
-        onClearCanvas={handleClearCanvas}
-        onExportPNG={handleExportPNG}
-        onAddLibrary={addLibrary}
-        onRemoveLibrary={removeLibrary}
-        onToggleLibrary={toggleLibrary}
-      />
 
       {/* Library panel (toggleable right panel) */}
       {showLibPanel && (
