@@ -134,6 +134,9 @@ interface ControlPanelProps {
   onDeleteSelected: () => void;
   onClearCanvas: () => void;
   onExportPNG: () => void;
+  onSaveNow?: () => void;
+  onExportCanvas?: () => void;
+  onImportCanvas?: () => void;
   onAddLibrary?: (lib: DesignLibrary) => void;
   onRemoveLibrary?: (libId: string) => void;
   onToggleLibrary?: (libId: string) => void;
@@ -155,6 +158,9 @@ export function ControlPanel({
   onDeleteSelected,
   onClearCanvas,
   onExportPNG,
+  onSaveNow,
+  onExportCanvas,
+  onImportCanvas,
   onAddLibrary,
   onRemoveLibrary,
   onToggleLibrary,
@@ -337,6 +343,13 @@ export function ControlPanel({
             )}
             <Action label="Clear All" variant="danger" onClick={onClearCanvas} />
             <Action label="Export PNG" onClick={onExportPNG} />
+          </Folder>
+
+          {/* ── File ─────────────────────────────── */}
+          <Folder label="File" defaultOpen={false}>
+            {onSaveNow && <Action label="Save Now" onClick={onSaveNow} />}
+            {onExportCanvas && <Action label="Export .pollin" onClick={onExportCanvas} />}
+            {onImportCanvas && <Action label="Import .pollin" onClick={onImportCanvas} />}
           </Folder>
 
           {/* ── Objects list ──────────────────────── */}

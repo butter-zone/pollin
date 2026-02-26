@@ -41,6 +41,11 @@ function App() {
     toggleLibrary,
     undo,
     redo,
+    // Persistence
+    lastSaved,
+    saveNow,
+    exportCanvas,
+    importCanvas,
   } = useCanvas();
 
   // ── Panel mode: prompt (default) vs draw ───────────────
@@ -92,6 +97,12 @@ function App() {
         redo();
         return;
       }
+      // Save: Ctrl+S
+      if (ctrl && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveNow();
+        return;
+      }
       // Duplicate: Ctrl+D
       if (ctrl && e.key.toLowerCase() === 'd') {
         e.preventDefault();
@@ -130,7 +141,7 @@ function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleToolChange, undo, redo, addObject, setSelection, state.selectedIds, state.objects]);
+  }, [handleToolChange, undo, redo, saveNow, addObject, setSelection, state.selectedIds, state.objects]);
 
   const handleDeleteSelected = useCallback(() => {
     deleteObjects(state.selectedIds);
@@ -363,6 +374,9 @@ function App() {
             onDeleteSelected={handleDeleteSelected}
             onClearCanvas={handleClearCanvas}
             onExportPNG={handleExportPNG}
+            onSaveNow={saveNow}
+            onExportCanvas={exportCanvas}
+            onImportCanvas={importCanvas}
             onAddLibrary={addLibrary}
             onRemoveLibrary={removeLibrary}
             onToggleLibrary={toggleLibrary}
@@ -401,6 +415,7 @@ function App() {
         objectCount={state.objects.length}
         selectedCount={state.selectedIds.length}
         activeTool={state.activeTool}
+        lastSaved={lastSaved}
         onZoomChange={setZoom}
         onResetView={handleResetView}
       />

@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import {
   CanvasState,
   CanvasAction,
@@ -7,12 +7,21 @@ import {
   DesignLibrary,
 } from '@/types/canvas';
 import { useHistory } from './useHistory';
+import {
+  loadCanvas,
+  saveCanvas,
+  buildSnapshot,
+  clearSavedCanvas,
+  exportCanvasFile,
+  importCanvasFile,
+  type CanvasSnapshot,
+} from '@/services/storage';
 
 interface ExtendedCanvasState extends CanvasState {
   libraries: DesignLibrary[];
 }
 
-const initialState: ExtendedCanvasState = {
+const defaultState: ExtendedCanvasState = {
   activeTool: 'pen',
   isDrawing: false,
   lineWidth: 2,
@@ -37,6 +46,31 @@ const initialState: ExtendedCanvasState = {
   // New: library management
   libraries: [],
 };
+
+/** Build initial state by restoring from localStorage if available. */
+function buildInitialState(): ExtendedCanvasState {
+  const saved = loadCanvas();
+  if (!saved) return defaultState;
+
+  return {
+    ...defaultState,
+    objects: saved.objects,
+    libraries: saved.libraries ?? [],
+    zoom: saved.viewport.zoom,
+    panX: saved.viewport.panX,
+    panY: saved.viewport.panY,
+    showGrid: saved.settings.showGrid,
+    gridSize: saved.settings.gridSize,
+    snapToGrid: saved.settings.snapToGrid,
+    lineWidth: saved.settings.lineWidth,
+    lineColor: saved.settings.lineColor,
+    fillColor: saved.settings.fillColor,
+    strokeColor: saved.settings.strokeColor,
+    strokeWidth: saved.settings.strokeWidth,
+    cornerRadius: saved.settings.cornerRadius,
+    opacity: saved.settings.opacity,
+  };
+}
 
 function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): ExtendedCanvasState {
   switch (action.type) {
@@ -111,11 +145,52 @@ function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): Extend
 }
 
 export function useCanvas() {
-  const [state, dispatch] = useReducer(canvasReducer, initialState);
+  const [state, dispatch] = useReducer(canvasReducer, undefined, buildInitialState);
 
   // Stable refs so history callbacks don't depend on state
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // ── Auto-save with debounce ────────────────────────────
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lastSaved, setLastSaved] = useState<number | null>(null);
+
+  // Debounced auto-save: 800ms after last state change
+  useEffect(() => {
+    // Don't save transient drawing state
+    if (state.isDrawing) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+
+    saveTimerRef.current = setTimeout(() => {
+      const snapshot = buildSnapshot(state);
+      const ok = saveCanvas(snapshot);
+      if (ok) setLastSaved(snapshot.savedAt);
+    }, 800);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+    // Depend on the fields we persist (not isDrawing / activeTool / selectedIds)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    state.objects,
+    state.libraries,
+    state.zoom,
+    state.panX,
+    state.panY,
+    state.showGrid,
+    state.gridSize,
+    state.snapToGrid,
+    state.lineWidth,
+    state.lineColor,
+    state.fillColor,
+    state.strokeColor,
+    state.strokeWidth,
+    state.cornerRadius,
+    state.opacity,
+    state.isDrawing,
+  ]);
 
   const getObjects = useCallback(() => stateRef.current.objects, []);
   const getSelection = useCallback(() => stateRef.current.selectedIds, []);
@@ -225,6 +300,57 @@ export function useCanvas() {
     dispatch({ type: 'TOGGLE_LIBRARY', payload: libId });
   }, []);
 
+  // ── Persistence actions ────────────────────────────────
+
+  /** Force an immediate save (bypass debounce). */
+  const saveNow = useCallback(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const snapshot = buildSnapshot(stateRef.current);
+    const ok = saveCanvas(snapshot);
+    if (ok) setLastSaved(snapshot.savedAt);
+    return ok;
+  }, []);
+
+  /** Clear saved data from localStorage. */
+  const clearSaved = useCallback(() => {
+    clearSavedCanvas();
+    setLastSaved(null);
+  }, []);
+
+  /** Export canvas to a .pollin.json file. */
+  const exportCanvas = useCallback(() => {
+    const snapshot = buildSnapshot(stateRef.current);
+    exportCanvasFile(snapshot);
+  }, []);
+
+  /** Import a .pollin.json file and replace current state. */
+  const importCanvas = useCallback(async () => {
+    const snapshot = await importCanvasFile();
+    if (!snapshot) return false;
+    applyFullSnapshot(snapshot);
+    return true;
+  }, []);
+
+  /** Apply a full snapshot to current state (used by import + load). */
+  const applyFullSnapshot = useCallback((snapshot: CanvasSnapshot) => {
+    dispatch({ type: 'SET_OBJECTS', payload: snapshot.objects });
+    dispatch({ type: 'SET_SELECTION', payload: [] });
+    dispatch({ type: 'SET_ZOOM', payload: snapshot.viewport.zoom });
+    dispatch({ type: 'SET_PAN', payload: { x: snapshot.viewport.panX, y: snapshot.viewport.panY } });
+    dispatch({ type: 'SET_LINE_WIDTH', payload: snapshot.settings.lineWidth });
+    dispatch({ type: 'SET_LINE_COLOR', payload: snapshot.settings.lineColor });
+    dispatch({ type: 'SET_FILL_COLOR', payload: snapshot.settings.fillColor });
+    dispatch({ type: 'SET_STROKE_COLOR', payload: snapshot.settings.strokeColor });
+    dispatch({ type: 'SET_STROKE_WIDTH', payload: snapshot.settings.strokeWidth });
+    dispatch({ type: 'SET_CORNER_RADIUS', payload: snapshot.settings.cornerRadius });
+    dispatch({ type: 'SET_OPACITY', payload: snapshot.settings.opacity });
+    // Re-add libraries
+    snapshot.libraries?.forEach((lib) => {
+      dispatch({ type: 'ADD_LIBRARY', payload: lib });
+    });
+    setLastSaved(snapshot.savedAt);
+  }, []);
+
   return {
     state,
     dispatch,
@@ -255,5 +381,11 @@ export function useCanvas() {
     canUndo,
     canRedo,
     pushSnapshot,
+    // Persistence
+    lastSaved,
+    saveNow,
+    clearSaved,
+    exportCanvas,
+    importCanvas,
   };
 }
