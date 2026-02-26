@@ -79,6 +79,13 @@ export function Canvas({
     originalBounds: { x: number; y: number; width: number; height: number };
   } | null>(null);
 
+  // Rotation handle state
+  const rotateHandle = useRef<{
+    objId: string;
+    startAngle: number;  // angle from center to initial click (radians)
+    originalRotation: number;  // object's rotation at drag start (degrees)
+  } | null>(null);
+
   // ── resize (ResizeObserver) ───────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -206,17 +213,40 @@ export function Canvas({
           const selObj = state.objects.find((o) => o.id === state.selectedIds[0]);
           if (selObj) {
             const bounds = getObjectBounds(selObj);
-            const handleRadius = 6 / state.zoom; // handle hit zone in world space
+            const cx = bounds.x + bounds.width / 2;
+            const cy = bounds.y + bounds.height / 2;
+            // Transform click into object-local space (undo object rotation)
+            const rad = -(selObj.rotation * Math.PI) / 180;
+            const cosR = Math.cos(rad);
+            const sinR = Math.sin(rad);
+            const localX = cosR * (world.x - cx) - sinR * (world.y - cy) + cx;
+            const localY = sinR * (world.x - cx) + cosR * (world.y - cy) + cy;
             const corners: Array<{ key: 'tl' | 'tr' | 'bl' | 'br'; x: number; y: number }> = [
               { key: 'tl', x: bounds.x - 4, y: bounds.y - 4 },
               { key: 'tr', x: bounds.x + bounds.width + 4, y: bounds.y - 4 },
               { key: 'bl', x: bounds.x - 4, y: bounds.y + bounds.height + 4 },
               { key: 'br', x: bounds.x + bounds.width + 4, y: bounds.y + bounds.height + 4 },
             ];
+            // Check rotation zones first (slightly outside corners, 8-16px radius)
+            const rotateInner = 8 / state.zoom;
+            const rotateOuter = 18 / state.zoom;
             for (const c of corners) {
-              const dx = world.x - c.x;
-              const dy = world.y - c.y;
-              if (dx * dx + dy * dy <= handleRadius * handleRadius) {
+              const dx = localX - c.x;
+              const dy = localY - c.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              // Rotation zone: outside the resize handle but within an outer radius
+              if (dist > rotateInner && dist <= rotateOuter) {
+                const startAngle = Math.atan2(world.y - cy, world.x - cx);
+                rotateHandle.current = {
+                  objId: selObj.id,
+                  startAngle,
+                  originalRotation: selObj.rotation,
+                };
+                onBeginTransaction?.();
+                return;
+              }
+              // Resize zone: inside the handle radius
+              if (dist <= rotateInner) {
                 resizeHandle.current = {
                   corner: c.key,
                   objId: selObj.id,
@@ -326,6 +356,27 @@ export function Canvas({
         return;
       }
 
+      // rotating a selected object
+      if (rotateHandle.current) {
+        const rh = rotateHandle.current;
+        const obj = state.objects.find((o) => o.id === rh.objId);
+        if (obj) {
+          const bounds = getObjectBounds(obj);
+          const cx = bounds.x + bounds.width / 2;
+          const cy = bounds.y + bounds.height / 2;
+          const currentAngle = Math.atan2(world.y - cy, world.x - cx);
+          const deltaAngle = currentAngle - rh.startAngle;
+          let newRotation = rh.originalRotation + (deltaAngle * 180) / Math.PI;
+          // Snap to 15° increments when holding Shift
+          if (e.shiftKey) {
+            newRotation = Math.round(newRotation / 15) * 15;
+          }
+          onUpdateObject(rh.objId, { rotation: newRotation });
+        }
+        scheduleRender();
+        return;
+      }
+
       // resizing a selected object via handle
       if (resizeHandle.current) {
         const rh = resizeHandle.current;
@@ -432,6 +483,13 @@ export function Canvas({
       if (isPanning.current) {
         isPanning.current = false;
         panStart.current = null;
+        return;
+      }
+
+      // finish rotation
+      if (rotateHandle.current) {
+        rotateHandle.current = null;
+        onEndTransaction?.();
         return;
       }
 
@@ -671,6 +729,7 @@ export function Canvas({
   const cursor = (() => {
     if (isPanning.current || spaceHeld.current || state.activeTool === 'hand')
       return 'grab';
+    if (rotateHandle.current) return 'grabbing';
     if (resizeHandle.current) {
       const c = resizeHandle.current.corner;
       if (c === 'tl' || c === 'br') return 'nwse-resize';
@@ -832,6 +891,14 @@ function drawObject(
   switch (obj.kind) {
     case 'stroke': {
       const s = obj;
+      if (s.rotation) {
+        const sb = getObjectBounds(s);
+        const scx = sb.x + sb.width / 2;
+        const scy = sb.y + sb.height / 2;
+        ctx.translate(scx, scy);
+        ctx.rotate((s.rotation * Math.PI) / 180);
+        ctx.translate(-scx, -scy);
+      }
       ctx.strokeStyle = s.color;
       ctx.lineWidth = s.lineWidth;
       ctx.lineCap = 'round';
@@ -879,6 +946,14 @@ function drawObject(
     }
     case 'line': {
       const l = obj;
+      if (l.rotation) {
+        const lb = getObjectBounds(l);
+        const lcx = lb.x + lb.width / 2;
+        const lcy = lb.y + lb.height / 2;
+        ctx.translate(lcx, lcy);
+        ctx.rotate((l.rotation * Math.PI) / 180);
+        ctx.translate(-lcx, -lcy);
+      }
       ctx.strokeStyle = l.color;
       ctx.lineWidth = l.lineWidth;
       ctx.lineCap = 'round';
@@ -948,18 +1023,26 @@ function drawObject(
   if (selected) {
     ctx.save();
     const bounds = getObjectBounds(obj);
+    const cx = bounds.x + bounds.width / 2;
+    const cy = bounds.y + bounds.height / 2;
+    // Rotate the selection highlight with the object
+    ctx.translate(cx, cy);
+    ctx.rotate((obj.rotation * Math.PI) / 180);
+    const hw = bounds.width / 2 + 4;
+    const hh = bounds.height / 2 + 4;
+
     ctx.strokeStyle = 'oklch(0.67 0.185 55)';
-    ctx.lineWidth = 1.5 / 1; // we're already in world space
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
-    ctx.strokeRect(bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8);
+    ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
     ctx.setLineDash([]);
 
     // corner handles
     const corners = [
-      { x: bounds.x - 4, y: bounds.y - 4 },
-      { x: bounds.x + bounds.width + 4, y: bounds.y - 4 },
-      { x: bounds.x - 4, y: bounds.y + bounds.height + 4 },
-      { x: bounds.x + bounds.width + 4, y: bounds.y + bounds.height + 4 },
+      { x: -hw, y: -hh },
+      { x: hw, y: -hh },
+      { x: -hw, y: hh },
+      { x: hw, y: hh },
     ];
     ctx.fillStyle = 'oklch(1 0 0)';
     ctx.strokeStyle = 'oklch(0.67 0.185 55)';
@@ -968,6 +1051,17 @@ function drawObject(
       ctx.beginPath();
       ctx.arc(c.x, c.y, 4, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
+    });
+
+    // rotation affordance: small arc at each corner (visible outside the handle)
+    ctx.strokeStyle = 'oklch(0.67 0.185 55 / 0.4)';
+    ctx.lineWidth = 1;
+    corners.forEach((c, i) => {
+      // Draw a small curved arrow outside each corner
+      const startAngle = [Math.PI, -Math.PI / 2, Math.PI / 2, 0][i];
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 10, startAngle, startAngle + Math.PI / 2);
       ctx.stroke();
     });
 
@@ -1099,11 +1193,23 @@ function hitTest(objects: CanvasObject[], point: Point): CanvasObject | null {
     if (!obj.visible || obj.locked) continue;
     const b = getObjectBounds(obj);
     const margin = 6;
+    // Transform point into object-local space to handle rotation
+    let px = point.x;
+    let py = point.y;
+    if (obj.rotation) {
+      const cx = b.x + b.width / 2;
+      const cy = b.y + b.height / 2;
+      const rad = -(obj.rotation * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      px = cos * (point.x - cx) - sin * (point.y - cy) + cx;
+      py = sin * (point.x - cx) + cos * (point.y - cy) + cy;
+    }
     if (
-      point.x >= b.x - margin &&
-      point.x <= b.x + b.width + margin &&
-      point.y >= b.y - margin &&
-      point.y <= b.y + b.height + margin
+      px >= b.x - margin &&
+      px <= b.x + b.width + margin &&
+      py >= b.y - margin &&
+      py <= b.y + b.height + margin
     ) {
       return obj;
     }
