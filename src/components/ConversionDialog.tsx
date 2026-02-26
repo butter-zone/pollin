@@ -109,7 +109,7 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
 
         {/* Design System Picker */}
         <div className="cv-section">
-          <label className="cv-label">Target Design System</label>
+          <label className="cv-label">Design System</label>
           <div className="cv-chips">
             <button
               className={`cv-chip ${selectedLib === null ? 'cv-chip--active' : ''}`}
