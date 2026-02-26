@@ -21,7 +21,6 @@ export function LibraryPanel({
 }: LibraryPanelProps) {
   const [expandedLibs, setExpandedLibs] = useState<Set<string>>(new Set());
   const [libUrl, setLibUrl] = useState('');
-  const [sourceType, setSourceType] = useState<'github' | 'npm' | 'figma' | 'other'>('github');
 
   const toggleExpand = (libId: string) => {
     const next = new Set(expandedLibs);
@@ -33,11 +32,18 @@ export function LibraryPanel({
   const handleAddLibrary = () => {
     if (!libUrl.trim()) return;
 
+    const url = libUrl.trim().toLowerCase();
+    const source: 'github' | 'npm' | 'figma' | 'other' =
+      url.includes('github.com') ? 'github'
+      : url.includes('npmjs.com') || url.includes('npm') ? 'npm'
+      : url.includes('figma.com') ? 'figma'
+      : 'other';
+
     const newLib: DesignLibrary = {
       id: `lib-${Date.now()}`,
       name: libUrl.split('/').pop() || 'Library',
-      description: `Added from ${sourceType}`,
-      source: sourceType,
+      description: `Added from ${source}`,
+      source,
       sourceUrl: libUrl,
       components: [
         {
@@ -85,23 +91,10 @@ export function LibraryPanel({
         {/* ── Add library ──────────────────────── */}
         <div className="dk-folder">
           <div className="dk-folder-body" style={{ paddingTop: 8 }}>
-            <div className="dk-row">
-              <label className="dk-label">Source</label>
-              <select
-                value={sourceType}
-                onChange={(e) => setSourceType(e.target.value as typeof sourceType)}
-                className="dk-select"
-              >
-                <option value="github">GitHub</option>
-                <option value="npm">NPM</option>
-                <option value="figma">Figma</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
             <div className="dk-row" style={{ gap: 4 }}>
               <input
                 type="text"
-                placeholder="Paste URL or name…"
+                placeholder="Paste URL…"
                 value={libUrl}
                 onChange={(e) => setLibUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddLibrary()}
