@@ -1385,6 +1385,45 @@ canvas {
   color: var(--c-text);
 }
 
+/* ── Mic button active / pulse ── */
+.pp-icon-btn--active {
+  color: #ef4444;
+  border-color: #ef4444;
+  position: relative;
+}
+.pp-mic-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: var(--radius-sm);
+  border: 2px solid #ef4444;
+  animation: mic-ring 1.2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes mic-ring {
+  0%   { opacity: .7; transform: scale(1); }
+  100% { opacity: 0;  transform: scale(1.35); }
+}
+
+/* ── Speech error / Handy tip ── */
+.pp-speech-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--c-text-dim);
+  background: var(--c-surface-2);
+  border-radius: var(--radius-sm);
+}
+.pp-speech-link {
+  color: var(--c-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pp-speech-link:hover {
+  text-decoration: underline;
+}
+
 .pp-send-btn {
   width: 32px;
   height: 32px;
@@ -1551,56 +1590,11 @@ canvas {
   box-shadow: var(--shadow-panel);
 }
 
-/* ── Top bar (target + library) ───────────────────────── */
+/* ── Top bar (design system selector) ─────────────────── */
 
 .pp-top-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   padding: 10px 12px 6px;
   border-bottom: 1px solid var(--c-border-subtle);
-}
-
-.pp-target-toggle {
-  display: flex;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.pp-target-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 5px 8px;
-  background: transparent;
-  border: none;
-  color: var(--c-text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
-}
-
-.pp-target-btn + .pp-target-btn {
-  border-left: 1px solid var(--c-border);
-}
-
-.pp-target-btn:hover {
-  background: var(--c-surface-3);
-  color: var(--c-text);
-}
-
-.pp-target-btn--active {
-  background: var(--c-accent);
-  color: #fff;
-}
-
-.pp-target-btn--active:hover {
-  background: var(--c-accent-hover);
-  color: #fff;
 }
 
 /* ── Context bar (selected objects) ───────────────────── */

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, type FC } from 'react';
 import type { DesignLibrary } from '@/types/canvas';
+import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 /* ─── LLM model definitions ────────────────────────────── */
 export interface LLMModel {
@@ -20,9 +21,6 @@ export const AVAILABLE_MODELS: LLMModel[] = [
   { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', description: 'Code & reasoning' },
 ];
 
-/* ─── Generation target (Stitch-style) ──────────────────── */
-export type TargetPlatform = 'web' | 'mobile';
-
 /* ─── Attachment ────────────────────────────────────────── */
 interface ImageAttachment {
   id: string;
@@ -41,13 +39,12 @@ export interface GenerationEntry {
   result?: string;
   timestamp: number;
   attachments: ImageAttachment[];
-  target?: TargetPlatform;
 }
 
 /* ─── Props ─────────────────────────────────────────────── */
 interface PromptPanelProps {
   libraries: DesignLibrary[];
-  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string, target?: TargetPlatform) => void;
+  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => void;
   onImageToCanvas: (attachment: ImageAttachment) => void;
   isGenerating: boolean;
   generations: GenerationEntry[];
@@ -68,19 +65,35 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
   const [selectedLibrary, setSelectedLibrary] = useState<string | undefined>();
   const [showLibPicker, setShowLibPicker] = useState(false);
-  const [target, setTarget] = useState<TargetPlatform>('web');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /* ── Speech-to-text (Web Speech API + Handy fallback) ── */
+  const handleSpeechTranscript = useCallback((text: string) => {
+    setPrompt((prev) => {
+      const needsSpace = prev.length > 0 && !prev.endsWith(' ');
+      return prev + (needsSpace ? ' ' : '') + text;
+    });
+    textareaRef.current?.focus();
+  }, []);
+
+  const {
+    isSupported: speechSupported,
+    isListening,
+    interimTranscript,
+    toggleListening,
+    error: speechError,
+  } = useSpeechToText(handleSpeechTranscript);
 
   const currentModel = AVAILABLE_MODELS.find((m) => m.id === selectedModel) ?? AVAILABLE_MODELS[0];
   const activeLibraries = libraries.filter((l) => l.active);
 
   const handleSubmit = useCallback(() => {
     if (!prompt.trim() && attachments.length === 0) return;
-    onGenerate(prompt.trim(), selectedModel, attachments, selectedLibrary, target);
+    onGenerate(prompt.trim(), selectedModel, attachments, selectedLibrary);
     setPrompt('');
     setAttachments([]);
-  }, [prompt, selectedModel, attachments, selectedLibrary, target, onGenerate]);
+  }, [prompt, selectedModel, attachments, selectedLibrary, onGenerate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -133,34 +146,9 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   return (
     <div className="pp">
-      {/* ── Top bar: target platform + design system ──── */}
-      <div className="pp-top-bar">
-        <div className="pp-target-toggle">
-          <button
-            className={`pp-target-btn ${target === 'web' ? 'pp-target-btn--active' : ''}`}
-            onClick={() => setTarget('web')}
-            title="Generate for web"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="3" width="20" height="14" rx="2" />
-              <line x1="8" y1="21" x2="16" y2="21" />
-              <line x1="12" y1="17" x2="12" y2="21" />
-            </svg>
-            Web
-          </button>
-          <button
-            className={`pp-target-btn ${target === 'mobile' ? 'pp-target-btn--active' : ''}`}
-            onClick={() => setTarget('mobile')}
-            title="Generate for mobile"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="5" y="2" width="14" height="20" rx="2" />
-              <line x1="12" y1="18" x2="12" y2="18" />
-            </svg>
-            Mobile
-          </button>
-        </div>
-        {activeLibraries.length > 0 && (
+      {/* ── Top bar: design system selector ──────────── */}
+      {activeLibraries.length > 0 && (
+        <div className="pp-top-bar">
           <div className="pp-lib-bar">
             <button className="pp-lib-btn" onClick={() => setShowLibPicker((v) => !v)}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -195,8 +183,8 @@ export const PromptPanel: FC<PromptPanelProps> = ({
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Selected object context ───────────────────── */}
       {selectedObjectCount > 0 && (
@@ -282,12 +270,21 @@ export const PromptPanel: FC<PromptPanelProps> = ({
         <textarea
           ref={textareaRef}
           className="pp-textarea"
-          placeholder="Describe your design idea…"
-          value={prompt}
+          placeholder={isListening ? 'Listening… speak now' : 'Describe your design idea…'}
+          value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
           rows={3}
         />
+        {/* Speech error / Handy tip */}
+        {speechError && (
+          <div className="pp-speech-tip">
+            <span>{speechError}</span>
+            <a href="https://handy.computer" target="_blank" rel="noopener noreferrer" className="pp-speech-link">
+              Get Handy →
+            </a>
+          </div>
+        )}
         <div className="pp-input-actions">
           <button
             className="pp-model-chip"
@@ -300,6 +297,20 @@ export const PromptPanel: FC<PromptPanelProps> = ({
             </svg>
           </button>
           <div className="pp-input-right">
+            <button
+              className={`pp-icon-btn ${isListening ? 'pp-icon-btn--active' : ''}`}
+              onClick={toggleListening}
+              title={isListening ? 'Stop listening' : speechSupported ? 'Voice input (speech-to-text)' : 'Install Handy for voice input (handy.computer)'}
+              aria-label={isListening ? 'Stop listening' : 'Voice input'}
+              aria-pressed={isListening}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+              {isListening && <span className="pp-mic-pulse" />}
+            </button>
             <button className="pp-icon-btn" onClick={handleFileSelect} title="Attach image as reference">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />

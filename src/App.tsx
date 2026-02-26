@@ -7,7 +7,7 @@ import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
 import { PromptPanel } from '@/components/PromptPanel';
-import type { GenerationEntry, ImageAttachment, TargetPlatform } from '@/components/PromptPanel';
+import type { GenerationEntry, ImageAttachment } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI, generateFromPrompt } from '@/services/conversion';
@@ -247,7 +247,7 @@ function App() {
 
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
-    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string, target?: TargetPlatform) => {
+    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
       const genId = `gen-${Date.now()}`;
       const entry: GenerationEntry = {
         id: genId,
@@ -256,7 +256,6 @@ function App() {
         status: 'generating',
         timestamp: Date.now(),
         attachments,
-        target,
       };
       setGenerations((prev) => [entry, ...prev]);
       setIsGenerating(true);
