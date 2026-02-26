@@ -942,9 +942,13 @@ canvas {
   background: none;
   border: none;
   color: var(--c-text-muted);
-  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 0;
   border-radius: var(--radius-sm);
 }
 

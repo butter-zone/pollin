@@ -77,7 +77,10 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
             <h3 className="cv-title">Convert {label} → UI</h3>
           </div>
           <button className="cv-close" onClick={onClose} aria-label="Close">
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
