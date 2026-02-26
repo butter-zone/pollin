@@ -5,6 +5,7 @@ import { Toolbar } from '@/components/Toolbar';
 import { StatusBar } from '@/components/StatusBar';
 import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
+import { LibraryPanel } from '@/components/LibraryPanel';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI } from '@/services/conversion';
 import type { ConversionPayload } from '@/components/ConversionDialog';
@@ -35,9 +36,14 @@ function App() {
     addLibrary,
     removeLibrary,
     toggleLibrary,
+    undo,
+    redo,
   } = useCanvas();
 
-  // keyboard shortcuts for tools
+  // ── Library panel toggle ──────────────────────────────
+  const [showLibPanel, setShowLibPanel] = useState(false);
+
+  // keyboard shortcuts for tools + undo/redo/dup/select-all
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Ignore if user is typing in an input
@@ -46,6 +52,44 @@ function App() {
         e.target instanceof HTMLTextAreaElement
       )
         return;
+
+      const ctrl = e.ctrlKey || e.metaKey;
+
+      // Undo: Ctrl+Z
+      if (ctrl && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        undo();
+        return;
+      }
+      // Redo: Ctrl+Shift+Z or Ctrl+Y
+      if ((ctrl && e.shiftKey && e.key.toLowerCase() === 'z') || (ctrl && e.key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      // Duplicate: Ctrl+D
+      if (ctrl && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        state.selectedIds.forEach((id) => {
+          const obj = state.objects.find((o) => o.id === id);
+          if (obj) {
+            addObject({
+              ...obj,
+              id: `obj-${Date.now()}-dup`,
+              x: obj.x + 20,
+              y: obj.y + 20,
+              name: `${obj.name || obj.kind} copy`,
+            } as CanvasObject);
+          }
+        });
+        return;
+      }
+      // Select all: Ctrl+A
+      if (ctrl && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setSelection(state.objects.map((o) => o.id));
+        return;
+      }
 
       const map: Record<string, Tool> = {
         v: 'select',
@@ -61,7 +105,7 @@ function App() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [setTool]);
+  }, [setTool, undo, redo, addObject, setSelection, state.selectedIds, state.objects]);
 
   const handleDeleteSelected = useCallback(() => {
     deleteObjects(state.selectedIds);
@@ -178,6 +222,15 @@ function App() {
 
   return (
     <div className="app-layout" onContextMenu={handleContextMenu}>
+      {/* Library panel toggle button */}
+      <button
+        className={`lib-toggle-btn${showLibPanel ? ' lib-toggle-btn--active' : ''}`}
+        onClick={() => setShowLibPanel((v) => !v)}
+        title="Design Libraries"
+      >
+        📚
+      </button>
+
       {/* Left toolbar */}
       <Toolbar activeTool={state.activeTool} onToolChange={setTool} />
 
@@ -216,6 +269,18 @@ function App() {
         onRemoveLibrary={removeLibrary}
         onToggleLibrary={toggleLibrary}
       />
+
+      {/* Library panel (toggleable right panel) */}
+      {showLibPanel && (
+        <div className="lib-panel-container">
+          <LibraryPanel
+            libraries={state.libraries}
+            onAddLibrary={addLibrary}
+            onRemoveLibrary={removeLibrary}
+            onToggleLibrary={toggleLibrary}
+          />
+        </div>
+      )}
 
       {/* Bottom status bar */}
       <StatusBar

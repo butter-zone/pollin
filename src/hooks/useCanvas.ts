@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useReducer, useRef } from 'react';
 import {
   CanvasState,
   CanvasAction,
@@ -6,6 +6,7 @@ import {
   Tool,
   DesignLibrary,
 } from '@/types/canvas';
+import { useHistory } from './useHistory';
 
 interface ExtendedCanvasState extends CanvasState {
   libraries: DesignLibrary[];
@@ -112,6 +113,26 @@ function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): Extend
 export function useCanvas() {
   const [state, dispatch] = useReducer(canvasReducer, initialState);
 
+  // Stable refs so history callbacks don't depend on state
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const getObjects = useCallback(() => stateRef.current.objects, []);
+  const getSelection = useCallback(() => stateRef.current.selectedIds, []);
+  const applySnapshot = useCallback(
+    (objects: CanvasObject[], selectedIds: string[]) => {
+      dispatch({ type: 'SET_OBJECTS', payload: objects });
+      dispatch({ type: 'SET_SELECTION', payload: selectedIds });
+    },
+    [],
+  );
+
+  const { pushSnapshot, undo, redo, canUndo, canRedo } = useHistory(
+    getObjects,
+    getSelection,
+    applySnapshot,
+  );
+
   const setTool = useCallback((tool: Tool) => {
     dispatch({ type: 'SET_TOOL', payload: tool });
   }, []);
@@ -157,24 +178,28 @@ export function useCanvas() {
   }, []);
 
   const addObject = useCallback((obj: CanvasObject) => {
+    pushSnapshot();
     dispatch({ type: 'ADD_OBJECT', payload: obj });
-  }, []);
+  }, [pushSnapshot]);
 
   const updateObject = useCallback((id: string, changes: Partial<CanvasObject>) => {
+    pushSnapshot();
     dispatch({ type: 'UPDATE_OBJECT', payload: { id, changes } });
-  }, []);
+  }, [pushSnapshot]);
 
   const deleteObjects = useCallback((ids: string[]) => {
+    pushSnapshot();
     dispatch({ type: 'DELETE_OBJECTS', payload: ids });
-  }, []);
+  }, [pushSnapshot]);
 
   const setSelection = useCallback((ids: string[]) => {
     dispatch({ type: 'SET_SELECTION', payload: ids });
   }, []);
 
   const setObjects = useCallback((objects: CanvasObject[]) => {
+    pushSnapshot();
     dispatch({ type: 'SET_OBJECTS', payload: objects });
-  }, []);
+  }, [pushSnapshot]);
 
   const toggleGrid = useCallback(() => {
     dispatch({ type: 'TOGGLE_GRID' });
@@ -225,5 +250,10 @@ export function useCanvas() {
     addLibrary,
     removeLibrary,
     toggleLibrary,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushSnapshot,
   };
 }

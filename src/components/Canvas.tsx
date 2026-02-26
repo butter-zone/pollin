@@ -14,6 +14,9 @@ import type {
 let _id = 0;
 const uid = () => `obj-${Date.now()}-${++_id}`;
 
+/** Module-level image cache — avoids re-creating Image() every frame */
+const imageCache = new Map<string, HTMLImageElement>();
+
 function screenToWorld(
   sx: number,
   sy: number,
@@ -550,15 +553,19 @@ function drawObject(
     }
     case 'image': {
       const img = obj as any;
-      const imgEl = new Image();
-      imgEl.onload = () => {
-        ctx.save();
+      const cached = imageCache.get(img.src);
+      if (cached) {
         ctx.translate(img.x, img.y);
         ctx.rotate((img.rotation * Math.PI) / 180);
-        ctx.drawImage(imgEl, -img.width / 2, -img.height / 2, img.width, img.height);
-        ctx.restore();
-      };
-      imgEl.src = img.src;
+        ctx.drawImage(cached, -img.width / 2, -img.height / 2, img.width, img.height);
+      } else {
+        // Load and cache for next frame
+        const imgEl = new Image();
+        imgEl.onload = () => {
+          imageCache.set(img.src, imgEl);
+        };
+        imgEl.src = img.src;
+      }
       break;
     }
     default:
