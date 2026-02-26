@@ -7,6 +7,7 @@ interface LibraryPanelProps {
   onAddLibrary: (library: DesignLibrary) => void;
   onRemoveLibrary: (libraryId: string) => void;
   onToggleLibrary: (libraryId: string) => void;
+  onClose: () => void;
   onComponentSelect?: (component: LibraryComponent, libraryId: string) => void;
 }
 
@@ -15,6 +16,7 @@ export function LibraryPanel({
   onAddLibrary,
   onRemoveLibrary,
   onToggleLibrary,
+  onClose,
   onComponentSelect,
 }: LibraryPanelProps) {
   const [expandedLibs, setExpandedLibs] = useState<Set<string>>(new Set());
@@ -71,6 +73,12 @@ export function LibraryPanel({
     <div className="dk-panel dk-library-panel">
       <div className="dk-panel-header">
         <span className="dk-panel-title">Design Systems</span>
+        <button className="dk-icon-btn dk-icon-btn--sm" onClick={onClose} title="Close panel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </div>
 
       <div className="dk-panel-body">

@@ -716,6 +716,11 @@
   color: var(--c-text);
 }
 
+.dk-icon-btn--sm {
+  width: 20px;
+  height: 20px;
+}
+
 .dk-icon-btn--danger:hover {
   background: oklch(0.63 0.25 29 / 0.12);
   color: var(--c-danger);

@@ -391,6 +391,7 @@ function App() {
           onAddLibrary={addLibrary}
           onRemoveLibrary={removeLibrary}
           onToggleLibrary={toggleLibrary}
+          onClose={() => setShowLibPanel(false)}
         />
       )}
 
