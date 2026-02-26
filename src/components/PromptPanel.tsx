@@ -270,7 +270,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
         <textarea
           ref={textareaRef}
           className="pp-textarea"
-          placeholder={isListening ? 'Listening… speak now' : 'Describe your design idea…'}
+          placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
           value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={handleKeyDown}
