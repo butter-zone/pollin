@@ -490,10 +490,12 @@ function drawGrid(
   cursor: Point | null,
 ) {
   const gs = gridSize;
-  const startX = Math.floor(-panX / zoom / gs) * gs;
-  const startY = Math.floor(-panY / zoom / gs) * gs;
-  const endX = startX + w / zoom + gs;
-  const endY = startY + h / zoom + gs;
+  // Inset grid bounds so dots (including magnetic displacement) aren't clipped at edges
+  const margin = gs * 0.5;
+  const startX = Math.floor((-panX / zoom + margin) / gs) * gs;
+  const startY = Math.floor((-panY / zoom + margin) / gs) * gs;
+  const endX = startX + w / zoom - margin * 2 + gs;
+  const endY = startY + h / zoom - margin * 2 + gs;
 
   // Dot radius scales with zoom but stays subtle
   const baseDotRadius = Math.max(0.8, 1.2 / zoom);
