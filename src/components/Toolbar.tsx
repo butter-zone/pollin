@@ -25,7 +25,7 @@ const ToolIcon: FC<{ toolId: Tool; isActive: boolean }> = ({ toolId, isActive })
     select: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path d="M3 2L3 14L6.5 10.5L9.5 16L11.5 15L8.5 9L13 9L3 2Z"
-          fill={isActive ? '#fff' : 'currentColor'} />
+          fill={isActive ? 'oklch(1 0 0)' : 'currentColor'} />
       </svg>
     ),
     hand: (

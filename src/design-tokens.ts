@@ -1,23 +1,23 @@
 export const colors = {
   surface: {
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717',
-    950: '#0a0a0a',
+    50: 'oklch(0.985 0 0)',
+    100: 'oklch(0.97 0 0)',
+    200: 'oklch(0.92 0 0)',
+    300: 'oklch(0.87 0 0)',
+    400: 'oklch(0.71 0 0)',
+    500: 'oklch(0.55 0 0)',
+    600: 'oklch(0.43 0 0)',
+    700: 'oklch(0.37 0 0)',
+    800: 'oklch(0.28 0 0)',
+    900: 'oklch(0.205 0 0)',
+    950: 'oklch(0.145 0 0)',
   },
   accent: {
-    blue: '#0066ff',
-    red: '#ff5555',
-    green: '#00dd44',
-    yellow: '#ffaa00',
-    purple: '#bb00ff',
+    blue: 'oklch(0.67 0.185 55)',
+    red: 'oklch(0.63 0.25 29)',
+    green: 'oklch(0.72 0.19 155)',
+    yellow: 'oklch(0.78 0.18 80)',
+    purple: 'oklch(0.55 0.28 310)',
   },
 } as const;
 
@@ -40,9 +40,9 @@ export const typography = {
 } as const;
 
 export const shadows = {
-  panel: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  elevated: '0 8px 16px rgba(0, 0, 0, 0.15)',
-  sm: '0 1px 2px rgba(0, 0, 0, 0.05)',
+  panel: '0 4px 6px oklch(0 0 0 / 0.1)',
+  elevated: '0 8px 16px oklch(0 0 0 / 0.15)',
+  sm: '0 1px 2px oklch(0 0 0 / 0.05)',
 } as const;
 
 export const radius = {

@@ -9,29 +9,29 @@
 
 :root {
   /* surface palette */
-  --c-bg: #0a0a0a;
-  --c-surface-1: #111111;
-  --c-surface-2: #1a1a1a;
-  --c-surface-3: #222222;
-  --c-surface-4: #2e2e2e;
-  --c-border: #333333;
-  --c-border-subtle: #252525;
-  --c-text: #e8e8e8;
-  --c-text-dim: #888888;
-  --c-text-muted: #555555;
-  /* accent */
-  --c-accent: #0066ff;
-  --c-accent-hover: #1a75ff;
-  --c-danger: #ff4444;
-  --c-danger-hover: #ff5c5c;
+  --c-bg: oklch(0.145 0 0);
+  --c-surface-1: oklch(0.185 0 0);
+  --c-surface-2: oklch(0.22 0 0);
+  --c-surface-3: oklch(0.265 0 0);
+  --c-surface-4: oklch(0.32 0 0);
+  --c-border: oklch(0.37 0 0);
+  --c-border-subtle: oklch(0.29 0 0);
+  --c-text: oklch(0.93 0 0);
+  --c-text-dim: oklch(0.62 0 0);
+  --c-text-muted: oklch(0.45 0 0);
+  /* accent (oklch) */
+  --c-accent: oklch(0.67 0.185 55);
+  --c-accent-hover: oklch(0.72 0.175 55);
+  --c-danger: oklch(0.63 0.25 29);
+  --c-danger-hover: oklch(0.68 0.22 29);
   /* radii */
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
   /* shadows */
-  --shadow-panel: 0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px var(--c-border);
-  --shadow-elevated: 0 16px 48px rgba(0,0,0,0.6);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px var(--c-border);
+  --shadow-panel: 0 8px 32px oklch(0 0 0 / 0.55), 0 0 0 1px var(--c-border);
+  --shadow-elevated: 0 16px 48px oklch(0 0 0 / 0.6);
+  --shadow-lg: 0 12px 40px oklch(0 0 0 / 0.5), 0 0 0 1px var(--c-border);
   --radius-full: 9999px;
   /* transitions */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -59,7 +59,7 @@
   }
 
   ::selection {
-    background: rgba(0, 102, 255, 0.35);
+    background: oklch(0.67 0.185 55 / 0.35);
   }
 }
 
@@ -178,7 +178,7 @@
 
 .toolbar-btn--active {
   background: var(--c-accent) !important;
-  color: #fff !important;
+  color: oklch(1 0 0) !important;
 }
 
 /* ══ Status bar (bottom) ═════════════════════════════════ */
@@ -558,7 +558,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: oklch(1 0 0);
   transition: transform var(--dur) var(--ease);
   pointer-events: none;
 }
@@ -589,13 +589,13 @@
 
 .dk-action--danger {
   color: var(--c-danger);
-  border-color: rgba(255, 68, 68, 0.2);
+  border-color: oklch(0.63 0.25 29 / 0.2);
 }
 
 .dk-action--danger:hover {
-  background: rgba(255, 68, 68, 0.12);
+  background: oklch(0.63 0.25 29 / 0.12);
   color: var(--c-danger-hover);
-  border-color: rgba(255, 68, 68, 0.3);
+  border-color: oklch(0.63 0.25 29 / 0.3);
 }
 
 /* ── Objects list ────────────────────────── */
@@ -632,7 +632,7 @@
 }
 
 .dk-object-row--selected {
-  background: rgba(0, 102, 255, 0.12);
+  background: oklch(0.67 0.185 55 / 0.12);
 }
 
 .dk-object-kind {
@@ -717,7 +717,7 @@
 }
 
 .dk-icon-btn--danger:hover {
-  background: rgba(255, 68, 68, 0.12);
+  background: oklch(0.63 0.25 29 / 0.12);
   color: var(--c-danger);
 }
 
@@ -865,7 +865,7 @@ canvas {
 }
 
 .ctx-item--danger:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: oklch(0.63 0.25 29 / 0.1);
 }
 
 .ctx-item--disabled {
@@ -893,7 +893,7 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
+  background: oklch(0 0 0 / 0.6);
   backdrop-filter: blur(4px);
 }
 
@@ -1021,7 +1021,7 @@ canvas {
 .cv-chip--active {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: #fff;
+  color: oklch(1 0 0);
 }
 
 .cv-options {
@@ -1062,7 +1062,7 @@ canvas {
 
 .cv-toggle-btn--active {
   background: var(--c-accent);
-  color: #fff;
+  color: oklch(1 0 0);
 }
 
 .cv-footer {
@@ -1094,7 +1094,7 @@ canvas {
 
 .cv-btn--primary {
   background: var(--c-accent);
-  color: #fff;
+  color: oklch(1 0 0);
 }
 
 .cv-btn--primary:hover {
@@ -1135,7 +1135,7 @@ canvas {
 
 .lib-toggle-btn--active {
   background: var(--c-accent);
-  color: #fff;
+  color: oklch(1 0 0);
   border-color: var(--c-accent);
 }
 
@@ -1231,7 +1231,7 @@ canvas {
 }
 
 .pp-model-option--active {
-  background: rgba(0, 102, 255, 0.12);
+  background: oklch(0.67 0.185 55 / 0.12);
 }
 
 .pp-model-option-name {
@@ -1387,15 +1387,15 @@ canvas {
 
 /* ── Mic button active / pulse ── */
 .pp-icon-btn--active {
-  color: #ef4444;
-  border-color: #ef4444;
+  color: oklch(0.63 0.25 29);
+  border-color: oklch(0.63 0.25 29);
   position: relative;
 }
 .pp-mic-pulse {
   position: absolute;
   inset: -4px;
   border-radius: var(--radius-sm);
-  border: 2px solid #ef4444;
+  border: 2px solid oklch(0.63 0.25 29);
   animation: mic-ring 1.2s ease-out infinite;
   pointer-events: none;
 }
@@ -1433,7 +1433,7 @@ canvas {
   background: var(--c-accent);
   border: none;
   border-radius: var(--radius-sm);
-  color: #fff;
+  color: oklch(1 0 0);
   cursor: pointer;
   transition: opacity var(--dur) var(--ease);
 }
@@ -1450,8 +1450,8 @@ canvas {
 .pp-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  border: 2px solid oklch(1 0 0 / 0.3);
+  border-top-color: oklch(1 0 0);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -1491,7 +1491,7 @@ canvas {
 }
 
 .pp-gen--done {
-  border-left-color: #22c55e;
+  border-left-color: oklch(0.72 0.19 155);
 }
 
 .pp-gen--error {
@@ -1604,8 +1604,8 @@ canvas {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(0, 102, 255, 0.08);
-  border-bottom: 1px solid rgba(0, 102, 255, 0.15);
+  background: oklch(0.67 0.185 55 / 0.08);
+  border-bottom: 1px solid oklch(0.67 0.185 55 / 0.15);
   color: var(--c-accent);
   font-size: 11px;
   font-weight: 500;

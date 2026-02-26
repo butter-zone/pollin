@@ -482,7 +482,7 @@ function drawGrid(
 
   // Dot radius scales with zoom but stays subtle
   const dotRadius = Math.max(0.8, 1.2 / zoom);
-  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fillStyle = 'oklch(1 0 0 / 0.15)';
 
   for (let x = startX; x < endX; x += gs) {
     for (let y = startY; y < endY; y += gs) {
@@ -590,7 +590,7 @@ function drawObject(
   if (selected) {
     ctx.save();
     const bounds = getObjectBounds(obj);
-    ctx.strokeStyle = '#0066ff';
+    ctx.strokeStyle = 'oklch(0.67 0.185 55)';
     ctx.lineWidth = 1.5 / 1; // we're already in world space
     ctx.setLineDash([4, 4]);
     ctx.strokeRect(bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8);
@@ -603,8 +603,8 @@ function drawObject(
       { x: bounds.x - 4, y: bounds.y + bounds.height + 4 },
       { x: bounds.x + bounds.width + 4, y: bounds.y + bounds.height + 4 },
     ];
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#0066ff';
+    ctx.fillStyle = 'oklch(1 0 0)';
+    ctx.strokeStyle = 'oklch(0.67 0.185 55)';
     ctx.lineWidth = 1.5;
     corners.forEach((c) => {
       ctx.beginPath();
