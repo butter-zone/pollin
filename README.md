@@ -148,7 +148,7 @@ See `CONTRIBUTING.md` for contribution guidelines.
 
 ## Control Panel Inspiration
 
-The canvas includes a floating control panel inspired by [Josh Puckett's DialKit](https://joshpuckett.me/dialkit), allowing real-time tuning of:
+The canvas includes a floating control panel by [Josh Puckett's DialKit](https://joshpuckett.me/dialkit), allowing real-time tuning of:
 - Drawing tools (pen, eraser, select)
 - Line width and color
 - Canvas parameters
