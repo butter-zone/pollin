@@ -63,6 +63,7 @@ export function Canvas({
   const spaceHeld = useRef(false);
   const dragStart = useRef<Point | null>(null);
   const dragObjOrigins = useRef<Map<string, Point>>(new Map());
+  const cursorWorld = useRef<Point | null>(null);
 
   // ── resize ───────────────────────────────────────────
   useEffect(() => {
@@ -102,7 +103,7 @@ export function Canvas({
 
     // grid
     if (state.showGrid) {
-      drawGrid(ctx, w, h, zoom, panX, panY, state.gridSize);
+      drawGrid(ctx, w, h, zoom, panX, panY, state.gridSize, cursorWorld.current);
     }
 
     // objects
@@ -242,6 +243,9 @@ export function Canvas({
       const sy = e.clientY - rect.top;
       const world = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
 
+      // Always track cursor for magnetic grid dots
+      cursorWorld.current = world;
+
       // panning
       if (isPanning.current && panStart.current) {
         const dx = e.clientX - panStart.current.x;
@@ -292,6 +296,9 @@ export function Canvas({
         const hit = hitTest(state.objects, world);
         if (hit) onDeleteObjects([hit.id]);
       }
+
+      // Trigger render for magnetic grid effect on hover
+      if (state.showGrid) scheduleRender();
     },
     [state, onSetPan, onUpdateObject, onDeleteObjects, scheduleRender],
   );
@@ -430,6 +437,12 @@ export function Canvas({
     [state, onAddObject],
   );
 
+  // ── pointer leave (clear magnetic grid cursor) ─────
+  const onPointerLeave = useCallback(() => {
+    cursorWorld.current = null;
+    if (state.showGrid) scheduleRender();
+  }, [state.showGrid, scheduleRender]);
+
   // ── cursor ───────────────────────────────────────────
   const cursor = (() => {
     if (isPanning.current || spaceHeld.current || state.activeTool === 'hand')
@@ -448,6 +461,7 @@ export function Canvas({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerLeave={onPointerLeave}
       onDragOver={onDragOver}
       onDrop={onDrop}
       role="img"
@@ -473,6 +487,7 @@ function drawGrid(
   panX: number,
   panY: number,
   gridSize: number,
+  cursor: Point | null,
 ) {
   const gs = gridSize;
   const startX = Math.floor(-panX / zoom / gs) * gs;
@@ -481,15 +496,57 @@ function drawGrid(
   const endY = startY + h / zoom + gs;
 
   // Dot radius scales with zoom but stays subtle
-  const dotRadius = Math.max(0.8, 1.2 / zoom);
-  ctx.fillStyle = 'oklch(1 0 0 / 0.15)';
+  const baseDotRadius = Math.max(0.8, 1.2 / zoom);
+
+  // Magnetic effect constants
+  const magnetRadius = gs * 5;            // 5 grid cells influence range
+  const magnetRadiusSq = magnetRadius * magnetRadius;
+  const pullStrength = gs * 0.15;         // subtle pull toward cursor
+  const maxRadiusScale = 2.2;             // dots grow up to 2.2x
+  const baseAlpha = 0.15;
+  const peakAlpha = 0.55;
+
+  // Pre-batch non-magnetic dots in a single path for performance
+  const magneticDots: { dx: number; dy: number; r: number; a: number }[] = [];
+  ctx.fillStyle = `oklch(1 0 0 / ${baseAlpha})`;
+  ctx.beginPath();
 
   for (let x = startX; x < endX; x += gs) {
     for (let y = startY; y < endY; y += gs) {
-      ctx.beginPath();
-      ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-      ctx.fill();
+      if (cursor) {
+        const ddx = cursor.x - x;
+        const ddy = cursor.y - y;
+        const distSq = ddx * ddx + ddy * ddy;
+
+        if (distSq < magnetRadiusSq) {
+          const dist = Math.sqrt(distSq);
+          const t = 1 - dist / magnetRadius;
+          const ease = t * t * (3 - 2 * t); // smoothstep
+          const pull = ease * pullStrength;
+          const drawX = x + (dist > 0 ? (ddx / dist) * pull : 0);
+          const drawY = y + (dist > 0 ? (ddy / dist) * pull : 0);
+          magneticDots.push({
+            dx: drawX,
+            dy: drawY,
+            r: baseDotRadius * (1 + ease * (maxRadiusScale - 1)),
+            a: baseAlpha + ease * (peakAlpha - baseAlpha),
+          });
+          continue;
+        }
+      }
+      // Non-magnetic dot — batch into single path
+      ctx.moveTo(x + baseDotRadius, y);
+      ctx.arc(x, y, baseDotRadius, 0, Math.PI * 2);
     }
+  }
+  ctx.fill();
+
+  // Draw magnetic dots individually (they have unique sizes/opacities)
+  for (const dot of magneticDots) {
+    ctx.fillStyle = `oklch(1 0 0 / ${dot.a})`;
+    ctx.beginPath();
+    ctx.arc(dot.dx, dot.dy, dot.r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
