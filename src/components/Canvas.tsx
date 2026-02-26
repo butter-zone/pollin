@@ -6,6 +6,7 @@ import type {
   RectObject,
   EllipseObject,
   LineObject,
+  TextObject,
   DrawPoint,
   Point,
 } from '@/types/canvas';
@@ -37,6 +38,8 @@ interface CanvasProps {
   onSetZoom: (z: number) => void;
   onSetPan: (x: number, y: number) => void;
   onSetDrawing: (d: boolean) => void;
+  onBeginTransaction?: () => void;
+  onEndTransaction?: () => void;
 }
 
 export function Canvas({
@@ -48,6 +51,8 @@ export function Canvas({
   onSetZoom,
   onSetPan,
   onSetDrawing,
+  onBeginTransaction,
+  onEndTransaction,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
@@ -64,8 +69,17 @@ export function Canvas({
   const dragStart = useRef<Point | null>(null);
   const dragObjOrigins = useRef<Map<string, Point>>(new Map());
   const cursorWorld = useRef<Point | null>(null);
+  const editingTextId = useRef<string | null>(null);
 
-  // ── resize ───────────────────────────────────────────
+  // Resize handle state
+  const resizeHandle = useRef<{
+    corner: 'tl' | 'tr' | 'bl' | 'br';
+    objId: string;
+    startWorld: Point;
+    originalBounds: { x: number; y: number; width: number; height: number };
+  } | null>(null);
+
+  // ── resize (ResizeObserver) ───────────────────────────
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext('2d')!;
@@ -81,8 +95,10 @@ export function Canvas({
     };
 
     resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+
+    const observer = new ResizeObserver(() => resize());
+    observer.observe(canvas.parentElement || canvas);
+    return () => observer.disconnect();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── render loop ──────────────────────────────────────
@@ -125,10 +141,7 @@ export function Canvas({
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
-      drawingPoints.current.forEach((p, i) => {
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      });
+      drawSmoothStroke(ctx, drawingPoints.current);
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
@@ -188,6 +201,35 @@ export function Canvas({
       }
 
       if (state.activeTool === 'select') {
+        // Check resize handles first (only when exactly one object is selected)
+        if (state.selectedIds.length === 1) {
+          const selObj = state.objects.find((o) => o.id === state.selectedIds[0]);
+          if (selObj) {
+            const bounds = getObjectBounds(selObj);
+            const handleRadius = 6 / state.zoom; // handle hit zone in world space
+            const corners: Array<{ key: 'tl' | 'tr' | 'bl' | 'br'; x: number; y: number }> = [
+              { key: 'tl', x: bounds.x - 4, y: bounds.y - 4 },
+              { key: 'tr', x: bounds.x + bounds.width + 4, y: bounds.y - 4 },
+              { key: 'bl', x: bounds.x - 4, y: bounds.y + bounds.height + 4 },
+              { key: 'br', x: bounds.x + bounds.width + 4, y: bounds.y + bounds.height + 4 },
+            ];
+            for (const c of corners) {
+              const dx = world.x - c.x;
+              const dy = world.y - c.y;
+              if (dx * dx + dy * dy <= handleRadius * handleRadius) {
+                resizeHandle.current = {
+                  corner: c.key,
+                  objId: selObj.id,
+                  startWorld: world,
+                  originalBounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+                };
+                onBeginTransaction?.();
+                return;
+              }
+            }
+          }
+        }
+
         // hit test
         const hit = hitTest(state.objects, world);
         if (hit) {
@@ -204,6 +246,7 @@ export function Canvas({
           // begin drag
           dragStart.current = world;
           dragObjOrigins.current = new Map();
+          onBeginTransaction?.();
           const ids = alreadySelected ? state.selectedIds : [hit.id];
           ids.forEach((id) => {
             const obj = state.objects.find((o) => o.id === id);
@@ -231,6 +274,35 @@ export function Canvas({
         if (hit) onDeleteObjects([hit.id]);
         return;
       }
+
+      // text tool — place a text object and begin inline editing
+      if (state.activeTool === 'text') {
+        const snapped = state.snapToGrid ? snapPoint(world, state.gridSize) : world;
+        const textObj: TextObject = {
+          id: uid(),
+          kind: 'text',
+          x: snapped.x,
+          y: snapped.y,
+          rotation: 0,
+          opacity: state.opacity,
+          locked: false,
+          visible: true,
+          name: 'Text',
+          timestamp: Date.now(),
+          text: '',
+          fontSize: 16,
+          fontFamily: 'Inter, system-ui, sans-serif',
+          color: state.lineColor,
+          width: 200,
+        };
+        onAddObject(textObj);
+        onSetSelection([textObj.id]);
+        // Start inline editing after a frame so the object is in state
+        requestAnimationFrame(() => {
+          beginInlineTextEdit(textObj.id, textObj, canvasRef.current!);
+        });
+        return;
+      }
     },
     [state, onSetSelection, onSetDrawing, onDeleteObjects],
   );
@@ -251,6 +323,54 @@ export function Canvas({
         const dx = e.clientX - panStart.current.x;
         const dy = e.clientY - panStart.current.y;
         onSetPan(panOrigin.current.x + dx, panOrigin.current.y + dy);
+        return;
+      }
+
+      // resizing a selected object via handle
+      if (resizeHandle.current) {
+        const rh = resizeHandle.current;
+        const ob = rh.originalBounds;
+        const dx = world.x - rh.startWorld.x;
+        const dy = world.y - rh.startWorld.y;
+
+        let newX = ob.x;
+        let newY = ob.y;
+        let newW = ob.width;
+        let newH = ob.height;
+
+        // Compute new bounds based on which corner is dragged
+        if (rh.corner === 'br') {
+          newW = Math.max(10, ob.width + dx);
+          newH = Math.max(10, ob.height + dy);
+        } else if (rh.corner === 'bl') {
+          newX = ob.x + dx;
+          newW = Math.max(10, ob.width - dx);
+          newH = Math.max(10, ob.height + dy);
+        } else if (rh.corner === 'tr') {
+          newY = ob.y + dy;
+          newW = Math.max(10, ob.width + dx);
+          newH = Math.max(10, ob.height - dy);
+        } else {
+          // tl
+          newX = ob.x + dx;
+          newY = ob.y + dy;
+          newW = Math.max(10, ob.width - dx);
+          newH = Math.max(10, ob.height - dy);
+        }
+
+        if (state.snapToGrid) {
+          newX = snapToGrid(newX, state.gridSize);
+          newY = snapToGrid(newY, state.gridSize);
+          newW = snapToGrid(newW, state.gridSize) || state.gridSize;
+          newH = snapToGrid(newH, state.gridSize) || state.gridSize;
+        }
+
+        const obj = state.objects.find((o) => o.id === rh.objId);
+        if (obj) {
+          const changes = getResizeChanges(obj, newX, newY, newW, newH);
+          onUpdateObject(rh.objId, changes);
+        }
+        scheduleRender();
         return;
       }
 
@@ -315,10 +435,18 @@ export function Canvas({
         return;
       }
 
+      // finish resize
+      if (resizeHandle.current) {
+        resizeHandle.current = null;
+        onEndTransaction?.();
+        return;
+      }
+
       // finish drag
       if (dragStart.current) {
         dragStart.current = null;
         dragObjOrigins.current.clear();
+        onEndTransaction?.();
         return;
       }
 
@@ -443,12 +571,114 @@ export function Canvas({
     if (state.showGrid) scheduleRender();
   }, [state.showGrid, scheduleRender]);
 
+  // ── inline text editing ──────────────────────────────
+  const beginInlineTextEdit = useCallback(
+    (id: string, obj: TextObject, canvas: HTMLCanvasElement) => {
+      if (editingTextId.current) return; // already editing
+      editingTextId.current = id;
+
+      const rect = canvas.getBoundingClientRect();
+      // Convert world → screen
+      const sx = obj.x * state.zoom + state.panX + rect.left;
+      const sy = obj.y * state.zoom + state.panY + rect.top;
+
+      const input = document.createElement('textarea');
+      input.value = obj.text;
+      input.style.cssText = `
+        position: fixed;
+        left: ${sx}px;
+        top: ${sy}px;
+        width: ${obj.width * state.zoom}px;
+        min-height: ${(obj.fontSize + 8) * state.zoom}px;
+        font-size: ${obj.fontSize * state.zoom}px;
+        font-family: ${obj.fontFamily};
+        color: ${obj.color};
+        background: transparent;
+        border: 1px solid oklch(0.67 0.185 55);
+        border-radius: 2px;
+        outline: none;
+        resize: none;
+        overflow: hidden;
+        padding: 2px 4px;
+        z-index: 1000;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      `;
+
+      document.body.appendChild(input);
+      input.focus();
+      input.select();
+
+      // Auto-resize height
+      const autoResize = () => {
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+      };
+      input.addEventListener('input', autoResize);
+      autoResize();
+
+      const commit = () => {
+        const newText = input.value;
+        if (newText.trim()) {
+          onUpdateObject(id, { text: newText } as Partial<CanvasObject>);
+        } else {
+          // Empty text — delete the object
+          onDeleteObjects([id]);
+        }
+        editingTextId.current = null;
+        input.removeEventListener('input', autoResize);
+        document.body.removeChild(input);
+        scheduleRender();
+      };
+
+      input.addEventListener('blur', commit, { once: true });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          input.removeEventListener('blur', commit);
+          editingTextId.current = null;
+          // If brand new and empty, delete
+          if (!input.value.trim()) onDeleteObjects([id]);
+          document.body.removeChild(input);
+          scheduleRender();
+        }
+        // Shift+Enter or just Enter to commit (Enter alone commits for single-line feel)
+        // Actually let's use Escape to cancel and blur to commit (click away)
+        e.stopPropagation();
+      });
+    },
+    [state.zoom, state.panX, state.panY, onUpdateObject, onDeleteObjects, scheduleRender],
+  );
+
+  // ── double-click to edit text objects ────────────────
+  const onDoubleClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current!;
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const world = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
+      const hit = hitTest(state.objects, world);
+      if (hit && hit.kind === 'text') {
+        onSetSelection([hit.id]);
+        beginInlineTextEdit(hit.id, hit as TextObject, canvas);
+      }
+    },
+    [state, onSetSelection, beginInlineTextEdit],
+  );
+
   // ── cursor ───────────────────────────────────────────
   const cursor = (() => {
     if (isPanning.current || spaceHeld.current || state.activeTool === 'hand')
       return 'grab';
+    if (resizeHandle.current) {
+      const c = resizeHandle.current.corner;
+      if (c === 'tl' || c === 'br') return 'nwse-resize';
+      return 'nesw-resize';
+    }
     if (state.activeTool === 'select') return 'default';
     if (state.activeTool === 'pen') return 'crosshair';
+    if (state.activeTool === 'text') return 'text';
     if (state.activeTool === 'eraser') return 'crosshair';
     return 'crosshair';
   })();
@@ -462,6 +692,7 @@ export function Canvas({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerLeave}
+      onDoubleClick={onDoubleClick}
       onDragOver={onDragOver}
       onDrop={onDrop}
       role="img"
@@ -471,6 +702,44 @@ export function Canvas({
 }
 
 // ── Drawing helpers ────────────────────────────────────
+
+/**
+ * Draw a smooth stroke through points using quadratic Bézier curves.
+ * Midpoints between consecutive points are used as on-curve positions,
+ * with the original points as control points, giving C1 continuity.
+ */
+function drawSmoothStroke(ctx: CanvasRenderingContext2D, points: Point[]) {
+  if (points.length === 0) return;
+  if (points.length === 1) {
+    ctx.moveTo(points[0].x, points[0].y);
+    ctx.lineTo(points[0].x, points[0].y);
+    return;
+  }
+  if (points.length === 2) {
+    ctx.moveTo(points[0].x, points[0].y);
+    ctx.lineTo(points[1].x, points[1].y);
+    return;
+  }
+
+  ctx.moveTo(points[0].x, points[0].y);
+
+  // First segment: line to the midpoint of p0→p1
+  const mid0x = (points[0].x + points[1].x) / 2;
+  const mid0y = (points[0].y + points[1].y) / 2;
+  ctx.lineTo(mid0x, mid0y);
+
+  // Middle segments: quadratic curves with original points as control points
+  for (let i = 1; i < points.length - 1; i++) {
+    const midX = (points[i].x + points[i + 1].x) / 2;
+    const midY = (points[i].y + points[i + 1].y) / 2;
+    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+  }
+
+  // Last segment: line to the final point
+  const last = points[points.length - 1];
+  ctx.lineTo(last.x, last.y);
+}
+
 function snapToGrid(value: number, gridSize: number): number {
   return Math.round(value / gridSize) * gridSize;
 }
@@ -568,10 +837,7 @@ function drawObject(
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
-      s.points.forEach((p, i) => {
-        if (i === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      });
+      drawSmoothStroke(ctx, s.points);
       ctx.stroke();
       break;
     }
@@ -637,6 +903,39 @@ function drawObject(
         };
         imgEl.src = img.src;
       }
+      break;
+    }
+    case 'text': {
+      const t = obj as TextObject;
+      if (!t.text) break; // empty text — skip rendering
+      ctx.save();
+      ctx.translate(t.x, t.y);
+      ctx.rotate((t.rotation * Math.PI) / 180);
+      ctx.font = `${t.fontSize}px ${t.fontFamily}`;
+      ctx.fillStyle = t.color;
+      ctx.textBaseline = 'top';
+      // Simple word-wrap
+      const words = t.text.split(/\n/);
+      let lineY = 0;
+      const lineHeight = t.fontSize * 1.4;
+      for (const paragraph of words) {
+        const parts = paragraph.split(' ');
+        let line = '';
+        for (const word of parts) {
+          const testLine = line ? `${line} ${word}` : word;
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > t.width && line) {
+            ctx.fillText(line, 0, lineY);
+            line = word;
+            lineY += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, 0, lineY);
+        lineY += lineHeight;
+      }
+      ctx.restore();
       break;
     }
     default:
@@ -730,8 +1029,66 @@ function getObjectBounds(obj: CanvasObject): { x: number; y: number; width: numb
         height: img.height,
       };
     }
+    case 'text': {
+      const t = obj as TextObject;
+      const lineCount = Math.max(1, (t.text.match(/\n/g) || []).length + 1);
+      return {
+        x: t.x,
+        y: t.y,
+        width: t.width,
+        height: lineCount * t.fontSize * 1.4,
+      };
+    }
     default:
       return { x: 0, y: 0, width: 0, height: 0 };
+  }
+}
+
+/** Map new bounds to object-specific property changes. */
+function getResizeChanges(
+  obj: CanvasObject,
+  newX: number,
+  newY: number,
+  newW: number,
+  newH: number,
+): Partial<CanvasObject> {
+  switch (obj.kind) {
+    case 'rect':
+      return { x: newX, y: newY, width: newW, height: newH } as Partial<CanvasObject>;
+    case 'ellipse':
+      return {
+        x: newX + newW / 2,
+        y: newY + newH / 2,
+        radiusX: newW / 2,
+        radiusY: newH / 2,
+      } as Partial<CanvasObject>;
+    case 'image':
+      return {
+        x: newX + newW / 2,
+        y: newY + newH / 2,
+        width: newW,
+        height: newH,
+      } as Partial<CanvasObject>;
+    case 'text':
+      return { x: newX, y: newY, width: newW } as Partial<CanvasObject>;
+    case 'line':
+      return { x: newX, y: newY, x2: newX + newW, y2: newY + newH } as Partial<CanvasObject>;
+    case 'stroke':
+      // For strokes, scale all points proportionally
+      {
+        const bounds = getObjectBounds(obj);
+        if (bounds.width === 0 || bounds.height === 0) return { x: newX, y: newY };
+        const scaleX = newW / bounds.width;
+        const scaleY = newH / bounds.height;
+        const points = (obj as StrokeObject).points.map((p) => ({
+          ...p,
+          x: newX + (p.x - bounds.x) * scaleX,
+          y: newY + (p.y - bounds.y) * scaleY,
+        }));
+        return { points } as Partial<CanvasObject>;
+      }
+    default:
+      return { x: newX, y: newY };
   }
 }
 

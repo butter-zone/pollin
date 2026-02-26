@@ -17,7 +17,7 @@ export interface Rect {
 }
 
 // ── Object types on the canvas ──────────────────────────
-export type ObjectKind = 'stroke' | 'rect' | 'ellipse' | 'line' | 'image';
+export type ObjectKind = 'stroke' | 'rect' | 'ellipse' | 'line' | 'image' | 'text';
 
 interface BaseObject {
   id: string;
@@ -73,12 +73,22 @@ export interface ImageObject extends BaseObject {
   height: number;
 }
 
+export interface TextObject extends BaseObject {
+  kind: 'text';
+  text: string;
+  fontSize: number;
+  fontFamily: string;
+  color: string;
+  width: number;
+}
+
 export type CanvasObject =
   | StrokeObject
   | RectObject
   | EllipseObject
   | LineObject
-  | ImageObject;
+  | ImageObject
+  | TextObject;
 
 // ── Legacy compat alias ─────────────────────────────────
 export interface DrawingStroke {
@@ -95,6 +105,7 @@ export type Tool =
   | 'rect'
   | 'ellipse'
   | 'line'
+  | 'text'
   | 'eraser'
   | 'hand';
 

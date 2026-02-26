@@ -202,7 +202,7 @@ export function useCanvas() {
     [],
   );
 
-  const { pushSnapshot, undo, redo, canUndo, canRedo } = useHistory(
+  const { pushSnapshot, undo, redo, canUndo, canRedo, beginTransaction, endTransaction } = useHistory(
     getObjects,
     getSelection,
     applySnapshot,
@@ -381,6 +381,8 @@ export function useCanvas() {
     canUndo,
     canRedo,
     pushSnapshot,
+    beginTransaction,
+    endTransaction,
     // Persistence
     lastSaved,
     saveNow,

@@ -4,6 +4,11 @@ import type { CanvasObject } from '@/types/canvas';
 /**
  * Manages an undo/redo history stack for canvas objects.
  * Snapshots are stored as full object arrays (simple & reliable).
+ *
+ * Transaction support: call `beginTransaction()` before a multi-step
+ * gesture (e.g. drag). The first `pushSnapshot()` inside the transaction
+ * records state; subsequent calls are no-ops. Call `endTransaction()`
+ * when the gesture finishes.
  */
 
 const MAX_HISTORY = 50;
@@ -20,9 +25,29 @@ export function useHistory(
 ) {
   const undoStack = useRef<Snapshot[]>([]);
   const redoStack = useRef<Snapshot[]>([]);
+  const inTransaction = useRef(false);
+  const transactionPushed = useRef(false);
+
+  /** Start a transaction — only the first pushSnapshot inside it records state. */
+  const beginTransaction = useCallback(() => {
+    inTransaction.current = true;
+    transactionPushed.current = false;
+  }, []);
+
+  /** End the current transaction. */
+  const endTransaction = useCallback(() => {
+    inTransaction.current = false;
+    transactionPushed.current = false;
+  }, []);
 
   /** Take a snapshot of current state before a mutation */
   const pushSnapshot = useCallback(() => {
+    // Inside a transaction, only push once (at gesture start)
+    if (inTransaction.current) {
+      if (transactionPushed.current) return;
+      transactionPushed.current = true;
+    }
+
     undoStack.current.push({
       objects: getCurrentObjects(),
       selectedIds: getCurrentSelection(),
@@ -60,5 +85,5 @@ export function useHistory(
   const canUndo = undoStack.current.length > 0;
   const canRedo = redoStack.current.length > 0;
 
-  return { pushSnapshot, undo, redo, canUndo, canRedo };
+  return { pushSnapshot, undo, redo, canUndo, canRedo, beginTransaction, endTransaction };
 }

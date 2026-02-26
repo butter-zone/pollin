@@ -46,6 +46,9 @@ function App() {
     saveNow,
     exportCanvas,
     importCanvas,
+    // Undo coalescing
+    beginTransaction,
+    endTransaction,
   } = useCanvas();
 
   // ── Panel mode: prompt (default) vs draw ───────────────
@@ -61,7 +64,7 @@ function App() {
   // Switch to draw mode when a drawing tool shortcut is pressed
   const handleToolChange = useCallback((tool: Tool) => {
     setTool(tool);
-    if (['pen', 'rect', 'ellipse', 'line', 'eraser'].includes(tool)) {
+    if (['pen', 'rect', 'ellipse', 'line', 'text', 'eraser'].includes(tool)) {
       setPanelMode('draw');
     }
   }, [setTool]);
@@ -134,6 +137,7 @@ function App() {
         r: 'rect',
         o: 'ellipse',
         l: 'line',
+        t: 'text',
         e: 'eraser',
       };
       const tool = map[e.key.toLowerCase()];
@@ -233,6 +237,69 @@ function App() {
           break;
         case 'select-all':
           setSelection(state.objects.map((o) => o.id));
+          break;
+        case 'paste':
+          // Paste from clipboard — images or text
+          navigator.clipboard.read().then(async (items) => {
+            for (const item of items) {
+              // Try image first
+              const imageType = item.types.find((t) => t.startsWith('image/'));
+              if (imageType) {
+                const blob = await item.getType(imageType);
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const src = ev.target?.result as string;
+                  const img = new Image();
+                  img.onload = () => {
+                    addObject({
+                      id: `obj-${Date.now()}-paste`,
+                      kind: 'image',
+                      x: state.panX + 200,
+                      y: state.panY + 200,
+                      rotation: 0,
+                      opacity: 1,
+                      locked: false,
+                      visible: true,
+                      name: 'Pasted image',
+                      timestamp: Date.now(),
+                      src,
+                      width: Math.min(img.width, 400),
+                      height: Math.min(img.height, 300),
+                    } as CanvasObject);
+                  };
+                  img.src = src;
+                };
+                reader.readAsDataURL(blob);
+                return;
+              }
+              // Fall back to text
+              if (item.types.includes('text/plain')) {
+                const blob = await item.getType('text/plain');
+                const text = await blob.text();
+                if (text.trim()) {
+                  addObject({
+                    id: `obj-${Date.now()}-paste`,
+                    kind: 'text',
+                    x: state.panX + 200,
+                    y: state.panY + 200,
+                    rotation: 0,
+                    opacity: 1,
+                    locked: false,
+                    visible: true,
+                    name: 'Pasted text',
+                    timestamp: Date.now(),
+                    text: text.trim(),
+                    fontSize: 16,
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    color: 'oklch(1 0 0)',
+                    width: 200,
+                  } as CanvasObject);
+                }
+              }
+            }
+          }).catch(() => {
+            // Clipboard API may not be available or permission denied — silent fail
+          });
           break;
         case 'toggle-grid':
           toggleGrid();
@@ -395,6 +462,8 @@ function App() {
           onSetZoom={setZoom}
           onSetPan={setPan}
           onSetDrawing={setDrawing}
+          onBeginTransaction={beginTransaction}
+          onEndTransaction={endTransaction}
         />
       </div>
 
