@@ -7,7 +7,7 @@ import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
 import { PromptPanel } from '@/components/PromptPanel';
-import type { GenerationEntry, ImageAttachment } from '@/components/PromptPanel';
+import type { GenerationEntry, ImageAttachment, TargetPlatform } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI, generateFromPrompt } from '@/services/conversion';
@@ -247,7 +247,7 @@ function App() {
 
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
-    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
+    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string, target?: TargetPlatform) => {
       const genId = `gen-${Date.now()}`;
       const entry: GenerationEntry = {
         id: genId,
@@ -256,6 +256,7 @@ function App() {
         status: 'generating',
         timestamp: Date.now(),
         attachments,
+        target,
       };
       setGenerations((prev) => [entry, ...prev]);
       setIsGenerating(true);
@@ -322,7 +323,9 @@ function App() {
         onClick={() => setShowLibPanel((v) => !v)}
         title="Design Libraries"
       >
-        📚
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+        </svg>
       </button>
 
       {/* Left toolbar rail */}
@@ -342,6 +345,7 @@ function App() {
             onImageToCanvas={handleImageToCanvas}
             isGenerating={isGenerating}
             generations={generations}
+            selectedObjectCount={state.selectedIds.length}
           />
         ) : (
           <ControlPanel
@@ -383,14 +387,12 @@ function App() {
 
       {/* Library panel (toggleable right panel) */}
       {showLibPanel && (
-        <div className="lib-panel-container">
-          <LibraryPanel
-            libraries={state.libraries}
-            onAddLibrary={addLibrary}
-            onRemoveLibrary={removeLibrary}
-            onToggleLibrary={toggleLibrary}
-          />
-        </div>
+        <LibraryPanel
+          libraries={state.libraries}
+          onAddLibrary={addLibrary}
+          onRemoveLibrary={removeLibrary}
+          onToggleLibrary={toggleLibrary}
+        />
       )}
 
       {/* Bottom status bar */}
@@ -430,23 +432,13 @@ function App() {
           <div className="cv-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>
             <div className="cv-header">
               <div className="cv-header-left">
-                <span className="cv-icon">🎉</span>
+                <span className="cv-icon">✦</span>
                 <h3 className="cv-title">Generated Code</h3>
               </div>
               <button className="cv-close" onClick={() => setConversionResult(null)}>✕</button>
             </div>
-            <div style={{ padding: 16 }}>
-              <pre style={{
-                fontSize: 12,
-                fontFamily: "'SF Mono', 'Cascadia Code', monospace",
-                background: 'var(--c-surface-2)',
-                padding: 12,
-                borderRadius: 'var(--radius-sm)',
-                overflow: 'auto',
-                maxHeight: 300,
-                whiteSpace: 'pre-wrap',
-                color: 'var(--c-text)',
-              }}>
+            <div className="cv-section">
+              <pre className="pp-gen-code" style={{ maxHeight: 300 }}>
                 {conversionResult}
               </pre>
             </div>

@@ -21,14 +21,11 @@ export function LibraryPanel({
   const [libUrl, setLibUrl] = useState('');
   const [sourceType, setSourceType] = useState<'github' | 'npm' | 'figma' | 'other'>('github');
 
-  const toggleLibrary = (libId: string) => {
-    const newExpanded = new Set(expandedLibs);
-    if (newExpanded.has(libId)) {
-      newExpanded.delete(libId);
-    } else {
-      newExpanded.add(libId);
-    }
-    setExpandedLibs(newExpanded);
+  const toggleExpand = (libId: string) => {
+    const next = new Set(expandedLibs);
+    if (next.has(libId)) next.delete(libId);
+    else next.add(libId);
+    setExpandedLibs(next);
   };
 
   const handleAddLibrary = () => {
@@ -41,7 +38,6 @@ export function LibraryPanel({
       source: sourceType,
       sourceUrl: libUrl,
       components: [
-        // Placeholder components for demo
         {
           id: 'btn-primary',
           name: 'Button Primary',
@@ -74,95 +70,94 @@ export function LibraryPanel({
   return (
     <div className="dk-panel dk-library-panel">
       <div className="dk-panel-header">
-        <h3 className="dk-panel-title">Design Systems</h3>
+        <span className="dk-panel-title">Design Systems</span>
       </div>
 
-      {/* Add Library Input */}
-      <div className="dk-row gap-2 p-3 border-b border-[--c-border]">
-        <select
-          value={sourceType}
-          onChange={(e) => setSourceType(e.target.value as 'github' | 'npm' | 'figma' | 'other')}
-          className="flex-1 px-2 py-1 text-xs rounded border border-[--c-border] bg-[--c-surface-2] text-[--c-text]"
-        >
-          <option value="github">GitHub</option>
-          <option value="npm">NPM</option>
-          <option value="figma">Figma</option>
-          <option value="other">Other URL</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Paste URL or name..."
-          value={libUrl}
-          onChange={(e) => setLibUrl(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleAddLibrary()}
-          className="flex-1 px-2 py-1 text-xs rounded border border-[--c-border] bg-[--c-surface-2] text-[--c-text]"
-        />
-        <button
-          onClick={handleAddLibrary}
-          className="dk-action dk-action-sm"
-          title="Add library"
-        >
-          <Plus size={14} />
-        </button>
-      </div>
-
-      {/* Libraries List */}
-      <div className="divide-y divide-[--c-border] max-h-80 overflow-y-auto">
-        {libraries.length === 0 ? (
-          <div className="p-3 text-xs text-[--c-text-muted] text-center">
-            No design systems added yet
+      <div className="dk-panel-body">
+        {/* ── Add library ──────────────────────── */}
+        <div className="dk-folder">
+          <div className="dk-folder-body" style={{ paddingTop: 8 }}>
+            <div className="dk-row">
+              <label className="dk-label">Source</label>
+              <select
+                value={sourceType}
+                onChange={(e) => setSourceType(e.target.value as typeof sourceType)}
+                className="dk-select"
+              >
+                <option value="github">GitHub</option>
+                <option value="npm">NPM</option>
+                <option value="figma">Figma</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="dk-row" style={{ gap: 4 }}>
+              <input
+                type="text"
+                placeholder="Paste URL or name…"
+                value={libUrl}
+                onChange={(e) => setLibUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddLibrary()}
+                className="dk-input"
+              />
+              <button onClick={handleAddLibrary} className="dk-icon-btn" title="Add library">
+                <Plus size={14} />
+              </button>
+            </div>
           </div>
+        </div>
+
+        {/* ── Library list ─────────────────────── */}
+        {libraries.length === 0 ? (
+          <div className="dk-empty">No design systems added yet</div>
         ) : (
           libraries.map((lib) => (
-            <div key={lib.id} className="border-b border-[--c-border] last:border-0">
-              {/* Library Header */}
-              <div className="flex items-center gap-2 p-2 hover:bg-[--c-surface-3]">
+            <div key={lib.id} className="dk-folder">
+              <div className="dk-lib-row">
                 <button
-                  onClick={() => toggleLibrary(lib.id)}
-                  className="flex-shrink-0 p-1 hover:bg-[--c-surface-3] rounded"
+                  onClick={() => toggleExpand(lib.id)}
+                  className="dk-icon-btn"
+                  aria-label="Expand"
                 >
                   <ChevronDown
-                    size={14}
-                    className={`transition ${expandedLibs.has(lib.id) ? '' : '-rotate-90'}`}
+                    size={12}
+                    style={{
+                      transform: expandedLibs.has(lib.id) ? 'none' : 'rotate(-90deg)',
+                      transition: `transform var(--dur) var(--ease)`,
+                    }}
                   />
                 </button>
-
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-[--c-text] truncate">{lib.name}</p>
-                  <p className="text-xs text-[--c-text-muted] truncate">{lib.components.length} components</p>
+                <div className="dk-lib-info">
+                  <div className="dk-lib-name">{lib.name}</div>
+                  <div className="dk-lib-meta">{lib.components.length} components</div>
                 </div>
-
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="dk-lib-actions">
                   <button
                     onClick={() => onToggleLibrary(lib.id)}
-                    className="p-1 hover:bg-[--c-surface-3] rounded text-[--c-text-muted]"
+                    className="dk-icon-btn"
                     title={lib.active ? 'Hide library' : 'Show library'}
                   >
-                    {lib.active ? <Eye size={14} /> : <EyeOff size={14} />}
+                    {lib.active ? <Eye size={12} /> : <EyeOff size={12} />}
                   </button>
                   <button
                     onClick={() => onRemoveLibrary(lib.id)}
-                    className="p-1 hover:bg-[--c-danger]/10 rounded text-[--c-danger]"
+                    className="dk-icon-btn dk-icon-btn--danger"
                     title="Remove library"
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
 
-              {/* Components Grid */}
               {expandedLibs.has(lib.id) && (
-                <div className="px-2 pb-2 pt-1 bg-[--c-surface-2]/50 grid grid-cols-2 gap-2">
+                <div className="dk-comp-grid">
                   {lib.components.map((comp) => (
                     <button
                       key={comp.id}
                       onClick={() => onComponentSelect?.(comp, lib.id)}
-                      className="p-2 text-left rounded border border-[--c-border] hover:bg-[--c-surface-3] transition text-xs"
+                      className="dk-comp-card"
                     >
-                      <p className="font-medium text-[--c-text] truncate">{comp.name}</p>
-                      {comp.category && (
-                        <p className="text-[--c-text-muted] text-xs">{comp.category}</p>
-                      )}
+                      <div className="dk-comp-name">{comp.name}</div>
+                      {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
                     </button>
                   ))}
                 </div>
@@ -172,10 +167,7 @@ export function LibraryPanel({
         )}
       </div>
 
-      {/* Info Footer */}
-      <div className="text-xs text-[--c-text-muted] p-2 border-t border-[--c-border]">
-        💡 Drag components onto canvas or use conversion tools
-      </div>
+      <div className="dk-hint">Drag components onto canvas or use conversion tools</div>
     </div>
   );
 }

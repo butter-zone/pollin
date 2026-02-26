@@ -159,7 +159,6 @@ export function ControlPanel({
   onRemoveLibrary,
   onToggleLibrary,
 }: ControlPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
   const [libUrl, setLibUrl] = useState('');
 
   const selectedObj = state.selectedIds.length === 1
@@ -168,24 +167,16 @@ export function ControlPanel({
 
   return (
     <div
-      className={`dk-panel ${collapsed ? 'dk-panel--collapsed' : ''}`}
+      className="dk-panel"
       role="region"
       aria-label="Control panel"
     >
       {/* Panel header */}
       <div className="dk-panel-header">
         <span className="dk-panel-title">Controls</span>
-        <button
-          className="dk-panel-collapse"
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
-        >
-          {collapsed ? '◂' : '▸'}
-        </button>
       </div>
 
-      {!collapsed && (
-        <div className="dk-panel-body">
+      <div className="dk-panel-body">
           {/* ── Drawing ──────────────────────────── */}
           <Folder label="Drawing">
             <Slider
@@ -213,7 +204,7 @@ export function ControlPanel({
 
           {/* ── Libraries ────────────────────────── */}
           <Folder label={`Libraries (${state.libraries.length})`} defaultOpen={false}>
-            <div className="dk-row gap-2">
+            <div className="dk-row">
               <input
                 type="text"
                 placeholder="Paste URL..."
@@ -232,29 +223,31 @@ export function ControlPanel({
                     setLibUrl('');
                   }
                 }}
-                className="flex-1 px-2 py-1 text-xs rounded border border-[--c-border] bg-[--c-surface-2] text-[--c-text]"
+                className="dk-input"
               />
             </div>
             {state.libraries.length === 0 ? (
-              <div className="dk-empty text-xs">No design systems added</div>
+              <div className="dk-empty">No design systems added</div>
             ) : (
-              <div className="divide-y divide-[--c-border]">
+              <div className="dk-objects-list">
                 {state.libraries.map((lib) => (
-                  <div key={lib.id} className="py-2 flex items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-[--c-text] truncate">{lib.name}</p>
-                      <p className="text-xs text-[--c-text-muted]">{lib.components.length} components</p>
+                  <div key={lib.id} className="dk-lib-row">
+                    <div className="dk-lib-info">
+                      <div className="dk-lib-name">{lib.name}</div>
+                      <div className="dk-lib-meta">{lib.components.length} components</div>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="dk-lib-actions">
                       <button
                         onClick={() => onToggleLibrary?.(lib.id)}
-                        className="px-2 py-0.5 text-xs rounded bg-[--c-surface-3] text-[--c-text] hover:bg-[--c-surface-4]"
+                        className="dk-icon-btn"
+                        title={lib.active ? 'Active' : 'Inactive'}
                       >
                         {lib.active ? '✓' : '○'}
                       </button>
                       <button
                         onClick={() => onRemoveLibrary?.(lib.id)}
-                        className="px-2 py-0.5 text-xs rounded bg-[--c-danger]/10 text-[--c-danger] hover:bg-[--c-danger]/20"
+                        className="dk-icon-btn dk-icon-btn--danger"
+                        title="Remove"
                       >
                         ✕
                       </button>
@@ -366,7 +359,6 @@ export function ControlPanel({
             </div>
           </Folder>
         </div>
-      )}
     </div>
   );
 }

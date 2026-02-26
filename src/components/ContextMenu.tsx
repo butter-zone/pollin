@@ -25,7 +25,7 @@ interface ContextMenuProps {
 function getMenuItems(target: CanvasObject | null): ContextMenuItem[] {
   if (!target) {
     return [
-      { id: 'paste', label: 'Paste', icon: '📋' },
+      { id: 'paste', label: 'Paste', icon: '⎘' },
       { id: 'select-all', label: 'Select All', icon: '☐' },
       { id: 'sep-1', label: '', separator: true },
       { id: 'toggle-grid', label: 'Toggle Grid', icon: '⊞' },
@@ -37,22 +37,22 @@ function getMenuItems(target: CanvasObject | null): ContextMenuItem[] {
   const isSketch = target.kind === 'stroke';
 
   return [
-    { id: 'convert-ui', label: 'Convert to UI…', icon: '✨' },
+    { id: 'convert-ui', label: 'Convert to UI…', icon: '✦' },
     ...(isImage
-      ? [{ id: 'convert-image', label: 'Use as Reference…', icon: '🖼️' }]
+      ? [{ id: 'convert-image', label: 'Use as Reference…', icon: '▣' }]
       : []),
     ...(isSketch
-      ? [{ id: 'convert-sketch', label: 'Sketch → UI…', icon: '✏️' }]
+      ? [{ id: 'convert-sketch', label: 'Sketch → UI…', icon: '✎' }]
       : []),
     { id: 'sep-1', label: '', separator: true },
     { id: 'duplicate', label: 'Duplicate', icon: '⧉' },
     { id: 'bring-front', label: 'Bring to Front', icon: '↑' },
     { id: 'send-back', label: 'Send to Back', icon: '↓' },
     { id: 'sep-2', label: '', separator: true },
-    { id: 'lock', label: target.locked ? 'Unlock' : 'Lock', icon: target.locked ? '🔓' : '🔒' },
-    { id: 'toggle-visible', label: target.visible ? 'Hide' : 'Show', icon: target.visible ? '👁' : '👁‍🗨' },
+    { id: 'lock', label: target.locked ? 'Unlock' : 'Lock', icon: target.locked ? '◇' : '◆' },
+    { id: 'toggle-visible', label: target.visible ? 'Hide' : 'Show', icon: target.visible ? '◉' : '◎' },
     { id: 'sep-3', label: '', separator: true },
-    { id: 'delete', label: 'Delete', icon: '🗑', danger: true },
+    { id: 'delete', label: 'Delete', icon: '╳', danger: true },
   ];
 }
 

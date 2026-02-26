@@ -20,6 +20,9 @@ export const AVAILABLE_MODELS: LLMModel[] = [
   { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', description: 'Code & reasoning' },
 ];
 
+/* ─── Generation target (Stitch-style) ──────────────────── */
+export type TargetPlatform = 'web' | 'mobile';
+
 /* ─── Attachment ────────────────────────────────────────── */
 interface ImageAttachment {
   id: string;
@@ -38,15 +41,17 @@ export interface GenerationEntry {
   result?: string;
   timestamp: number;
   attachments: ImageAttachment[];
+  target?: TargetPlatform;
 }
 
 /* ─── Props ─────────────────────────────────────────────── */
 interface PromptPanelProps {
   libraries: DesignLibrary[];
-  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => void;
+  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string, target?: TargetPlatform) => void;
   onImageToCanvas: (attachment: ImageAttachment) => void;
   isGenerating: boolean;
   generations: GenerationEntry[];
+  selectedObjectCount?: number;
 }
 
 export const PromptPanel: FC<PromptPanelProps> = ({
@@ -55,6 +60,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   onImageToCanvas,
   isGenerating,
   generations,
+  selectedObjectCount = 0,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
@@ -62,6 +68,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
   const [selectedLibrary, setSelectedLibrary] = useState<string | undefined>();
   const [showLibPicker, setShowLibPicker] = useState(false);
+  const [target, setTarget] = useState<TargetPlatform>('web');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -70,10 +77,10 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   const handleSubmit = useCallback(() => {
     if (!prompt.trim() && attachments.length === 0) return;
-    onGenerate(prompt.trim(), selectedModel, attachments, selectedLibrary);
+    onGenerate(prompt.trim(), selectedModel, attachments, selectedLibrary, target);
     setPrompt('');
     setAttachments([]);
-  }, [prompt, selectedModel, attachments, selectedLibrary, onGenerate]);
+  }, [prompt, selectedModel, attachments, selectedLibrary, target, onGenerate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -126,36 +133,78 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   return (
     <div className="pp">
-      {/* ── Design system library selector ─────────────── */}
-      {activeLibraries.length > 0 && (
-        <div className="pp-lib-bar">
-          <button className="pp-lib-btn" onClick={() => setShowLibPicker((v) => !v)}>
-            🧩 {selectedLibrary ? libraries.find((l) => l.id === selectedLibrary)?.name : 'No design system'}
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="pp-chevron">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* ── Top bar: target platform + design system ──── */}
+      <div className="pp-top-bar">
+        <div className="pp-target-toggle">
+          <button
+            className={`pp-target-btn ${target === 'web' ? 'pp-target-btn--active' : ''}`}
+            onClick={() => setTarget('web')}
+            title="Generate for web"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <line x1="8" y1="21" x2="16" y2="21" />
+              <line x1="12" y1="17" x2="12" y2="21" />
             </svg>
+            Web
           </button>
-          {showLibPicker && (
-            <div className="pp-model-dropdown">
-              <button
-                className={`pp-model-option ${!selectedLibrary ? 'pp-model-option--active' : ''}`}
-                onClick={() => { setSelectedLibrary(undefined); setShowLibPicker(false); }}
-              >
-                <span className="pp-model-option-name">None (freeform)</span>
-                <span className="pp-model-option-desc">Generate without a design system</span>
-              </button>
-              {activeLibraries.map((lib) => (
+          <button
+            className={`pp-target-btn ${target === 'mobile' ? 'pp-target-btn--active' : ''}`}
+            onClick={() => setTarget('mobile')}
+            title="Generate for mobile"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" />
+              <line x1="12" y1="18" x2="12" y2="18" />
+            </svg>
+            Mobile
+          </button>
+        </div>
+        {activeLibraries.length > 0 && (
+          <div className="pp-lib-bar">
+            <button className="pp-lib-btn" onClick={() => setShowLibPicker((v) => !v)}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+              {selectedLibrary ? libraries.find((l) => l.id === selectedLibrary)?.name : 'No design system'}
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="pp-chevron">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {showLibPicker && (
+              <div className="pp-model-dropdown">
                 <button
-                  key={lib.id}
-                  className={`pp-model-option ${lib.id === selectedLibrary ? 'pp-model-option--active' : ''}`}
-                  onClick={() => { setSelectedLibrary(lib.id); setShowLibPicker(false); }}
+                  className={`pp-model-option ${!selectedLibrary ? 'pp-model-option--active' : ''}`}
+                  onClick={() => { setSelectedLibrary(undefined); setShowLibPicker(false); }}
                 >
-                  <span className="pp-model-option-name">{lib.name}</span>
-                  <span className="pp-model-option-desc">{lib.components.length} components</span>
+                  <span className="pp-model-option-name">None (freeform)</span>
+                  <span className="pp-model-option-desc">Generate without a design system</span>
                 </button>
-              ))}
-            </div>
-          )}
+                {activeLibraries.map((lib) => (
+                  <button
+                    key={lib.id}
+                    className={`pp-model-option ${lib.id === selectedLibrary ? 'pp-model-option--active' : ''}`}
+                    onClick={() => { setSelectedLibrary(lib.id); setShowLibPicker(false); }}
+                  >
+                    <span className="pp-model-option-name">{lib.name}</span>
+                    <span className="pp-model-option-desc">{lib.components.length} components</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Selected object context ───────────────────── */}
+      {selectedObjectCount > 0 && (
+        <div className="pp-context-bar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+          </svg>
+          <span>{selectedObjectCount} selected — describe changes to apply</span>
         </div>
       )}
 
@@ -166,13 +215,15 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           {generations.map((gen) => (
             <div key={gen.id} className={`pp-gen pp-gen--${gen.status}`}>
               <div className="pp-gen-prompt">
-                {gen.attachments.length > 0 && <span className="pp-gen-badge">📷 {gen.attachments.length}</span>}
+                {gen.attachments.length > 0 && <span className="pp-gen-badge">⊞ {gen.attachments.length}</span>}
                 {gen.prompt || '(image reference)'}
               </div>
               <div className="pp-gen-meta">
                 <span className="pp-gen-model">{AVAILABLE_MODELS.find((m) => m.id === gen.model)?.name ?? gen.model}</span>
                 <span className="pp-gen-status">
-                  {gen.status === 'generating' && '⏳ Generating…'}
+                  {gen.status === 'generating' && (
+                    <><span className="pp-spinner pp-spinner--sm" /> Generating…</>
+                  )}
                   {gen.status === 'done' && '✓ Done'}
                   {gen.status === 'error' && '✗ Error'}
                 </span>
@@ -195,7 +246,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
                 <span className="pp-att-name">{att.name}</span>
                 <div className="pp-att-actions">
                   <button className="pp-att-action" onClick={() => onImageToCanvas(att)} title="Add to canvas">
-                    📌
+                    →
                   </button>
                   <button className="pp-att-action" onClick={() => removeAttachment(att.id)} title="Remove">
                     ✕

@@ -73,7 +73,7 @@ export const ConversionDialog: FC<ConversionDialogProps> = ({
         {/* Header */}
         <div className="cv-header">
           <div className="cv-header-left">
-            <span className="cv-icon">{isSketch ? '✏️' : '🖼️'}</span>
+            <span className="cv-icon">{isSketch ? '✎' : '▣'}</span>
             <h3 className="cv-title">Convert {label} → UI</h3>
           </div>
           <button className="cv-close" onClick={onClose} aria-label="Close">
