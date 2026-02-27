@@ -417,6 +417,8 @@ function App() {
             height: result.imageHeight ?? 580,
           };
           addObject(imgObj);
+          // Ensure the select tool is active so the user can interact with the image
+          setTool('select');
         }
       } catch {
         setGenerations((prev) =>
@@ -426,7 +428,7 @@ function App() {
         setIsGenerating(false);
       }
     },
-    [addObject, state.panX, state.panY],
+    [addObject, setTool, state.panX, state.panY],
   );
 
   // ── Add image attachment to canvas ────────────────────

@@ -258,19 +258,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
                 </div>
               )}
 
-              {gen.status === 'done' && gen.imageDataUrl && (
-                <div className="pp-gen-preview">
-                  <img
-                    src={gen.imageDataUrl}
-                    alt={`Generated: ${gen.prompt}`}
-                    className="pp-gen-preview-img"
-                  />
-                  <div className="pp-gen-preview-badge">Generated UI</div>
-                </div>
-              )}
-              {gen.status === 'done' && !gen.imageDataUrl && gen.result && (
-                <pre className="pp-gen-code">{gen.result}</pre>
-              )}
               {gen.status === 'error' && gen.result && (
                 <div className="pp-gen-error">{gen.result}</div>
               )}

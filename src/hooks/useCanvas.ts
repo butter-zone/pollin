@@ -22,7 +22,7 @@ interface ExtendedCanvasState extends CanvasState {
 }
 
 const defaultState: ExtendedCanvasState = {
-  activeTool: 'pen',
+  activeTool: 'select',
   isDrawing: false,
   lineWidth: 2,
   lineColor: 'oklch(1 0 0)',
@@ -40,7 +40,7 @@ const defaultState: ExtendedCanvasState = {
   gridSize: 20,
   snapToGrid: true,
   // legacy compat
-  tool: 'pen',
+  tool: 'select',
   offsetX: 0,
   offsetY: 0,
   // New: library management
