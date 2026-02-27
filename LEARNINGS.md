@@ -150,14 +150,77 @@ The Tailwind removal was notable — it had been carried since scaffold, providi
 
 ---
 
+## QuadTree spatial indexing pays off immediately
+
+Hit testing was O(n) — reverse-scan every object on every click. Replaced with a custom QuadTree (20,000×20,000 world bounds, depth 8, 8 items per leaf). `syncSpatialIndex()` lazily rebuilds when the `objects` array reference changes. Hit testing now does broadphase spatial query → narrowphase rotation-aware bounds check. For a canvas with hundreds of objects, the difference is measurable.
+
+The key insight: don't rebuild the tree on every frame. Rebuild on structural changes (add/remove/move objects), and let `queryPoint()` do the work per interaction.
+
+**Takeaway:** Spatial indices are worth adding proactively. The code is ~360 lines, mostly bookkeeping, and it turns O(n) hit testing into O(log n) with near-zero per-frame cost.
+
+---
+
+## Content-addressed IndexedDB beats base64 in undo stacks
+
+Base64 data URIs in canvas state snapshots meant each undo step could be megabytes for image-heavy scenes. Replaced with content-addressed IndexedDB storage: `storeImage(dataUrl)` → SHA-256 hash → `pollin-img://abc123` reference. Undo snapshots now store lightweight string refs. `loadImage(ref)` resolves them with an LRU cache (20 entries).
+
+Six insertion paths needed wiring: file drops on canvas, component drag-to-canvas, library component select, clipboard paste, AI generation output, and attachment-to-canvas. Missing even one creates an inconsistency where some images are refs and others are inline base64.
+
+**Takeaway:** Identify *every* data ingestion path before wiring storage. Content-addressed storage naturally deduplicates — the same image dropped twice stores once.
+
+---
+
+## Code splitting via manualChunks is surgical
+
+Vite warned about a 1,489 KB chunk. Three lines of `manualChunks` config split it into four: `index` (270 KB), `canvas-engine` (273 KB), `whisper` (873 KB), `gsap` (70 KB). The whisper chunk is large but only loads when speech-to-text is activated — it never blocks initial render.
+
+The grouping logic: match module paths containing `@huggingface` → whisper chunk, canvas/hooks/services paths → canvas-engine chunk, `gsap` → gsap chunk. Everything else falls to index.
+
+**Takeaway:** Before reaching for dynamic `import()`, check if `manualChunks` solves the problem. It's zero-refactor and directly controls what loads together.
+
+---
+
+## Snap guides need zoom-independent rendering
+
+Snap guides (edge-to-edge and center alignment) render as dashed lines across the full canvas extent. The visual weight must be constant regardless of zoom level — a 1px dash at 3× zoom looks like 3px. Fix: divide line width and dash lengths by the current zoom factor before drawing.
+
+Implementation: `computeSnap()` returns `{dx, dy, guides}` where `dx`/`dy` are the snapped deltas to apply to the dragged object, and `guides` is an array of `{axis, pos, from, to}` segments. The Canvas render loop draws them after normal objects but before the final `ctx.restore()`.
+
+**Takeaway:** Any overlay drawn in world coordinates (selection handles, alignment guides, grid) must counter-scale by zoom to maintain consistent screen-space appearance.
+
+---
+
+## STT auto-fallback is better than STT configuration
+
+The original speech-to-text hook exposed a "backend" toggle (native vs Whisper). Users don't care which engine runs — they want the mic button to work. Rewrote the flow: start with native Web Speech API, and if it errors with `network` or `service-not-allowed`, silently pivot to Whisper. The UI shows a small "Live" or "Whisper" badge so power users can see what's running, but selection is automatic.
+
+Other STT fixes: `OfflineAudioContext` has poor codec support in some browsers — switching to real `AudioContext` with forced 16 kHz resampling fixed silent transcriptions. Added `pickMimeType()` to negotiate the best recording format. Added `testMicrophone()` to verify capture → decode before a real recording session.
+
+**Takeaway:** Auto-fallback with visibility is better than manual selection. Users should see what's happening, not decide what should happen.
+
+---
+
+## Subagent delegation scales file creation
+
+Three new service files (quadtree.ts, image-store.ts, component-preview.ts) were created by parallel subagents in a single round. Each subagent received: the type definitions, the design standards, and a clear interface contract. Integration (wiring into Canvas.tsx, App.tsx) was done in the main agent where cross-file context matters.
+
+The pattern: subagents handle *leaf* files with well-defined interfaces. The orchestrator handles *integration* where understanding multiple files simultaneously matters.
+
+**Takeaway:** Delegate file creation to subagents when the contract is clear. Keep integration work centralized where cross-file dependencies need reasoning.
+
+---
+
 ## Things to revisit
 
 - **Undo coalescing** — debounce or transaction boundaries for drag mutations
-- **Hit testing** — O(n) reverse scan works now, needs a spatial index (quadtree) for larger scenes
-- **Image storage** — base64 data URIs in state will bloat undo snapshots; move to object URLs or IndexedDB
+- ~~**Hit testing** — O(n) reverse scan works now, needs a spatial index (quadtree) for larger scenes~~ ✅ Done (QuadTree)
+- ~~**Image storage** — base64 data URIs in state will bloat undo snapshots; move to object URLs or IndexedDB~~ ✅ Done (IndexedDB content-addressed)
 - **Stroke smoothing** — simple `lineTo` looks jagged at low pointer event rates; Catmull-Rom or quadratic Bézier would help
 - **Canvas resize** — `ResizeObserver` on the container instead of `window.resize` to catch panel collapses
 - **Persistence** — no save/load yet; canvas state is lost on refresh
+- **Component property editing** — library components land as images; need a property editor to tweak them post-placement
+- **Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping
+- **Token export** — export resolved OKLCH tokens as CSS/JSON for handoff
 
 ---
 
@@ -165,12 +228,15 @@ The Tailwind removal was notable — it had been carried since scaffold, providi
 
 | Metric | Value |
 |--------|-------|
-| Commits | 37 |
-| Days | 2 |
-| TypeScript/TSX | ~7,600 lines |
-| CSS | ~2,000 lines |
+| Commits | 40+ |
+| Days | 3 |
+| TypeScript/TSX | ~9,800 lines |
+| CSS | ~2,170 lines |
 | Runtime deps | 5 (React, GSAP, html2canvas, Lucide, HF Transformers) |
 | Files pruned in cleanup | ~50 |
 | Undo stack depth | 50 snapshots |
-| Grid dot radius (magnetic) | 5 cells |
+| Grid dot spacing | 40 px |
 | Surface levels | 5 |
+| Main chunk size | 270 KB (down from 1,489 KB) |
+| Spatial index | QuadTree, depth 8, 8/leaf |
+| Image store | IndexedDB, SHA-256, LRU 20 |

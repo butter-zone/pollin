@@ -16,6 +16,7 @@ import { generateComponentPreviewHTML } from '@/services/component-preview';
 import { getTheme } from '@/services/ui-templates';
 import { QuadTree } from '@/services/quadtree';
 import { storeImage, loadImage, isImageRef } from '@/services/image-store';
+import { computeSnap, drawSnapGuides, type SnapGuide } from '@/services/snap-guides';
 
 // ── helpers ────────────────────────────────────────────
 let _id = 0;
@@ -82,6 +83,9 @@ export function Canvas({
   const dragObjOrigins = useRef<Map<string, Point>>(new Map());
   const cursorWorld = useRef<Point | null>(null);
   const editingTextId = useRef<string | null>(null);
+
+  // Snap guides — active during drag
+  const activeGuides = useRef<SnapGuide[]>([]);
 
   // Resize handle state
   const resizeHandle = useRef<{
@@ -163,6 +167,11 @@ export function Canvas({
       drawSmoothStroke(ctx, drawingPoints.current);
       ctx.stroke();
       ctx.globalAlpha = 1;
+    }
+
+    // snap alignment guides (during drag)
+    if (activeGuides.current.length > 0) {
+      drawSnapGuides(ctx, activeGuides.current, zoom);
     }
 
     ctx.restore();
@@ -447,13 +456,36 @@ export function Canvas({
       if (dragStart.current && state.activeTool === 'select') {
         const dx = world.x - dragStart.current.x;
         const dy = world.y - dragStart.current.y;
+
+        // Compute snap guides against non-selected objects
+        const selectedSet = new Set(state.selectedIds);
+        const refBounds = state.objects
+          .filter((o) => !selectedSet.has(o.id) && o.visible)
+          .map(getObjectBounds);
+
         dragObjOrigins.current.forEach((origin, id) => {
           let nx = origin.x + dx;
           let ny = origin.y + dy;
-          if (state.snapToGrid) {
+
+          // Smart snap: try object-to-object alignment first
+          const obj = state.objects.find((o) => o.id === id);
+          if (obj) {
+            const candidateBounds = { ...getObjectBounds(obj), x: nx, y: ny };
+            // For image/ellipse, adjust bounds since x,y is center
+            if (obj.kind === 'image' || obj.kind === 'ellipse') {
+              candidateBounds.x = nx - candidateBounds.width / 2;
+              candidateBounds.y = ny - candidateBounds.height / 2;
+            }
+            const snap = computeSnap(candidateBounds, refBounds, state.gridSize, state.snapToGrid);
+            nx += snap.dx;
+            ny += snap.dy;
+            activeGuides.current = snap.guides;
+          } else if (state.snapToGrid) {
             nx = snapToGrid(nx, state.gridSize);
             ny = snapToGrid(ny, state.gridSize);
+            activeGuides.current = [];
           }
+
           onUpdateObject(id, { x: nx, y: ny });
         });
         scheduleRender();
@@ -522,7 +554,9 @@ export function Canvas({
       if (dragStart.current) {
         dragStart.current = null;
         dragObjOrigins.current.clear();
+        activeGuides.current = [];
         onEndTransaction?.();
+        scheduleRender();
         return;
       }
 

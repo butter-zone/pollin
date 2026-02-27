@@ -17,5 +17,21 @@ export default defineConfig({
   build: {
     target: 'ES2020',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Heavy AI/ML runtime — loaded only when Whisper fallback activates
+          'whisper': ['@huggingface/transformers'],
+          // Canvas rendering engine
+          'canvas-engine': [
+            './src/services/ui-renderer.ts',
+            './src/services/ui-templates.ts',
+            './src/services/component-preview.ts',
+          ],
+          // Animation library
+          'gsap': ['gsap'],
+        },
+      },
+    },
   },
 });
