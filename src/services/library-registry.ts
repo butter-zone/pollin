@@ -452,6 +452,120 @@ export async function fetchFromGitHub(url: string): Promise<DesignLibrary | null
   }
 }
 
+/* ─── Figma API integration ─────────────────────────────── */
+
+const FIGMA_API = 'https://api.figma.com/v1';
+
+/**
+ * Extract a Figma file key from a URL.
+ * Supports:
+ *   https://www.figma.com/file/ABCDE/FileName
+ *   https://www.figma.com/design/ABCDE/FileName
+ *   https://figma.com/file/ABCDE
+ */
+function extractFigmaFileKey(url: string): string | null {
+  const match = url.match(/figma\.com\/(?:file|design)\/([a-zA-Z0-9]+)/i);
+  return match ? match[1] : null;
+}
+
+/**
+ * Fetch component list from a Figma file using the Figma REST API.
+ * Requires a personal access token set via VITE_FIGMA_TOKEN.
+ *
+ * Reads both published components and component sets (variants).
+ */
+export async function fetchFromFigma(url: string): Promise<DesignLibrary | null> {
+  const fileKey = extractFigmaFileKey(url);
+  if (!fileKey) return null;
+
+  const token = import.meta.env.VITE_FIGMA_TOKEN || '';
+  if (!token) {
+    console.warn('[library-registry] VITE_FIGMA_TOKEN not set — cannot read Figma files');
+    return null;
+  }
+
+  try {
+    // Use the /files/:key endpoint to get file metadata + components
+    const res = await fetch(`${FIGMA_API}/files/${fileKey}?depth=1`, {
+      headers: { 'X-Figma-Token': token },
+    });
+    if (!res.ok) throw new Error(`Figma API error: ${res.status}`);
+    const data = await res.json();
+
+    const components: LibraryComponent[] = [];
+    const seenNames = new Set<string>();
+
+    // Extract from components map (published components)
+    if (data.components) {
+      for (const [nodeId, meta] of Object.entries(data.components)) {
+        const m = meta as { name: string; description?: string; componentSetId?: string };
+        const name = m.name;
+        if (!name || seenNames.has(name.toLowerCase())) continue;
+        seenNames.add(name.toLowerCase());
+        components.push({
+          id: `figma-${nodeId}`,
+          name,
+          category: m.componentSetId ? 'Variants' : 'Components',
+          description: m.description || `Figma component`,
+        });
+      }
+    }
+
+    // Also extract component sets (variant groups)
+    if (data.componentSets) {
+      for (const [nodeId, meta] of Object.entries(data.componentSets)) {
+        const m = meta as { name: string; description?: string };
+        const name = m.name;
+        if (!name || seenNames.has(name.toLowerCase())) continue;
+        seenNames.add(name.toLowerCase());
+        components.push({
+          id: `figma-set-${nodeId}`,
+          name,
+          category: 'Component Sets',
+          description: m.description || `Figma component set`,
+        });
+      }
+    }
+
+    // For files that don't publish components, scan the top-level document
+    // for COMPONENT and COMPONENT_SET node types
+    if (components.length === 0 && data.document?.children) {
+      const walk = (node: any) => {
+        if (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET') {
+          const name = node.name;
+          if (name && !seenNames.has(name.toLowerCase())) {
+            seenNames.add(name.toLowerCase());
+            components.push({
+              id: `figma-node-${node.id}`,
+              name,
+              category: node.type === 'COMPONENT_SET' ? 'Component Sets' : 'Components',
+              description: `Figma ${node.type.toLowerCase().replace('_', ' ')}`,
+            });
+          }
+        }
+        if (node.children) node.children.forEach(walk);
+      };
+      data.document.children.forEach(walk);
+    }
+
+    if (components.length === 0) return null;
+
+    const fileName = data.name || `Figma File (${fileKey})`;
+    return {
+      id: `lib-${Date.now()}`,
+      name: fileName,
+      description: `Figma file with ${components.length} components`,
+      source: 'figma',
+      sourceUrl: url,
+      components: components.sort((a, b) => a.name.localeCompare(b.name)),
+      active: true,
+    };
+  } catch (err) {
+    console.warn('[library-registry] Figma fetch failed:', err);
+    return null;
+  }
+}
+
 /* ─── HTML fetch + parse fallback ───────────────────────── */
 
 /**
@@ -569,8 +683,9 @@ export type ResolveStatus = 'resolving' | 'resolved' | 'error';
 /**
  * Resolve a URL to a DesignLibrary using the hybrid strategy:
  * 1. Check curated registry (instant)
- * 2. Try GitHub API (if GitHub URL)
- * 3. Fall back to HTML fetch + parse
+ * 2. Try Figma API (if Figma URL)
+ * 3. Try GitHub API (if GitHub URL)
+ * 4. Fall back to HTML fetch + parse
  */
 export async function resolveLibrary(
   url: string,
@@ -584,7 +699,20 @@ export async function resolveLibrary(
     return curated;
   }
 
-  // 2. GitHub API
+  // 2. Figma API
+  if (/figma\.com/i.test(url)) {
+    onStatus?.('resolving', 'Reading Figma file…');
+    const figmaLib = await fetchFromFigma(url);
+    if (figmaLib && figmaLib.components.length > 0) {
+      onStatus?.('resolved', `Found ${figmaLib.components.length} components from Figma`);
+      return figmaLib;
+    }
+    // If Figma fetch returned nothing, don't fallback to HTML scraping
+    onStatus?.('error', 'Could not read Figma file. Set VITE_FIGMA_TOKEN in your .env to enable Figma access.');
+    return null;
+  }
+
+  // 3. GitHub API
   if (/github\.com/i.test(url)) {
     onStatus?.('resolving', 'Scanning GitHub repository…');
     const ghLib = await fetchFromGitHub(url);
@@ -594,7 +722,7 @@ export async function resolveLibrary(
     }
   }
 
-  // 3. HTML fetch + parse
+  // 4. HTML fetch + parse
   onStatus?.('resolving', 'Scanning page for components…');
   const htmlLib = await fetchFromHTML(url);
   if (htmlLib && htmlLib.components.length > 0) {
@@ -608,5 +736,39 @@ export async function resolveLibrary(
 
 /** Get all supported library names for display */
 export function getSupportedLibraries(): string[] {
-  return REGISTRY.map((e) => e.name);
+  return REGISTRY.map((e) => e.name).sort();
+}
+
+/** Get the full curated registry entries for the built-in panel */
+export function getBuiltInEntries(): Array<{
+  name: string;
+  description: string;
+  source: DesignLibrary['source'];
+  sourceUrl: string;
+  componentCount: number;
+}> {
+  return REGISTRY
+    .map((e) => ({
+      name: e.name,
+      description: e.description,
+      source: e.source,
+      sourceUrl: e.sourceUrl,
+      componentCount: e.components.length,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Instantiate a full DesignLibrary from a curated entry by name */
+export function instantiateBuiltIn(name: string): DesignLibrary | null {
+  const entry = REGISTRY.find((e) => e.name === name);
+  if (!entry) return null;
+  return {
+    id: `lib-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    name: entry.name,
+    description: entry.description,
+    source: entry.source,
+    sourceUrl: entry.sourceUrl,
+    components: entry.components,
+    active: true,
+  };
 }
