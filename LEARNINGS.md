@@ -106,6 +106,50 @@ Canvas objects use a `kind` discriminant (`'stroke' | 'rect' | 'ellipse' | 'line
 
 ---
 
+## GSAP over CSS for choreographed motion
+
+CSS transitions/keyframes work for isolated A→B animations but fall apart when you need sequencing, staggered timing, or physics-like easing. We moved quote cycling and logo hover effects to GSAP — the API (`gsap.to`, `gsap.fromTo`, `timeline`) maps directly to the animation intent instead of wrestling with `@keyframes` percentages.
+
+The logo hover is a good example: eight SVG circles scatter outward on mouseEnter with randomized angles and distances, then float back with `elastic.out` easing on mouseLeave. Doing this in CSS would require 8 individual keyframes with hardcoded values. GSAP makes it a loop.
+
+**Takeaway:** Use CSS for simple hover/transition states. Reach for GSAP when animations need randomization, sequencing, or physics-based easing.
+
+---
+
+## Clamp animation bounds, not just positions
+
+The logo scatter initially pushed circles outside the SVG viewBox, causing visual cropping. The fix: clamp each circle's `cx` and `cy` by its own radius (`max(r, min(viewBoxWidth - r, cx))`), not just by the viewBox edges. This ensures no circle edge extends past the boundary.
+
+**Takeaway:** When animating elements with area (circles, rects), bounds-checking must account for the element's size, not just its center point.
+
+---
+
+## Progressive reasoning steps sell latency
+
+AI generation has a perceived wait time problem. We added 5 progressive reasoning steps (Analyzing → Classifying → Theming → Layout → Rendering) that fire during the mock generation delay. Each step appears with a brief label and contextual detail. The same total wait time *feels* shorter because the user sees continuous progress.
+
+**Takeaway:** Break opaque waits into visible micro-steps. Even if the steps are cosmetic, showing progress dramatically improves perceived performance.
+
+---
+
+## Default tool state must match default panel mode
+
+A subtle bug: the default panel was `'prompt'` mode but the default active tool was `'pen'`. Clicking the canvas after generation tried to draw instead of select. Fixed by aligning the initial tool to `'select'`, and auto-switching to `'select'` after image placement.
+
+**Takeaway:** Verify that initial state combinations make sense together. Defaults that were set independently can conflict when the app's modes interact.
+
+---
+
+## Prune deps before they calcify
+
+The second cleanup pass caught: `framer-motion` (zero imports), `tailwindcss` + `postcss` + `autoprefixer` (no utility classes used — only the CSS reset), an unused `design-tokens.ts`, a dead barrel file, and a `terser` minifier reference without the package installed. Total: 831 lines removed across 10 files.
+
+The Tailwind removal was notable — it had been carried since scaffold, providing only a CSS reset that we replaced with 15 lines of hand-written reset. Three npm packages and two config files for 15 lines of functionality.
+
+**Takeaway:** Audit deps regularly. Packages carried from scaffolding accumulate config surface area that outlasts their usefulness. If you're only using a framework for its reset, you don't need the framework.
+
+---
+
 ## Things to revisit
 
 - **Undo coalescing** — debounce or transaction boundaries for drag mutations
@@ -121,11 +165,11 @@ Canvas objects use a `kind` discriminant (`'stroke' | 'rect' | 'ellipse' | 'line
 
 | Metric | Value |
 |--------|-------|
-| Commits | 21 |
+| Commits | 37 |
 | Days | 2 |
-| TypeScript/TSX | ~3,200 lines |
-| CSS | ~1,700 lines |
-| Runtime deps | 3 (React, Framer Motion, Lucide) |
+| TypeScript/TSX | ~7,600 lines |
+| CSS | ~2,000 lines |
+| Runtime deps | 5 (React, GSAP, html2canvas, Lucide, HF Transformers) |
 | Files pruned in cleanup | ~50 |
 | Undo stack depth | 50 snapshots |
 | Grid dot radius (magnetic) | 5 cells |
