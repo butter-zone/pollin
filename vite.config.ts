@@ -17,6 +17,5 @@ export default defineConfig({
   build: {
     target: 'ES2020',
     sourcemap: false,
-    minify: 'terser',
   },
 });
