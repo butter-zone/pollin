@@ -68,7 +68,14 @@ async function getTranscriber(
     },
   ) as Promise<AutomaticSpeechRecognitionPipeline>;
 
-  transcriber = await loadingPromise;
+  try {
+    transcriber = await loadingPromise;
+  } catch (err) {
+    loadingPromise = null;
+    throw new Error(
+      `Failed to load speech model: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
   loadingPromise = null;
 
   onProgress?.({
@@ -83,26 +90,74 @@ async function getTranscriber(
 /* ─── Audio helpers ─────────────────────────────────────── */
 
 /**
- * Decode an audio Blob to a 16 kHz mono Float32Array
- * using OfflineAudioContext.
+ * Decode an audio Blob to a 16 kHz mono Float32Array.
+ *
+ * Uses a real AudioContext for the initial decode (much better codec
+ * support than OfflineAudioContext), then OfflineAudioContext to
+ * resample to the 16 kHz mono that Whisper expects.
  */
 async function blobToFloat32(blob: Blob): Promise<Float32Array> {
-  const arrayBuf = await blob.arrayBuffer();
-  const audioCtx = new OfflineAudioContext(1, 1, 16_000);
-  const decoded = await audioCtx.decodeAudioData(arrayBuf);
+  if (blob.size < 100) {
+    throw new Error('Audio recording too short — please speak for at least 1 second.');
+  }
 
-  // Resample to 16 kHz mono
-  const offCtx = new OfflineAudioContext(
-    1,
-    Math.ceil((decoded.duration * 16_000)),
-    16_000,
-  );
+  const arrayBuf = await blob.arrayBuffer();
+
+  // Step 1: Decode using a real AudioContext — much wider codec support
+  // than OfflineAudioContext (handles webm/opus, mp4/aac, ogg, etc.)
+  let decoded: AudioBuffer;
+  const tempCtx = new AudioContext({ sampleRate: 16_000 });
+  try {
+    decoded = await tempCtx.decodeAudioData(arrayBuf.slice(0));
+  } catch (decodeErr) {
+    // Fallback: try with default sample rate (some browsers reject forced rate)
+    const fallbackCtx = new AudioContext();
+    try {
+      decoded = await fallbackCtx.decodeAudioData(arrayBuf.slice(0));
+    } catch {
+      throw new Error(
+        `Could not decode audio (${blob.type || 'unknown format'}). ` +
+        `Try a different browser — Chrome or Edge work best. ` +
+        `Original error: ${decodeErr instanceof Error ? decodeErr.message : String(decodeErr)}`,
+      );
+    } finally {
+      await fallbackCtx.close().catch(() => {});
+    }
+  } finally {
+    await tempCtx.close().catch(() => {});
+  }
+
+  // Step 2: Resample to 16 kHz mono via OfflineAudioContext
+  const targetLength = Math.ceil(decoded.duration * 16_000);
+  if (targetLength < 1) {
+    throw new Error('Audio recording too short — please speak for at least 1 second.');
+  }
+
+  const offCtx = new OfflineAudioContext(1, targetLength, 16_000);
   const src = offCtx.createBufferSource();
   src.buffer = decoded;
   src.connect(offCtx.destination);
   src.start();
+
   const rendered = await offCtx.startRendering();
   return rendered.getChannelData(0);
+}
+
+/**
+ * Pick the best supported MIME type for MediaRecorder.
+ * Tries opus-in-webm first (widest decode support), then ogg, then mp4.
+ */
+function pickMimeType(): string {
+  const candidates = [
+    'audio/webm;codecs=opus',
+    'audio/webm',
+    'audio/ogg;codecs=opus',
+    'audio/mp4',
+  ];
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return ''; // let browser choose default
 }
 
 /* ─── Recorder class ────────────────────────────────────── */
@@ -111,6 +166,7 @@ export class WhisperRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
   private stream: MediaStream | null = null;
+  private recordingStartTime = 0;
 
   status: WhisperStatus = 'idle';
 
@@ -122,29 +178,103 @@ export class WhisperRecorder {
   }
 
   /**
+   * Quick mic permission + audio capture test.
+   * Returns { ok, error?, durationMs? }.
+   */
+  static async testMicrophone(): Promise<{
+    ok: boolean;
+    error?: string;
+    durationMs?: number;
+  }> {
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('NotAllowed') || msg.includes('Permission denied')) {
+        return { ok: false, error: 'Microphone access denied. Check browser permissions.' };
+      }
+      return { ok: false, error: `Microphone unavailable: ${msg}` };
+    }
+
+    // Record 1.5s of audio and verify we get data
+    return new Promise((resolve) => {
+      const mime = pickMimeType();
+      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      const start = performance.now();
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const elapsed = Math.round(performance.now() - start);
+        const totalSize = chunks.reduce((s, c) => s + c.size, 0);
+        if (totalSize < 100) {
+          resolve({ ok: false, error: 'Mic connected but no audio data received.', durationMs: elapsed });
+          return;
+        }
+        // Try decoding to verify the pipeline works end-to-end
+        try {
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          await blobToFloat32(blob);
+          resolve({ ok: true, durationMs: elapsed });
+        } catch (err) {
+          resolve({
+            ok: false,
+            error: `Mic works but audio decode failed: ${err instanceof Error ? err.message : String(err)}`,
+            durationMs: elapsed,
+          });
+        }
+      };
+
+      recorder.start(100);
+      setTimeout(() => {
+        if (recorder.state !== 'inactive') recorder.stop();
+      }, 1500);
+    });
+  }
+
+  /**
    * Request mic access and start recording.
    */
   async startRecording(onProgress?: ProgressCallback): Promise<void> {
     // Pre-load model in parallel with mic request
     const modelPromise = getTranscriber(onProgress);
 
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('NotAllowed') || msg.includes('Permission denied')) {
+        throw new Error('Microphone access denied. Please allow mic access in your browser settings.');
+      }
+      throw new Error(`Could not access microphone: ${msg}`);
+    }
+
     this.chunks = [];
 
-    // Use a widely-supported mime type
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : 'audio/webm';
-
-    this.mediaRecorder = new MediaRecorder(this.stream, { mimeType });
+    const mimeType = pickMimeType();
+    this.mediaRecorder = new MediaRecorder(
+      this.stream,
+      mimeType ? { mimeType } : undefined,
+    );
     this.mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) this.chunks.push(e.data);
     };
     this.mediaRecorder.start(250); // collect chunks every 250ms
+    this.recordingStartTime = Date.now();
 
     await modelPromise; // ensure model is ready
     this.status = 'recording';
     onProgress?.({ status: 'recording', progress: 0, message: 'Recording… click mic to stop' });
+  }
+
+  /** How long the current recording has been running (ms). */
+  get recordingDuration(): number {
+    if (!this.recordingStartTime || this.status !== 'recording') return 0;
+    return Date.now() - this.recordingStartTime;
   }
 
   /**
@@ -158,6 +288,8 @@ export class WhisperRecorder {
         return;
       }
 
+      const savedMime = this.mediaRecorder.mimeType;
+
       this.mediaRecorder.onstop = async () => {
         try {
           this.status = 'transcribing';
@@ -167,8 +299,39 @@ export class WhisperRecorder {
             message: 'Transcribing…',
           });
 
-          const blob = new Blob(this.chunks, { type: this.mediaRecorder!.mimeType });
-          const audio = await blobToFloat32(blob);
+          const totalSize = this.chunks.reduce((s, c) => s + c.size, 0);
+          if (totalSize < 100) {
+            this.cleanup();
+            this.status = 'idle';
+            resolve(''); // No meaningful audio
+            return;
+          }
+
+          const blob = new Blob(this.chunks, { type: savedMime });
+
+          let audio: Float32Array;
+          try {
+            audio = await blobToFloat32(blob);
+          } catch (decodeErr) {
+            this.cleanup();
+            this.status = 'error';
+            reject(
+              new Error(
+                decodeErr instanceof Error
+                  ? decodeErr.message
+                  : 'Failed to decode audio. Try Chrome or Edge.',
+              ),
+            );
+            return;
+          }
+
+          // Sanity check: if audio is less than ~0.3s of silence, skip
+          if (audio.length < 4800) {
+            this.cleanup();
+            this.status = 'idle';
+            resolve('');
+            return;
+          }
 
           const t = await getTranscriber();
           const result = await t(audio);
@@ -184,7 +347,11 @@ export class WhisperRecorder {
         } catch (err) {
           this.cleanup();
           this.status = 'error';
-          reject(err);
+          reject(
+            new Error(
+              `Transcription failed: ${err instanceof Error ? err.message : String(err)}`,
+            ),
+          );
         }
       };
 
@@ -198,6 +365,7 @@ export class WhisperRecorder {
     this.stream = null;
     this.mediaRecorder = null;
     this.chunks = [];
+    this.recordingStartTime = 0;
   }
 
   /** Cancel any in-progress recording without transcribing. */

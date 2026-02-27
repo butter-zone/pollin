@@ -234,6 +234,11 @@ export const PromptPanel: FC<PromptPanelProps> = ({
     interimTranscript,
     toggleListening,
     error: speechError,
+    backend: speechBackend,
+    whisperStatus,
+    modelProgress,
+    testMic,
+    isTesting,
   } = useSpeechToText(handleSpeechTranscript);
 
   const currentModel = AVAILABLE_MODELS.find((m) => m.id === selectedModel) ?? AVAILABLE_MODELS[0];
@@ -475,10 +480,18 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           onKeyDown={handleKeyDown}
           rows={3}
         />
-        {/* Speech status / error */}
-        {speechError && (
+        {/* Speech status — progress bar, error, backend badge */}
+        {(speechError || whisperStatus === 'loading-model' || isListening) && (
           <div className="pp-speech-tip">
-            <span>{speechError}</span>
+            {whisperStatus === 'loading-model' && (
+              <div className="pp-model-progress">
+                <div className="pp-model-progress-bar" style={{ width: `${modelProgress}%` }} />
+              </div>
+            )}
+            {speechError && <span>{speechError}</span>}
+            {isListening && speechBackend && (
+              <span className="pp-speech-badge">{speechBackend === 'native' ? 'Live' : 'Whisper'}</span>
+            )}
           </div>
         )}
         <div className="pp-input-actions">
@@ -506,6 +519,18 @@ export const PromptPanel: FC<PromptPanelProps> = ({
                 <line x1="12" y1="19" x2="12" y2="22" />
               </svg>
               {isListening && <span className="pp-mic-pulse" />}
+            </button>
+            <button
+              className={`pp-icon-btn ${isTesting ? 'pp-icon-btn--testing' : ''}`}
+              onClick={() => testMic()}
+              disabled={isListening || isTesting}
+              title="Test microphone"
+              aria-label="Test microphone"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
             </button>
             <button className="pp-icon-btn" onClick={handleFileSelect} title="Attach image as reference">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

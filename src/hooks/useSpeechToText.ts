@@ -67,6 +67,12 @@ export interface UseSpeechToTextReturn {
   backend: 'native' | 'whisper' | null;
   /** Whisper model status for progress UI */
   whisperStatus: WhisperStatus;
+  /** Whisper model download progress 0-100 */
+  modelProgress: number;
+  /** Run a quick mic test — returns result message */
+  testMic: () => Promise<string>;
+  /** Whether a mic test is currently running */
+  isTesting: boolean;
 }
 
 export function useSpeechToText(
@@ -78,6 +84,8 @@ export function useSpeechToText(
   const [error, setError] = useState<string | null>(null);
   const [backend, setBackend] = useState<'native' | 'whisper' | null>(null);
   const [whisperStatus, setWhisperStatus] = useState<WhisperStatus>('idle');
+  const [modelProgress, setModelProgress] = useState(0);
+  const [isTesting, setIsTesting] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const whisperRef = useRef<WhisperRecorder | null>(null);
   const onTranscriptRef = useRef(onTranscript);
@@ -96,6 +104,57 @@ export function useSpeechToText(
       recognitionRef.current?.abort();
       whisperRef.current?.cancel();
     };
+  }, []);
+
+  /* ── Whisper fallback start ──────────────────────────── */
+  const startWhisper = useCallback(async () => {
+    setError(null);
+    setBackend('whisper');
+
+    if (!whisperRef.current) {
+      whisperRef.current = new WhisperRecorder();
+    }
+
+    try {
+      await whisperRef.current.startRecording((p) => {
+        setWhisperStatus(p.status);
+        setModelProgress(p.progress);
+        if (p.status === 'loading-model') {
+          setError(p.message);
+        } else if (p.status === 'recording') {
+          setError(null);
+        }
+      });
+      setIsListening(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start recording';
+      setError(msg);
+      setIsListening(false);
+      setBackend(null);
+    }
+  }, []);
+
+  const stopWhisper = useCallback(async () => {
+    if (!whisperRef.current) return;
+
+    setIsListening(false);
+    setWhisperStatus('transcribing');
+    setError('Transcribing…');
+
+    try {
+      const text = await whisperRef.current.stopAndTranscribe((p) => {
+        setWhisperStatus(p.status);
+      });
+      setError(null);
+      setWhisperStatus('idle');
+      setBackend(null);
+      if (text) onTranscriptRef.current(text);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Transcription failed';
+      setError(msg);
+      setWhisperStatus('error');
+      setBackend(null);
+    }
   }, []);
 
   /* ── Native Web Speech API start ─────────────────────── */
@@ -137,21 +196,37 @@ export function useSpeechToText(
     };
 
     recognition.onerror = (event) => {
-      const msg =
-        event.error === 'not-allowed'
-          ? 'Microphone access denied. Please allow mic access in your browser settings.'
-          : event.error === 'no-speech'
-            ? 'No speech detected. Try again.'
-            : `Speech error: ${event.error}`;
-      setError(msg);
-      setIsListening(false);
-      setBackend(null);
+      // On non-fatal errors, auto-fallback to Whisper instead of dying
+      const errCode = event.error;
+      if (errCode === 'not-allowed') {
+        // Permission denied — Whisper also needs mic, so just report
+        setError('Microphone access denied. Please allow mic access in your browser settings.');
+        setIsListening(false);
+        setBackend(null);
+        return;
+      }
+
+      if (errCode === 'no-speech') {
+        setError('No speech detected. Try again.');
+        // Don't kill the session — let it keep listening
+        return;
+      }
+
+      // For network, service-not-allowed, aborted, etc. → auto-fallback to Whisper
+      console.warn(`[STT] Native speech error "${errCode}", falling back to Whisper`);
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
+      setError('Switching to offline speech model…');
+      startWhisper();
     };
 
     recognition.onend = () => {
-      setIsListening(false);
-      setInterimTranscript('');
-      setBackend(null);
+      // Only reset if we haven't already switched to whisper
+      if (recognitionRef.current === recognition) {
+        setIsListening(false);
+        setInterimTranscript('');
+        setBackend(null);
+      }
     };
 
     recognitionRef.current = recognition;
@@ -159,64 +234,12 @@ export function useSpeechToText(
     try {
       recognition.start();
     } catch {
-      setError('Failed to start speech recognition.');
-      setBackend(null);
+      // start() failed — fall back to Whisper
+      console.warn('[STT] Native recognition.start() failed, falling back to Whisper');
+      setError('Switching to offline speech model…');
+      startWhisper();
     }
-  }, [SpeechRecognitionCtor, lang]);
-
-  /* ── Whisper fallback start ──────────────────────────── */
-  const startWhisper = useCallback(async () => {
-    setError(null);
-    setBackend('whisper');
-
-    if (!whisperRef.current) {
-      whisperRef.current = new WhisperRecorder();
-    }
-
-    try {
-      await whisperRef.current.startRecording((p) => {
-        setWhisperStatus(p.status);
-        if (p.status === 'loading-model') {
-          setError(`${p.message}`);
-        } else if (p.status === 'recording') {
-          setError(null);
-        }
-      });
-      setIsListening(true);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start recording';
-      if (msg.includes('Permission denied') || msg.includes('NotAllowedError')) {
-        setError('Microphone access denied. Please allow mic access in your browser settings.');
-      } else {
-        setError(msg);
-      }
-      setIsListening(false);
-      setBackend(null);
-    }
-  }, []);
-
-  const stopWhisper = useCallback(async () => {
-    if (!whisperRef.current) return;
-
-    setIsListening(false);
-    setWhisperStatus('transcribing');
-    setError('Transcribing…');
-
-    try {
-      const text = await whisperRef.current.stopAndTranscribe((p) => {
-        setWhisperStatus(p.status);
-      });
-      setError(null);
-      setWhisperStatus('idle');
-      setBackend(null);
-      if (text) onTranscriptRef.current(text);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Transcription failed';
-      setError(msg);
-      setWhisperStatus('error');
-      setBackend(null);
-    }
-  }, []);
+  }, [SpeechRecognitionCtor, lang, startWhisper]);
 
   /* ── Unified start / stop / toggle ───────────────────── */
   const startListening = useCallback(() => {
@@ -245,6 +268,26 @@ export function useSpeechToText(
     }
   }, [isListening, startListening, stopListening]);
 
+  /* ── Mic test ────────────────────────────────────────── */
+  const testMic = useCallback(async (): Promise<string> => {
+    setIsTesting(true);
+    setError('Testing microphone…');
+    try {
+      const result = await WhisperRecorder.testMicrophone();
+      const msg = result.ok
+        ? `Mic test passed (${result.durationMs}ms)`
+        : `Mic test failed: ${result.error}`;
+      setError(result.ok ? null : msg);
+      return msg;
+    } catch (err) {
+      const msg = `Mic test error: ${err instanceof Error ? err.message : String(err)}`;
+      setError(msg);
+      return msg;
+    } finally {
+      setIsTesting(false);
+    }
+  }, []);
+
   return {
     isSupported: true, // always supported thanks to Whisper fallback
     isListening,
@@ -255,5 +298,8 @@ export function useSpeechToText(
     error,
     backend,
     whisperStatus,
+    modelProgress,
+    testMic,
+    isTesting,
   };
 }
