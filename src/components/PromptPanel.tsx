@@ -30,6 +30,14 @@ interface ImageAttachment {
   height: number;
 }
 
+/* ─── Reasoning step (shown during generation) ─────────── */
+export interface ReasoningStep {
+  id: string;
+  label: string;
+  detail?: string;
+  status: 'pending' | 'active' | 'done';
+}
+
 /* ─── Generation entry ──────────────────────────────────── */
 export interface GenerationEntry {
   id: string;
@@ -38,6 +46,9 @@ export interface GenerationEntry {
   status: 'pending' | 'generating' | 'done' | 'error';
   result?: string;
   imageDataUrl?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  reasoningSteps?: ReasoningStep[];
   timestamp: number;
   attachments: ImageAttachment[];
 }
@@ -218,6 +229,35 @@ export const PromptPanel: FC<PromptPanelProps> = ({
                   {gen.status === 'error' && '✗ Error'}
                 </span>
               </div>
+
+              {/* ── Reasoning steps ── */}
+              {gen.reasoningSteps && gen.reasoningSteps.length > 0 && (
+                <div className="pp-reasoning">
+                  {gen.reasoningSteps.map((step) => (
+                    <div key={step.id} className={`pp-reasoning-step pp-reasoning-step--${step.status}`}>
+                      <span className="pp-reasoning-icon">
+                        {step.status === 'done' && (
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                            <path d="M5 8.5L7 10.5L11 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                        {step.status === 'active' && (
+                          <span className="pp-reasoning-pulse" />
+                        )}
+                        {step.status === 'pending' && (
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" opacity="0.3" />
+                          </svg>
+                        )}
+                      </span>
+                      <span className="pp-reasoning-label">{step.label}</span>
+                      {step.detail && <span className="pp-reasoning-detail">{step.detail}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {gen.status === 'done' && gen.imageDataUrl && (
                 <div className="pp-gen-preview">
                   <img

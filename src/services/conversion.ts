@@ -35,6 +35,8 @@ export interface GenerationPayload {
   framework: 'react' | 'html' | 'tailwind';
   imageRefs?: string[];   // base64 data URIs of reference images
   libraryId?: string;
+  /** Called with progressive reasoning steps during generation */
+  onStep?: (step: { id: string; label: string; detail?: string }) => void;
 }
 
 /* ─── API configuration ─────────────────────────────────── */
@@ -101,15 +103,42 @@ async function getLibraryName(libraryId?: string): Promise<string | undefined> {
 /* ─── Mock generation ───────────────────────────────────── */
 
 async function mockGeneration(payload: GenerationPayload): Promise<ConversionResult> {
+  const onStep = payload.onStep;
   try {
-    const { generateAndRender } = await import('./ui-renderer');
+    // Step 1: Analyzing prompt
+    onStep?.({ id: 'analyze', label: 'Analyzing prompt' });
+    await new Promise((r) => setTimeout(r, 400));
+
+    // Step 2: Classifying UI type
+    const { classifyPrompt, getTheme } = await import('./ui-templates');
+    const uiType = classifyPrompt(payload.prompt);
+    const uiLabel = uiType.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim();
+    onStep?.({ id: 'classify', label: 'Classifying UI type', detail: uiLabel });
+    await new Promise((r) => setTimeout(r, 350));
+
+    // Step 3: Selecting design system
     const libraryName = await getLibraryName(payload.libraryId);
+    const theme = getTheme(libraryName);
+    const dsLabel = libraryName || 'Default';
+    onStep?.({ id: 'theme', label: 'Applying design system', detail: dsLabel });
+    void theme; // used by generateAndRender internally
+    await new Promise((r) => setTimeout(r, 300));
+
+    // Step 4: Generating layout
+    onStep?.({ id: 'layout', label: 'Generating layout', detail: `Building ${uiLabel} components` });
+    await new Promise((r) => setTimeout(r, 350));
+
+    // Step 5: Rendering mockup
+    onStep?.({ id: 'render', label: 'Rendering mockup' });
+    const { generateAndRender } = await import('./ui-renderer');
     const result = await generateAndRender(payload.prompt, libraryName);
+
+    onStep?.({ id: 'complete', label: 'Complete' });
 
     return {
       success: true,
       framework: payload.framework,
-      code: '', // no code — we return a rendered image instead
+      code: '',
       imageDataUrl: result.dataUrl,
       imageWidth: result.width,
       imageHeight: result.height,

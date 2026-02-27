@@ -7,7 +7,7 @@ import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
 import { PromptPanel } from '@/components/PromptPanel';
-import type { GenerationEntry, ImageAttachment } from '@/components/PromptPanel';
+import type { GenerationEntry, ImageAttachment, ReasoningStep } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI, generateFromPrompt } from '@/services/conversion';
@@ -330,16 +330,30 @@ function App() {
   const handleGenerate = useCallback(
     async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
       const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+      // Define the initial reasoning steps
+      const initialSteps: ReasoningStep[] = [
+        { id: 'analyze', label: 'Analyzing prompt', status: 'pending' },
+        { id: 'classify', label: 'Classifying UI type', status: 'pending' },
+        { id: 'theme', label: 'Applying design system', status: 'pending' },
+        { id: 'layout', label: 'Generating layout', status: 'pending' },
+        { id: 'render', label: 'Rendering mockup', status: 'pending' },
+      ];
+
       const entry: GenerationEntry = {
         id: genId,
         prompt,
         model,
         status: 'generating',
+        reasoningSteps: initialSteps,
         timestamp: Date.now(),
         attachments,
       };
       setGenerations((prev) => [entry, ...prev]);
       setIsGenerating(true);
+
+      // Track completed step IDs to animate them in sequence
+      const completedStepIds = new Set<string>();
 
       try {
         const result = await generateFromPrompt({
@@ -348,6 +362,24 @@ function App() {
           framework: 'react',
           imageRefs: attachments.map((a) => a.dataUrl),
           libraryId,
+          onStep: (step) => {
+            completedStepIds.add(step.id);
+            setGenerations((prev) =>
+              prev.map((g) => {
+                if (g.id !== genId) return g;
+                const updatedSteps = (g.reasoningSteps ?? []).map((s) => {
+                  if (s.id === step.id) {
+                    return { ...s, status: 'active' as const, detail: step.detail ?? s.detail };
+                  }
+                  if (completedStepIds.has(s.id) && s.id !== step.id) {
+                    return { ...s, status: 'done' as const };
+                  }
+                  return s;
+                });
+                return { ...g, reasoningSteps: updatedSteps };
+              }),
+            );
+          },
         });
 
         const newStatus: GenerationEntry['status'] = result.success ? 'done' : 'error';
@@ -359,6 +391,9 @@ function App() {
                   status: newStatus,
                   result: result.code || result.error || undefined,
                   imageDataUrl: result.imageDataUrl,
+                  imageWidth: result.imageWidth,
+                  imageHeight: result.imageHeight,
+                  reasoningSteps: (g.reasoningSteps ?? []).map((s) => ({ ...s, status: 'done' as const })),
                 }
               : g,
           ).slice(0, 20),
@@ -385,7 +420,7 @@ function App() {
         }
       } catch {
         setGenerations((prev) =>
-          prev.map((g) => (g.id === genId ? { ...g, status: 'error' } : g)),
+          prev.map((g) => (g.id === genId ? { ...g, status: 'error', reasoningSteps: (g.reasoningSteps ?? []).map((s) => s.status === 'active' ? { ...s, status: 'done' as const } : s) } : g)),
         );
       } finally {
         setIsGenerating(false);
