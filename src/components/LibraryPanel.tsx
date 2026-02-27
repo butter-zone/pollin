@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { ChevronDown, Plus, Trash2, Loader2, Check, Figma } from 'lucide-react';
+import { useState, useMemo, useCallback, useRef } from 'react';
+import { ChevronDown, Plus, Trash2, Loader2, Check, Figma, Search, X } from 'lucide-react';
 import type { DesignLibrary, LibraryComponent } from '@/types/canvas';
 import { resolveLibrary, getBuiltInEntries, instantiateBuiltIn } from '@/services/library-registry';
 import type { ResolveStatus } from '@/services/library-registry';
@@ -25,6 +25,18 @@ function SourceIcon({ source }: { source: DesignLibrary['source'] }) {
   return null;
 }
 
+/** Component detail tooltip (rendered on hover) */
+function ComponentTooltip({ comp, style }: { comp: LibraryComponent; style?: React.CSSProperties }) {
+  return (
+    <div className="dk-comp-tooltip" style={style}>
+      <div className="dk-comp-tooltip-name">{comp.name}</div>
+      {comp.category && <div className="dk-comp-tooltip-cat">{comp.category}</div>}
+      {comp.description && <div className="dk-comp-tooltip-desc">{comp.description}</div>}
+      <div className="dk-comp-tooltip-hint">Click to preview &middot; Drag to canvas</div>
+    </div>
+  );
+}
+
 export function LibraryPanel({
   libraries,
   selectedLibraryId,
@@ -38,6 +50,9 @@ export function LibraryPanel({
   const [libUrl, setLibUrl] = useState('');
   const [resolveStatus, setResolveStatus] = useState<ResolveStatus | null>(null);
   const [resolveMessage, setResolveMessage] = useState('');
+  const [compFilter, setCompFilter] = useState('');
+  const [hoveredComp, setHoveredComp] = useState<{ comp: LibraryComponent; rect: DOMRect } | null>(null);
+  const tooltipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const builtInEntries = useMemo(() => getBuiltInEntries(), []);
 
@@ -59,6 +74,47 @@ export function LibraryPanel({
 
   /** Is there already a selected library? */
   const hasSelection = !!selectedLibraryId;
+
+  /** Filter components by search term */
+  const filterComponents = useCallback(
+    (components: LibraryComponent[]): LibraryComponent[] => {
+      if (!compFilter.trim()) return components;
+      const q = compFilter.toLowerCase().trim();
+      return components.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.category?.toLowerCase().includes(q) ||
+          c.description?.toLowerCase().includes(q),
+      );
+    },
+    [compFilter],
+  );
+
+  /** Handle drag start for a component card */
+  const handleDragStart = useCallback(
+    (e: React.DragEvent, comp: LibraryComponent, libId: string) => {
+      e.dataTransfer.setData('application/pollin-component', JSON.stringify({ component: comp, libraryId: libId }));
+      e.dataTransfer.effectAllowed = 'copy';
+    },
+    [],
+  );
+
+  /** Handle component card hover (show tooltip after delay) */
+  const handleCompHover = useCallback(
+    (comp: LibraryComponent, e: React.MouseEvent) => {
+      if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+      tooltipTimer.current = setTimeout(() => {
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        setHoveredComp({ comp, rect });
+      }, 400);
+    },
+    [],
+  );
+
+  const handleCompLeave = useCallback(() => {
+    if (tooltipTimer.current) clearTimeout(tooltipTimer.current);
+    setHoveredComp(null);
+  }, []);
 
   const toggleExpand = (libId: string) => {
     const next = new Set(expandedLibs);
@@ -221,21 +277,50 @@ export function LibraryPanel({
                   </div>
 
                   {/* Component grid for expanded built-in */}
-                  {isSelected && isExpanded && activeLib && (
-                    <div className="dk-comp-grid">
-                      {activeLib.components.map((comp) => (
-                        <button
-                          key={comp.id}
-                          onClick={() => onComponentSelect?.(comp, activeLib.id)}
-                          className="dk-comp-card"
-                          title={comp.description}
-                        >
-                          <div className="dk-comp-name">{comp.name}</div>
-                          {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  {isSelected && isExpanded && activeLib && (() => {
+                    const filtered = filterComponents(activeLib.components);
+                    return (
+                      <>
+                        {activeLib.components.length > 8 && (
+                          <div className="dk-comp-search">
+                            <Search size={11} className="dk-comp-search-icon" />
+                            <input
+                              type="text"
+                              placeholder="Filter components…"
+                              value={compFilter}
+                              onChange={(e) => setCompFilter(e.target.value)}
+                              className="dk-comp-search-input"
+                            />
+                            {compFilter && (
+                              <button className="dk-comp-search-clear" onClick={() => setCompFilter('')}>
+                                <X size={10} />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                        <div className="dk-comp-grid">
+                          {filtered.map((comp) => (
+                            <button
+                              key={comp.id}
+                              onClick={() => onComponentSelect?.(comp, activeLib.id)}
+                              onMouseEnter={(e) => handleCompHover(comp, e)}
+                              onMouseLeave={handleCompLeave}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, comp, activeLib.id)}
+                              className="dk-comp-card"
+                              title={comp.description}
+                            >
+                              <div className="dk-comp-name">{comp.name}</div>
+                              {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
+                            </button>
+                          ))}
+                          {filtered.length === 0 && compFilter && (
+                            <div className="dk-comp-empty">No matches for "{compFilter}"</div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               );
             })}
@@ -337,28 +422,70 @@ export function LibraryPanel({
                   </div>
                 </div>
 
-                {isSelected && expandedLibs.has(lib.id) && (
-                  <div className="dk-comp-grid">
-                    {lib.components.map((comp) => (
-                      <button
-                        key={comp.id}
-                        onClick={() => onComponentSelect?.(comp, lib.id)}
-                        className="dk-comp-card"
-                        title={comp.description}
-                      >
-                        <div className="dk-comp-name">{comp.name}</div>
-                        {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {isSelected && expandedLibs.has(lib.id) && (() => {
+                  const filtered = filterComponents(lib.components);
+                  return (
+                    <>
+                      {lib.components.length > 8 && (
+                        <div className="dk-comp-search">
+                          <Search size={11} className="dk-comp-search-icon" />
+                          <input
+                            type="text"
+                            placeholder="Filter components…"
+                            value={compFilter}
+                            onChange={(e) => setCompFilter(e.target.value)}
+                            className="dk-comp-search-input"
+                          />
+                          {compFilter && (
+                            <button className="dk-comp-search-clear" onClick={() => setCompFilter('')}>
+                              <X size={10} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      <div className="dk-comp-grid">
+                        {filtered.map((comp) => (
+                          <button
+                            key={comp.id}
+                            onClick={() => onComponentSelect?.(comp, lib.id)}
+                            onMouseEnter={(e) => handleCompHover(comp, e)}
+                            onMouseLeave={handleCompLeave}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, comp, lib.id)}
+                            className="dk-comp-card"
+                            title={comp.description}
+                          >
+                            <div className="dk-comp-name">{comp.name}</div>
+                            {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
+                          </button>
+                        ))}
+                        {filtered.length === 0 && compFilter && (
+                          <div className="dk-comp-empty">No matches for "{compFilter}"</div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="dk-hint">Select one library at a time to use in generation</div>
+      <div className="dk-hint">Select a library, then click components to preview on canvas</div>
+
+      {/* Component detail tooltip */}
+      {hoveredComp && (
+        <ComponentTooltip
+          comp={hoveredComp.comp}
+          style={{
+            position: 'fixed',
+            left: hoveredComp.rect.left - 8,
+            top: hoveredComp.rect.bottom + 6,
+            zIndex: 9999,
+          }}
+        />
+      )}
     </div>
   );
 }

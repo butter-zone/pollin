@@ -12,7 +12,10 @@ import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI, generateFromPrompt } from '@/services/conversion';
 import type { ConversionPayload } from '@/components/ConversionDialog';
-import type { Tool, CanvasObject } from '@/types/canvas';
+import type { Tool, CanvasObject, LibraryComponent } from '@/types/canvas';
+import { renderHTMLToImage } from '@/services/ui-renderer';
+import { generateComponentPreviewHTML } from '@/services/component-preview';
+import { getTheme } from '@/services/ui-templates';
 
 function App() {
   const {
@@ -63,6 +66,44 @@ function App() {
   // ── Generation state ──────────────────────────────────
   const [generations, setGenerations] = useState<GenerationEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // ── Component insertion from library panel ────────────
+  const handleComponentSelect = useCallback(
+    async (component: LibraryComponent, libraryId: string) => {
+      const lib = state.libraries.find((l) => l.id === libraryId);
+      const libraryName = lib?.name;
+      const theme = getTheme(libraryName);
+      const { html, width, height } = generateComponentPreviewHTML(
+        component.name,
+        component.category,
+        libraryName,
+        theme,
+      );
+      try {
+        const result = await renderHTMLToImage(html, width, height);
+        const imgObj: CanvasObject = {
+          id: `obj-${Date.now()}-comp`,
+          kind: 'image',
+          x: state.panX + 120,
+          y: state.panY + 80,
+          rotation: 0,
+          opacity: 1,
+          locked: false,
+          visible: true,
+          name: `${libraryName ? libraryName + ' / ' : ''}${component.name}`,
+          timestamp: Date.now(),
+          src: result.dataUrl,
+          width: result.width,
+          height: result.height,
+        };
+        addObject(imgObj);
+        setTool('select');
+      } catch (err) {
+        console.warn('[pollin] Component preview render failed:', err);
+      }
+    },
+    [state.libraries, state.panX, state.panY, addObject, setTool],
+  );
 
   // Switch to draw mode when a drawing tool shortcut is pressed
   const handleToolChange = useCallback((tool: Tool) => {
@@ -540,6 +581,7 @@ function App() {
           onAddLibrary={addLibrary}
           onRemoveLibrary={removeLibrary}
           onClose={() => setShowLibPanel(false)}
+          onComponentSelect={handleComponentSelect}
         />
       )}
 

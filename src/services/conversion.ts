@@ -97,7 +97,9 @@ async function getLibraryName(libraryId?: string): Promise<string | undefined> {
     if (normalizedId.startsWith(key) || key.startsWith(normalizedId)) return name;
     if (normalizedId.includes(key) || key.includes(normalizedId)) return name;
   }
-  return undefined;
+  // If not in the built-in cache, it may be a custom library — return the raw ID
+  // so the prompt can still mention it
+  return libraryId;
 }
 
 /* ─── Mock generation ───────────────────────────────────── */

@@ -9,7 +9,11 @@ import type {
   TextObject,
   DrawPoint,
   Point,
+  LibraryComponent,
 } from '@/types/canvas';
+import { renderHTMLToImage } from '@/services/ui-renderer';
+import { generateComponentPreviewHTML } from '@/services/component-preview';
+import { getTheme } from '@/services/ui-templates';
 
 // ── helpers ────────────────────────────────────────────
 let _id = 0;
@@ -587,13 +591,58 @@ export function Canvas({
       e.preventDefault();
       e.stopPropagation();
 
-      const files = Array.from(e.dataTransfer.files);
       const canvas = canvasRef.current!;
       const rect = canvas.getBoundingClientRect();
       const sx = e.clientX - rect.left;
       const sy = e.clientY - rect.top;
       const dropPos = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
       const snapped = state.snapToGrid ? snapPoint(dropPos, state.gridSize) : dropPos;
+
+      // Handle component drops from the library panel
+      const compData = e.dataTransfer.getData('application/pollin-component');
+      if (compData) {
+        try {
+          const { component, libraryId } = JSON.parse(compData) as {
+            component: LibraryComponent;
+            libraryId: string;
+          };
+          // Find library name from the state's libraries
+          const lib = (state as any).libraries?.find?.((l: any) => l.id === libraryId);
+          const libraryName = lib?.name as string | undefined;
+          const theme = getTheme(libraryName);
+          const { html, width, height } = generateComponentPreviewHTML(
+            component.name,
+            component.category,
+            libraryName,
+            theme,
+          );
+          renderHTMLToImage(html, width, height).then((result) => {
+            const imgObj: CanvasObject = {
+              id: uid(),
+              kind: 'image',
+              x: snapped.x - result.width / 2,
+              y: snapped.y - result.height / 2,
+              rotation: 0,
+              opacity: 1,
+              locked: false,
+              visible: true,
+              name: `${libraryName ? libraryName + ' / ' : ''}${component.name}`,
+              timestamp: Date.now(),
+              src: result.dataUrl,
+              width: result.width,
+              height: result.height,
+            };
+            onAddObject(imgObj);
+          }).catch((err) => {
+            console.warn('[pollin] Component drop render failed:', err);
+          });
+        } catch {
+          // Invalid component data — ignore
+        }
+        return;
+      }
+
+      const files = Array.from(e.dataTransfer.files);
 
       files.forEach((file) => {
         // only images

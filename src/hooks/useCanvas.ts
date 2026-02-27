@@ -37,7 +37,7 @@ const defaultState: ExtendedCanvasState = {
   panX: 0,
   panY: 0,
   showGrid: true,
-  gridSize: 20,
+  gridSize: 40,
   snapToGrid: true,
   // legacy compat
   tool: 'select',
