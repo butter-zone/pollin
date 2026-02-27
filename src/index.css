@@ -829,6 +829,31 @@
   border-top: 1px solid var(--c-border-subtle);
 }
 
+/* ── Library resolve status ─────────────────────────────── */
+.dk-resolve-status {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  padding: 4px 0 0;
+  line-height: 1.4;
+}
+.dk-resolve-status--error { color: oklch(0.65 0.2 25); }
+.dk-resolve-status--success { color: oklch(0.7 0.18 145); }
+
+.dk-supported-hint {
+  font-size: 10px;
+  color: var(--c-text-muted);
+  padding: 4px 0 0;
+  line-height: 1.4;
+  opacity: 0.7;
+}
+
+@keyframes dk-spin {
+  to { transform: rotate(360deg); }
+}
+.dk-spin {
+  animation: dk-spin 0.8s linear infinite;
+}
+
 /* ══ Utility ═════════════════════════════════════════════ */
 
 canvas {

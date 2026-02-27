@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { ChevronDown, Plus, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { ChevronDown, Plus, Eye, EyeOff, Trash2, Loader2 } from 'lucide-react';
 import type { DesignLibrary, LibraryComponent } from '@/types/canvas';
+import { resolveLibrary, getSupportedLibraries } from '@/services/library-registry';
+import type { ResolveStatus } from '@/services/library-registry';
 
 interface LibraryPanelProps {
   libraries: DesignLibrary[];
@@ -21,6 +23,8 @@ export function LibraryPanel({
 }: LibraryPanelProps) {
   const [expandedLibs, setExpandedLibs] = useState<Set<string>>(new Set());
   const [libUrl, setLibUrl] = useState('');
+  const [resolveStatus, setResolveStatus] = useState<ResolveStatus | null>(null);
+  const [resolveMessage, setResolveMessage] = useState('');
 
   const toggleExpand = (libId: string) => {
     const next = new Set(expandedLibs);
@@ -29,50 +33,35 @@ export function LibraryPanel({
     setExpandedLibs(next);
   };
 
-  const handleAddLibrary = () => {
-    if (!libUrl.trim()) return;
+  const handleAddLibrary = async () => {
+    if (!libUrl.trim() || resolveStatus === 'resolving') return;
 
-    const url = libUrl.trim().toLowerCase();
-    const source: 'github' | 'npm' | 'figma' | 'other' =
-      url.includes('github.com') ? 'github'
-      : url.includes('npmjs.com') || url.includes('npm') ? 'npm'
-      : url.includes('figma.com') ? 'figma'
-      : 'other';
+    const result = await resolveLibrary(libUrl.trim(), (status, message) => {
+      setResolveStatus(status);
+      setResolveMessage(message || '');
+    });
 
-    const newLib: DesignLibrary = {
-      id: `lib-${Date.now()}`,
-      name: libUrl.split('/').pop() || 'Library',
-      description: `Added from ${source}`,
-      source,
-      sourceUrl: libUrl,
-      components: [
-        {
-          id: 'btn-primary',
-          name: 'Button Primary',
-          category: 'Buttons',
-          description: 'Primary action button',
-          props: { variant: 'primary', size: 'md' },
-        },
-        {
-          id: 'btn-secondary',
-          name: 'Button Secondary',
-          category: 'Buttons',
-          description: 'Secondary action button',
-          props: { variant: 'secondary', size: 'md' },
-        },
-        {
-          id: 'input-text',
-          name: 'Text Input',
-          category: 'Forms',
-          description: 'Single-line text field',
-          props: { type: 'text', size: 'md' },
-        },
-      ],
-      active: true,
-    };
-
-    onAddLibrary(newLib);
-    setLibUrl('');
+    if (result) {
+      // Check for duplicates by sourceUrl
+      const alreadyAdded = libraries.some(
+        (l) => l.sourceUrl?.toLowerCase() === result.sourceUrl?.toLowerCase()
+          || l.name.toLowerCase() === result.name.toLowerCase(),
+      );
+      if (alreadyAdded) {
+        setResolveStatus('error');
+        setResolveMessage(`${result.name} is already added`);
+        return;
+      }
+      onAddLibrary(result);
+      setLibUrl('');
+      // Auto-expand the newly added library
+      setExpandedLibs((prev) => new Set([...prev, result.id]));
+      // Clear status after a brief delay
+      setTimeout(() => {
+        setResolveStatus(null);
+        setResolveMessage('');
+      }, 2000);
+    }
   };
 
   return (
@@ -99,11 +88,35 @@ export function LibraryPanel({
                 onChange={(e) => setLibUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddLibrary()}
                 className="dk-input"
+                disabled={resolveStatus === 'resolving'}
               />
-              <button onClick={handleAddLibrary} className="dk-icon-btn" title="Add library">
-                <Plus size={14} />
+              <button
+                onClick={handleAddLibrary}
+                className="dk-icon-btn"
+                title="Add library"
+                disabled={resolveStatus === 'resolving'}
+              >
+                {resolveStatus === 'resolving' ? (
+                  <Loader2 size={14} className="dk-spin" />
+                ) : (
+                  <Plus size={14} />
+                )}
               </button>
             </div>
+            {/* Resolve status message */}
+            {resolveStatus && resolveMessage && (
+              <div
+                className={`dk-resolve-status ${resolveStatus === 'error' ? 'dk-resolve-status--error' : resolveStatus === 'resolved' ? 'dk-resolve-status--success' : ''}`}
+              >
+                {resolveMessage}
+              </div>
+            )}
+            {/* Supported libraries hint */}
+            {!resolveStatus && libraries.length === 0 && (
+              <div className="dk-supported-hint">
+                Instant support for {getSupportedLibraries().join(', ')}. Any GitHub or docs URL also works.
+              </div>
+            )}
           </div>
         </div>
 
