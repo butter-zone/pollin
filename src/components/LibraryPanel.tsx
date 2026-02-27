@@ -1,14 +1,15 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, Plus, Eye, EyeOff, Trash2, Loader2, Search, Check, Figma } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, Loader2, Check, Figma } from 'lucide-react';
 import type { DesignLibrary, LibraryComponent } from '@/types/canvas';
 import { resolveLibrary, getBuiltInEntries, instantiateBuiltIn } from '@/services/library-registry';
 import type { ResolveStatus } from '@/services/library-registry';
 
 interface LibraryPanelProps {
   libraries: DesignLibrary[];
+  selectedLibraryId?: string;
+  onSelectLibrary: (libraryId: string | undefined) => void;
   onAddLibrary: (library: DesignLibrary) => void;
   onRemoveLibrary: (libraryId: string) => void;
-  onToggleLibrary: (libraryId: string) => void;
   onClose: () => void;
   onComponentSelect?: (component: LibraryComponent, libraryId: string) => void;
 }
@@ -26,9 +27,10 @@ function SourceIcon({ source }: { source: DesignLibrary['source'] }) {
 
 export function LibraryPanel({
   libraries,
+  selectedLibraryId,
+  onSelectLibrary,
   onAddLibrary,
   onRemoveLibrary,
-  onToggleLibrary,
   onClose,
   onComponentSelect,
 }: LibraryPanelProps) {
@@ -36,15 +38,8 @@ export function LibraryPanel({
   const [libUrl, setLibUrl] = useState('');
   const [resolveStatus, setResolveStatus] = useState<ResolveStatus | null>(null);
   const [resolveMessage, setResolveMessage] = useState('');
-  const [searchFilter, setSearchFilter] = useState('');
 
   const builtInEntries = useMemo(() => getBuiltInEntries(), []);
-
-  /** Which built-in names are already added */
-  const addedBuiltInNames = useMemo(
-    () => new Set(libraries.map((l) => l.name.toLowerCase())),
-    [libraries],
-  );
 
   /** Custom (user-added) libraries — everything not matching a built-in name */
   const builtInNamesSet = useMemo(
@@ -62,6 +57,9 @@ export function LibraryPanel({
     [libraries, builtInNamesSet],
   );
 
+  /** Is there already a selected library? */
+  const hasSelection = !!selectedLibraryId;
+
   const toggleExpand = (libId: string) => {
     const next = new Set(expandedLibs);
     if (next.has(libId)) next.delete(libId);
@@ -69,18 +67,49 @@ export function LibraryPanel({
     setExpandedLibs(next);
   };
 
-  const handleToggleBuiltIn = (name: string) => {
+  const handleSelectBuiltIn = (name: string) => {
     const existing = libraries.find((l) => l.name.toLowerCase() === name.toLowerCase());
+
     if (existing) {
-      onRemoveLibrary(existing.id);
-    } else {
-      const lib = instantiateBuiltIn(name);
-      if (lib) onAddLibrary(lib);
+      // Already added — if it's the selected one, deselect & remove. Otherwise do nothing (locked out).
+      if (selectedLibraryId === existing.id) {
+        onSelectLibrary(undefined);
+        onRemoveLibrary(existing.id);
+      }
+      return;
     }
+
+    // Not yet added — but if another library is already selected, block
+    if (hasSelection) return;
+
+    // Add and select
+    const lib = instantiateBuiltIn(name);
+    if (lib) {
+      onAddLibrary(lib);
+      onSelectLibrary(lib.id);
+      setExpandedLibs((prev) => new Set([...prev, lib.id]));
+    }
+  };
+
+  const handleSelectCustom = (libId: string) => {
+    if (selectedLibraryId === libId) {
+      // Deselect
+      onSelectLibrary(undefined);
+    } else if (!hasSelection) {
+      onSelectLibrary(libId);
+    }
+  };
+
+  const handleRemoveCustom = (libId: string) => {
+    if (selectedLibraryId === libId) {
+      onSelectLibrary(undefined);
+    }
+    onRemoveLibrary(libId);
   };
 
   const handleAddCustom = async () => {
     if (!libUrl.trim() || resolveStatus === 'resolving') return;
+    if (hasSelection) return; // can't add while one is active
 
     const result = await resolveLibrary(libUrl.trim(), (status, message) => {
       setResolveStatus(status);
@@ -99,6 +128,7 @@ export function LibraryPanel({
         return;
       }
       onAddLibrary(result);
+      onSelectLibrary(result.id);
       setLibUrl('');
       setExpandedLibs((prev) => new Set([...prev, result.id]));
       setTimeout(() => {
@@ -107,17 +137,6 @@ export function LibraryPanel({
       }, 2000);
     }
   };
-
-  /** Filter built-in entries by search */
-  const filteredBuiltIns = useMemo(() => {
-    if (!searchFilter.trim()) return builtInEntries;
-    const q = searchFilter.toLowerCase();
-    return builtInEntries.filter(
-      (e) =>
-        e.name.toLowerCase().includes(q) ||
-        e.description.toLowerCase().includes(q),
-    );
-  }, [builtInEntries, searchFilter]);
 
   return (
     <div className="dk-panel dk-library-panel">
@@ -139,49 +158,37 @@ export function LibraryPanel({
             <span className="dk-folder-count">{builtInEntries.length}</span>
           </div>
 
-          {/* Search filter */}
-          {builtInEntries.length > 3 && (
-            <div className="dk-folder-body" style={{ paddingTop: 4, paddingBottom: 4 }}>
-              <div className="dk-search-row">
-                <Search size={11} className="dk-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Filter libraries…"
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                  className="dk-input dk-input--search"
-                />
-              </div>
-            </div>
-          )}
-
           {/* Alphabetical list of built-in entries */}
           <div className="dk-builtin-list">
-            {filteredBuiltIns.map((entry) => {
-              const isAdded = addedBuiltInNames.has(entry.name.toLowerCase());
+            {builtInEntries.map((entry) => {
               const activeLib = activeBuiltIns.find(
                 (l) => l.name.toLowerCase() === entry.name.toLowerCase(),
               );
+              const isSelected = activeLib ? selectedLibraryId === activeLib.id : false;
+              const isDisabled = hasSelection && !isSelected;
               const isExpanded = activeLib ? expandedLibs.has(activeLib.id) : false;
 
               return (
                 <div key={entry.name}>
-                  <div className={`dk-builtin-row ${isAdded ? 'dk-builtin-row--active' : ''}`}>
+                  <div
+                    className={`dk-builtin-row ${isSelected ? 'dk-builtin-row--active' : ''} ${isDisabled ? 'dk-builtin-row--disabled' : ''}`}
+                  >
                     <button
                       className="dk-builtin-toggle"
-                      onClick={() => handleToggleBuiltIn(entry.name)}
-                      title={isAdded ? 'Remove library' : 'Add library'}
+                      onClick={() => handleSelectBuiltIn(entry.name)}
+                      title={isSelected ? 'Deselect library' : isDisabled ? 'Deselect current library first' : 'Select library'}
+                      disabled={isDisabled}
                     >
-                      <div className={`dk-builtin-check ${isAdded ? 'dk-builtin-check--on' : ''}`}>
-                        {isAdded && <Check size={10} strokeWidth={3} />}
+                      <div className={`dk-builtin-check ${isSelected ? 'dk-builtin-check--on' : ''}`}>
+                        {isSelected && <Check size={10} strokeWidth={3} />}
                       </div>
                     </button>
                     <div
                       className="dk-builtin-info"
                       onClick={() => {
-                        if (isAdded && activeLib) toggleExpand(activeLib.id);
+                        if (isSelected && activeLib) toggleExpand(activeLib.id);
                       }}
-                      style={{ cursor: isAdded ? 'pointer' : 'default' }}
+                      style={{ cursor: isSelected ? 'pointer' : 'default' }}
                     >
                       <div className="dk-builtin-name">
                         <SourceIcon source={entry.source} />
@@ -191,7 +198,7 @@ export function LibraryPanel({
                         {entry.componentCount} components
                       </div>
                     </div>
-                    {isAdded && activeLib && (
+                    {isSelected && activeLib && (
                       <button
                         className="dk-icon-btn"
                         onClick={() => toggleExpand(activeLib.id)}
@@ -209,7 +216,7 @@ export function LibraryPanel({
                   </div>
 
                   {/* Component grid for expanded built-in */}
-                  {isAdded && isExpanded && activeLib && (
+                  {isSelected && isExpanded && activeLib && (
                     <div className="dk-comp-grid">
                       {activeLib.components.map((comp) => (
                         <button
@@ -244,13 +251,13 @@ export function LibraryPanel({
                 onChange={(e) => setLibUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddCustom()}
                 className="dk-input"
-                disabled={resolveStatus === 'resolving'}
+                disabled={resolveStatus === 'resolving' || hasSelection}
               />
               <button
                 onClick={handleAddCustom}
                 className="dk-icon-btn"
-                title="Add library"
-                disabled={resolveStatus === 'resolving'}
+                title={hasSelection ? 'Deselect current library first' : 'Add library'}
+                disabled={resolveStatus === 'resolving' || hasSelection}
               >
                 {resolveStatus === 'resolving' ? (
                   <Loader2 size={14} className="dk-spin" />
@@ -266,7 +273,7 @@ export function LibraryPanel({
                 {resolveMessage}
               </div>
             )}
-            {!resolveStatus && (
+            {!resolveStatus && !hasSelection && (
               <div className="dk-supported-hint">
                 Supports GitHub repos, docs sites, and Figma files
               </div>
@@ -274,68 +281,79 @@ export function LibraryPanel({
           </div>
 
           {/* Custom library list */}
-          {customLibraries.map((lib) => (
-            <div key={lib.id}>
-              <div className="dk-lib-row">
-                <button
-                  onClick={() => toggleExpand(lib.id)}
-                  className="dk-icon-btn"
-                  aria-label="Expand"
-                >
-                  <ChevronDown
-                    size={12}
-                    style={{
-                      transform: expandedLibs.has(lib.id) ? 'none' : 'rotate(-90deg)',
-                      transition: 'transform var(--dur) var(--ease)',
-                    }}
-                  />
-                </button>
-                <div className="dk-lib-info">
-                  <div className="dk-lib-name">
-                    <SourceIcon source={lib.source} />
-                    {lib.name}
-                  </div>
-                  <div className="dk-lib-meta">{lib.components.length} components</div>
-                </div>
-                <div className="dk-lib-actions">
-                  <button
-                    onClick={() => onToggleLibrary(lib.id)}
-                    className="dk-icon-btn"
-                    title={lib.active ? 'Hide library' : 'Show library'}
-                  >
-                    {lib.active ? <Eye size={12} /> : <EyeOff size={12} />}
-                  </button>
-                  <button
-                    onClick={() => onRemoveLibrary(lib.id)}
-                    className="dk-icon-btn dk-icon-btn--danger"
-                    title="Remove library"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
+          {customLibraries.map((lib) => {
+            const isSelected = selectedLibraryId === lib.id;
+            const isDisabled = hasSelection && !isSelected;
 
-              {expandedLibs.has(lib.id) && (
-                <div className="dk-comp-grid">
-                  {lib.components.map((comp) => (
+            return (
+              <div key={lib.id} className={isDisabled ? 'dk-builtin-row--disabled' : ''}>
+                <div className="dk-lib-row">
+                  <button
+                    className="dk-builtin-toggle"
+                    onClick={() => handleSelectCustom(lib.id)}
+                    title={isSelected ? 'Deselect library' : isDisabled ? 'Deselect current library first' : 'Select library'}
+                    disabled={isDisabled}
+                  >
+                    <div className={`dk-builtin-check ${isSelected ? 'dk-builtin-check--on' : ''}`}>
+                      {isSelected && <Check size={10} strokeWidth={3} />}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isSelected) toggleExpand(lib.id);
+                    }}
+                    className="dk-icon-btn"
+                    aria-label="Expand"
+                    disabled={!isSelected}
+                  >
+                    <ChevronDown
+                      size={12}
+                      style={{
+                        transform: expandedLibs.has(lib.id) ? 'none' : 'rotate(-90deg)',
+                        transition: 'transform var(--dur) var(--ease)',
+                      }}
+                    />
+                  </button>
+                  <div className="dk-lib-info">
+                    <div className="dk-lib-name">
+                      <SourceIcon source={lib.source} />
+                      {lib.name}
+                    </div>
+                    <div className="dk-lib-meta">{lib.components.length} components</div>
+                  </div>
+                  <div className="dk-lib-actions">
                     <button
-                      key={comp.id}
-                      onClick={() => onComponentSelect?.(comp, lib.id)}
-                      className="dk-comp-card"
-                      title={comp.description}
+                      onClick={() => handleRemoveCustom(lib.id)}
+                      className="dk-icon-btn dk-icon-btn--danger"
+                      title="Remove library"
                     >
-                      <div className="dk-comp-name">{comp.name}</div>
-                      {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
+                      <Trash2 size={12} />
                     </button>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
-          ))}
+
+                {isSelected && expandedLibs.has(lib.id) && (
+                  <div className="dk-comp-grid">
+                    {lib.components.map((comp) => (
+                      <button
+                        key={comp.id}
+                        onClick={() => onComponentSelect?.(comp, lib.id)}
+                        className="dk-comp-card"
+                        title={comp.description}
+                      >
+                        <div className="dk-comp-name">{comp.name}</div>
+                        {comp.category && <div className="dk-comp-cat">{comp.category}</div>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      <div className="dk-hint">Toggle built-in libraries or add custom sources</div>
+      <div className="dk-hint">Select one library at a time to use in generation</div>
     </div>
   );
 }

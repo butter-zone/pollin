@@ -57,6 +57,9 @@ function App() {
   // ── Library panel toggle ──────────────────────────────
   const [showLibPanel, setShowLibPanel] = useState(false);
 
+  // ── Selected library (single-select, shared between panels) ──
+  const [selectedLibraryId, setSelectedLibraryId] = useState<string | undefined>();
+
   // ── Generation state ──────────────────────────────────
   const [generations, setGenerations] = useState<GenerationEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -418,6 +421,8 @@ function App() {
         {panelMode === 'prompt' ? (
           <PromptPanel
             libraries={state.libraries}
+            selectedLibraryId={selectedLibraryId}
+            onSelectedLibraryChange={setSelectedLibraryId}
             onGenerate={handleGenerate}
             onImageToCanvas={handleImageToCanvas}
             isGenerating={isGenerating}
@@ -471,9 +476,10 @@ function App() {
       {showLibPanel && (
         <LibraryPanel
           libraries={state.libraries}
+          selectedLibraryId={selectedLibraryId}
+          onSelectLibrary={setSelectedLibraryId}
           onAddLibrary={addLibrary}
           onRemoveLibrary={removeLibrary}
-          onToggleLibrary={toggleLibrary}
           onClose={() => setShowLibPanel(false)}
         />
       )}

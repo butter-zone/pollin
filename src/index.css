@@ -808,6 +808,11 @@
   background: oklch(0.67 0.185 55 / 0.06);
 }
 
+.dk-builtin-row--disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 .dk-builtin-toggle {
   flex-shrink: 0;
   background: none;
@@ -852,27 +857,6 @@
 .dk-builtin-meta {
   font-size: 10px;
   color: var(--c-text-muted);
-}
-
-/* ── Search filter ───────────────────────── */
-
-.dk-search-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.dk-search-icon {
-  position: absolute;
-  left: 7px;
-  color: var(--c-text-muted);
-  pointer-events: none;
-}
-
-.dk-input--search {
-  padding-left: 22px !important;
-  font-size: 10px !important;
-  height: 24px;
 }
 
 /* ── Folder count badge ──────────────────── */
