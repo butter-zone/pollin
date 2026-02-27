@@ -16,6 +16,7 @@ import type { Tool, CanvasObject, LibraryComponent } from '@/types/canvas';
 import { renderHTMLToImage } from '@/services/ui-renderer';
 import { generateComponentPreviewHTML } from '@/services/component-preview';
 import { getTheme } from '@/services/ui-templates';
+import { storeImage } from '@/services/image-store';
 
 function App() {
   const {
@@ -81,6 +82,7 @@ function App() {
       );
       try {
         const result = await renderHTMLToImage(html, width, height);
+        const ref = await storeImage(result.dataUrl);
         const imgObj: CanvasObject = {
           id: `obj-${Date.now()}-comp`,
           kind: 'image',
@@ -92,7 +94,7 @@ function App() {
           visible: true,
           name: `${libraryName ? libraryName + ' / ' : ''}${component.name}`,
           timestamp: Date.now(),
-          src: result.dataUrl,
+          src: ref,
           width: result.width,
           height: result.height,
         };
@@ -294,7 +296,8 @@ function App() {
                 reader.onload = (ev) => {
                   const src = ev.target?.result as string;
                   const img = new Image();
-                  img.onload = () => {
+                  img.onload = async () => {
+                    const ref = await storeImage(src);
                     addObject({
                       id: `obj-${Date.now()}-paste`,
                       kind: 'image',
@@ -306,7 +309,7 @@ function App() {
                       visible: true,
                       name: 'Pasted image',
                       timestamp: Date.now(),
-                      src,
+                      src: ref,
                       width: Math.min(img.width, 400),
                       height: Math.min(img.height, 300),
                     } as CanvasObject);
@@ -442,6 +445,7 @@ function App() {
 
         // Place the rendered UI image directly on the canvas
         if (result.success && result.imageDataUrl) {
+          const ref = await storeImage(result.imageDataUrl);
           const imgObj: CanvasObject = {
             id: `obj-${Date.now()}-gen`,
             kind: 'image',
@@ -453,7 +457,7 @@ function App() {
             visible: true,
             name: `Generated: ${prompt.slice(0, 40)}`,
             timestamp: Date.now(),
-            src: result.imageDataUrl,
+            src: ref,
             width: result.imageWidth ?? 420,
             height: result.imageHeight ?? 580,
           };
@@ -474,7 +478,8 @@ function App() {
 
   // ── Add image attachment to canvas ────────────────────
   const handleImageToCanvas = useCallback(
-    (att: ImageAttachment) => {
+    async (att: ImageAttachment) => {
+      const ref = await storeImage(att.dataUrl);
       const imgObj: CanvasObject = {
         id: `obj-${Date.now()}-img`,
         kind: 'image',
@@ -486,7 +491,7 @@ function App() {
         visible: true,
         name: att.name,
         timestamp: Date.now(),
-        src: att.dataUrl,
+        src: ref,
         width: Math.min(att.width, 400),
         height: Math.min(att.height, 300),
       };

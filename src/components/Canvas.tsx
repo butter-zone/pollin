@@ -14,6 +14,8 @@ import type {
 import { renderHTMLToImage } from '@/services/ui-renderer';
 import { generateComponentPreviewHTML } from '@/services/component-preview';
 import { getTheme } from '@/services/ui-templates';
+import { QuadTree } from '@/services/quadtree';
+import { storeImage, loadImage, isImageRef } from '@/services/image-store';
 
 // ── helpers ────────────────────────────────────────────
 let _id = 0;
@@ -21,6 +23,12 @@ const uid = () => `obj-${Date.now()}-${++_id}`;
 
 /** Module-level image cache — avoids re-creating Image() every frame */
 const imageCache = new Map<string, HTMLImageElement>();
+
+/** Module-level spatial index — rebuilt when objects change */
+const spatialIndex = new QuadTree({ x: -10000, y: -10000, width: 20000, height: 20000 });
+
+/** Track the object list identity to avoid redundant rebuilds */
+let lastIndexedObjects: CanvasObject[] | null = null;
 
 function screenToWorld(
   sx: number,
@@ -616,7 +624,8 @@ export function Canvas({
             libraryName,
             theme,
           );
-          renderHTMLToImage(html, width, height).then((result) => {
+          renderHTMLToImage(html, width, height).then(async (result) => {
+            const ref = await storeImage(result.dataUrl);
             const imgObj: CanvasObject = {
               id: uid(),
               kind: 'image',
@@ -628,7 +637,7 @@ export function Canvas({
               visible: true,
               name: `${libraryName ? libraryName + ' / ' : ''}${component.name}`,
               timestamp: Date.now(),
-              src: result.dataUrl,
+              src: ref,
               width: result.width,
               height: result.height,
             };
@@ -652,7 +661,8 @@ export function Canvas({
         reader.onload = (event) => {
           const src = event.target?.result as string;
           const img = new Image();
-          img.onload = () => {
+          img.onload = async () => {
+            const ref = await storeImage(src);
             const imgObj: CanvasObject = {
               id: uid(),
               kind: 'image',
@@ -664,7 +674,7 @@ export function Canvas({
               visible: true,
               name: file.name,
               timestamp: Date.now(),
-              src,
+              src: ref,
               width: Math.min(img.width, 400),
               height: Math.min(img.height, 300),
             };
@@ -1020,18 +1030,24 @@ function drawObject(
     }
     case 'image': {
       const img = obj as any;
-      const cached = imageCache.get(img.src);
+      const srcKey = img.src as string;
+      const cached = imageCache.get(srcKey);
       if (cached) {
         ctx.translate(img.x, img.y);
         ctx.rotate((img.rotation * Math.PI) / 180);
         ctx.drawImage(cached, -img.width / 2, -img.height / 2, img.width, img.height);
+      } else if (isImageRef(srcKey)) {
+        // Resolve pollin-img:// ref from IndexedDB, then cache
+        loadImage(srcKey).then((dataUrl) => {
+          const imgEl = new Image();
+          imgEl.onload = () => { imageCache.set(srcKey, imgEl); };
+          imgEl.src = dataUrl;
+        }).catch(() => { /* image missing — skip */ });
       } else {
-        // Load and cache for next frame
+        // Plain data URL — load and cache for next frame
         const imgEl = new Image();
-        imgEl.onload = () => {
-          imageCache.set(img.src, imgEl);
-        };
-        imgEl.src = img.src;
+        imgEl.onload = () => { imageCache.set(srcKey, imgEl); };
+        imgEl.src = srcKey;
       }
       break;
     }
@@ -1241,13 +1257,52 @@ function getResizeChanges(
   }
 }
 
+/**
+ * Rebuild the spatial index when the object list changes.
+ * Called at the start of pointer events — amortised O(1) per event.
+ */
+function syncSpatialIndex(objects: CanvasObject[]): void {
+  if (objects === lastIndexedObjects) return;
+  lastIndexedObjects = objects;
+  spatialIndex.rebuild(
+    objects.map((o) => ({ id: o.id, bounds: getObjectBounds(o) })),
+  );
+}
+
 function hitTest(objects: CanvasObject[], point: Point): CanvasObject | null {
-  // iterate reverse so top-most wins
-  for (let i = objects.length - 1; i >= 0; i--) {
-    const obj = objects[i];
+  // Use the spatial index for a fast broadphase
+  syncSpatialIndex(objects);
+  const candidateIds = spatialIndex.queryPoint(point);
+
+  // Also query a small region around the point for the 6px margin
+  const margin = 6;
+  const nearbyIds = spatialIndex.query({
+    x: point.x - margin,
+    y: point.y - margin,
+    width: margin * 2,
+    height: margin * 2,
+  });
+
+  // Merge candidates — nearbyIds is the superset
+  const idSet = new Set(nearbyIds);
+  for (const id of candidateIds) idSet.add(id);
+
+  // Build a lookup for O(1) access and find the topmost (highest index) hit
+  const objMap = new Map<string, number>();
+  for (let i = 0; i < objects.length; i++) {
+    objMap.set(objects[i].id, i);
+  }
+
+  let bestIdx = -1;
+  let bestObj: CanvasObject | null = null;
+
+  for (const id of idSet) {
+    const idx = objMap.get(id);
+    if (idx === undefined || idx <= bestIdx) continue;
+    const obj = objects[idx];
     if (!obj.visible || obj.locked) continue;
+
     const b = getObjectBounds(obj);
-    const margin = 6;
     // Transform point into object-local space to handle rotation
     let px = point.x;
     let py = point.y;
@@ -1266,10 +1321,11 @@ function hitTest(objects: CanvasObject[], point: Point): CanvasObject | null {
       py >= b.y - margin &&
       py <= b.y + b.height + margin
     ) {
-      return obj;
+      bestIdx = idx;
+      bestObj = obj;
     }
   }
-  return null;
+  return bestObj;
 }
 
 function buildShapePreview(
