@@ -1,6 +1,21 @@
-import { useState, useRef, useCallback, type FC } from 'react';
+import { useState, useRef, useCallback, useEffect, type FC } from 'react';
+import gsap from 'gsap';
 import type { DesignLibrary } from '@/types/canvas';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
+
+/* ─── Inspirational quotes (shown when panel is empty) ── */
+const INSPIRATION_QUOTES = [
+  { text: 'I begin with an idea and then it becomes something else.', author: 'Pablo Picasso' },
+  { text: 'The most courageous act is still to think for yourself.', author: 'Coco Chanel' },
+  { text: 'I invent nothing. I rediscover.', author: 'Augusta Ada King' },
+  { text: 'Ideas are easy. Implementation is hard.', author: 'Guy Kawasaki' },
+  { text: 'Ideas shape the course of history.', author: 'John Maynard Keynes' },
+  { text: 'You can\u2019t use up creativity. The more you use, the more you have.', author: 'Maya Angelou' },
+  { text: 'Creativity is intelligence having fun.', author: 'Albert Einstein' },
+  { text: 'The creative adult is the child who survived.', author: 'Ursula K. Le Guin' },
+  { text: 'You can\u2019t wait for inspiration. You have to go after it.', author: 'Jack London' },
+  { text: 'I am my own experiment.', author: 'Frida Kahlo' },
+];
 
 /* ─── LLM model definitions ────────────────────────────── */
 export interface LLMModel {
@@ -11,6 +26,8 @@ export interface LLMModel {
 }
 
 export const AVAILABLE_MODELS: LLMModel[] = [
+  { id: 'claude-4-sonnet', name: 'Claude 4 Sonnet', provider: 'Anthropic', description: 'Latest & most capable' },
+  { id: 'gemini-3.0-flash', name: 'Gemini 3.0 Flash', provider: 'Google', description: 'Fast multimodal reasoning' },
   { id: 'llama-3.3-70b', name: 'Llama 3.3 70B', provider: 'Meta', description: 'Fast, high-quality open-source' },
   { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', provider: 'Meta', description: 'Lightweight & fast' },
   { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral', description: 'Best-in-class reasoning' },
@@ -84,6 +101,124 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const [showLibPicker, setShowLibPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /* ── Inspirational quote cycling (GSAP pollination) ── */
+  const [quoteIndex, setQuoteIndex] = useState(0);
+  const showQuotes = generations.length === 0;
+  const quoteOrder = useRef<number[]>([]);
+  const quoteRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const authorRef = useRef<HTMLSpanElement>(null);
+  const pollenRef = useRef<HTMLDivElement>(null);
+  const initialReveal = useRef(true);
+
+  // Build a shuffled order: Picasso (0) first, rest randomized
+  if (quoteOrder.current.length === 0) {
+    const rest = Array.from({ length: INSPIRATION_QUOTES.length - 1 }, (_, i) => i + 1);
+    for (let i = rest.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rest[i], rest[j]] = [rest[j], rest[i]];
+    }
+    quoteOrder.current = [0, ...rest];
+  }
+
+  // Animate pollen particles floating in
+  const spawnPollen = useCallback(() => {
+    if (!pollenRef.current) return;
+    const container = pollenRef.current;
+    const count = 6 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'pp-pollen-particle';
+      const size = 3 + Math.random() * 4;
+      dot.style.width = `${size}px`;
+      dot.style.height = `${size}px`;
+      dot.style.left = `${10 + Math.random() * 80}%`;
+      dot.style.top = `${20 + Math.random() * 60}%`;
+      container.appendChild(dot);
+      gsap.fromTo(dot,
+        { opacity: 0, scale: 0, x: (Math.random() - 0.5) * 40, y: 20 + Math.random() * 20 },
+        {
+          opacity: 0.25 + Math.random() * 0.35,
+          scale: 1,
+          x: (Math.random() - 0.5) * 60,
+          y: -30 - Math.random() * 40,
+          duration: 2.5 + Math.random() * 2,
+          delay: Math.random() * 1.2,
+          ease: 'power1.out',
+          onComplete: () => dot.remove(),
+        },
+      );
+    }
+  }, []);
+
+  // Initial reveal animation
+  useEffect(() => {
+    if (!showQuotes || !initialReveal.current) return;
+    initialReveal.current = false;
+    const tl = gsap.timeline();
+    if (textRef.current) {
+      tl.fromTo(textRef.current,
+        { opacity: 0, y: 24, scale: 0.92 },
+        { opacity: 1, y: 0, scale: 1, duration: 1.2, ease: 'power3.out' },
+        0,
+      );
+    }
+    if (authorRef.current) {
+      tl.fromTo(authorRef.current,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+        0.5,
+      );
+    }
+    spawnPollen();
+  }, [showQuotes, spawnPollen]);
+
+  // Cycling transition with GSAP
+  useEffect(() => {
+    if (!showQuotes) return;
+    const interval = setInterval(() => {
+      // Drift out like pollen carried away
+      const tl = gsap.timeline({
+        onComplete: () => {
+          setQuoteIndex((i) => (i + 1) % quoteOrder.current.length);
+        },
+      });
+      if (textRef.current) {
+        tl.to(textRef.current, {
+          opacity: 0, y: -18, scale: 0.96,
+          duration: 0.7, ease: 'power2.inOut',
+        }, 0);
+      }
+      if (authorRef.current) {
+        tl.to(authorRef.current, {
+          opacity: 0, y: -10,
+          duration: 0.5, ease: 'power2.in',
+        }, 0.1);
+      }
+    }, 12000);
+    return () => clearInterval(interval);
+  }, [showQuotes]);
+
+  // Animate in after quote index changes (skip initial)
+  useEffect(() => {
+    if (!showQuotes || !textRef.current) return;
+    const tl = gsap.timeline();
+    tl.fromTo(textRef.current,
+      { opacity: 0, y: 20, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: 'power3.out' },
+      0,
+    );
+    if (authorRef.current) {
+      tl.fromTo(authorRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' },
+        0.25,
+      );
+    }
+    spawnPollen();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteIndex]);
 
   /* ── Speech-to-text (Web Speech API + Whisper fallback) ── */
   const handleSpeechTranscript = useCallback((text: string) => {
@@ -206,6 +341,17 @@ export const PromptPanel: FC<PromptPanelProps> = ({
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
           <span>{selectedObjectCount} selected — describe changes to apply</span>
+        </div>
+      )}
+
+      {/* ── Inspirational quotes (empty state) ───────── */}
+      {showQuotes && (
+        <div className="pp-inspiration" ref={quoteRef}>
+          <div className="pp-pollen-field" ref={pollenRef} />
+          <div className="pp-inspiration-quote">
+            <p className="pp-inspiration-text" ref={textRef}>“{INSPIRATION_QUOTES[quoteOrder.current[quoteIndex]].text}”</p>
+            <span className="pp-inspiration-author" ref={authorRef}>— {INSPIRATION_QUOTES[quoteOrder.current[quoteIndex]].author}</span>
+          </div>
         </div>
       )}
 

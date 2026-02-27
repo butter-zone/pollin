@@ -1,4 +1,5 @@
-import type { FC } from 'react';
+import { useRef, useCallback, type FC } from 'react';
+import gsap from 'gsap';
 import { Tool } from '@/types/canvas';
 
 export type PanelMode = 'prompt' | 'draw';
@@ -75,10 +76,76 @@ const ToolIcon: FC<{ toolId: Tool; isActive: boolean }> = ({ toolId, isActive })
 };
 
 export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange, onPanelModeChange }) => {
+  const logoRef = useRef<SVGSVGElement>(null);
+
+  // Original circle positions for the pollin logo
+  const originalPositions = useRef([
+    { cx: 4, cy: 32.4707, r: 4 },
+    { cx: 33.1836, cy: 4, r: 4 },
+    { cx: 6.58984, cy: 7, r: 3 },
+    { cx: 47.4219, cy: 53.4414, r: 3 },
+    { cx: 35.1836, cy: 45.9883, r: 4 },
+    { cx: 50.4219, cy: 24.4707, r: 8 },
+    { cx: 15.9453, cy: 53.4414, r: 8 },
+    { cx: 26.2109, cy: 26.7207, r: 12 },
+  ]);
+
+  const handleLogoEnter = useCallback(() => {
+    if (!logoRef.current) return;
+    const circles = logoRef.current.querySelectorAll('circle');
+    const centerX = 29.5;
+    const centerY = 31;
+    const vbW = 59;
+    const vbH = 62;
+    circles.forEach((circle, i) => {
+      const orig = originalPositions.current[i];
+      // Scatter outward from center like pollen dispersing
+      const angle = Math.atan2(orig.cy - centerY, orig.cx - centerX) + (Math.random() - 0.5) * 1.2;
+      const dist = 5 + Math.random() * 8;
+      const newR = orig.r * (0.75 + Math.random() * 0.5);
+      // Clamp so circle stays fully inside the viewBox
+      let newCx = orig.cx + Math.cos(angle) * dist;
+      let newCy = orig.cy + Math.sin(angle) * dist;
+      newCx = Math.max(newR, Math.min(vbW - newR, newCx));
+      newCy = Math.max(newR, Math.min(vbH - newR, newCy));
+      gsap.to(circle, {
+        attr: { cx: newCx, cy: newCy, r: newR },
+        duration: 0.6 + Math.random() * 0.3,
+        ease: 'power2.out',
+      });
+    });
+  }, []);
+
+  const handleLogoLeave = useCallback(() => {
+    if (!logoRef.current) return;
+    const circles = logoRef.current.querySelectorAll('circle');
+    circles.forEach((circle, i) => {
+      const orig = originalPositions.current[i];
+      gsap.to(circle, {
+        attr: { cx: orig.cx, cy: orig.cy, r: orig.r },
+        duration: 0.8 + Math.random() * 0.4,
+        ease: 'elastic.out(1, 0.5)',
+      });
+    });
+  }, []);
+
   return (
     <div className="toolbar" role="toolbar" aria-label="Tools">
-      <div className="toolbar-logo">
-        <span className="toolbar-logo-mark">P</span>
+      <div
+        className="toolbar-logo"
+        onMouseEnter={handleLogoEnter}
+        onMouseLeave={handleLogoLeave}
+      >
+        <svg ref={logoRef} width="24" height="24" viewBox="0 0 59 62" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="4" cy="32.4707" r="4" fill="currentColor"/>
+          <circle cx="33.1836" cy="4" r="4" fill="currentColor"/>
+          <circle cx="6.58984" cy="7" r="3" fill="currentColor"/>
+          <circle cx="47.4219" cy="53.4414" r="3" fill="currentColor"/>
+          <circle cx="35.1836" cy="45.9883" r="4" fill="currentColor"/>
+          <circle cx="50.4219" cy="24.4707" r="8" fill="currentColor"/>
+          <circle cx="15.9453" cy="53.4414" r="8" fill="currentColor"/>
+          <circle cx="26.2109" cy="26.7207" r="12" fill="currentColor"/>
+        </svg>
       </div>
 
       <div className="toolbar-divider" />
@@ -88,7 +155,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
         <button
           className={`toolbar-btn ${panelMode === 'prompt' ? 'toolbar-btn--active' : ''}`}
           onClick={() => onPanelModeChange('prompt')}
-          title="Prompt (describe your design)"
+          title="Prompt (describe your idea)"
           aria-pressed={panelMode === 'prompt'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
