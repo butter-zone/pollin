@@ -329,7 +329,7 @@ function App() {
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
     async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
-      const genId = `gen-${Date.now()}`;
+      const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const entry: GenerationEntry = {
         id: genId,
         prompt,
@@ -350,16 +350,38 @@ function App() {
           libraryId,
         });
 
+        const newStatus: GenerationEntry['status'] = result.success ? 'done' : 'error';
         setGenerations((prev) =>
           prev.map((g) =>
             g.id === genId
-              ? { ...g, status: result.success ? 'done' : 'error', result: result.code }
+              ? {
+                  ...g,
+                  status: newStatus,
+                  result: result.code || result.error || undefined,
+                  imageDataUrl: result.imageDataUrl,
+                }
               : g,
-          ),
+          ).slice(0, 20),
         );
 
-        if (result.success) {
-          setConversionResult(result.code);
+        // Place the rendered UI image directly on the canvas
+        if (result.success && result.imageDataUrl) {
+          const imgObj: CanvasObject = {
+            id: `obj-${Date.now()}-gen`,
+            kind: 'image',
+            x: state.panX + 120,
+            y: state.panY + 80,
+            rotation: 0,
+            opacity: 1,
+            locked: false,
+            visible: true,
+            name: `Generated: ${prompt.slice(0, 40)}`,
+            timestamp: Date.now(),
+            src: result.imageDataUrl,
+            width: result.imageWidth ?? 420,
+            height: result.imageHeight ?? 580,
+          };
+          addObject(imgObj);
         }
       } catch {
         setGenerations((prev) =>
@@ -369,7 +391,7 @@ function App() {
         setIsGenerating(false);
       }
     },
-    [],
+    [addObject, state.panX, state.panY],
   );
 
   // ── Add image attachment to canvas ────────────────────
@@ -517,7 +539,7 @@ function App() {
         />
       )}
 
-      {/* Generated code result */}
+      {/* Generated code result (conversion dialog — kept for sketch→code flow) */}
       {conversionResult && (
         <div className="cv-overlay" onClick={() => setConversionResult(null)}>
           <div className="cv-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 560 }}>

@@ -37,6 +37,7 @@ export interface GenerationEntry {
   model: string;
   status: 'pending' | 'generating' | 'done' | 'error';
   result?: string;
+  imageDataUrl?: string;
   timestamp: number;
   attachments: ImageAttachment[];
 }
@@ -217,8 +218,21 @@ export const PromptPanel: FC<PromptPanelProps> = ({
                   {gen.status === 'error' && '✗ Error'}
                 </span>
               </div>
-              {gen.status === 'done' && gen.result && (
+              {gen.status === 'done' && gen.imageDataUrl && (
+                <div className="pp-gen-preview">
+                  <img
+                    src={gen.imageDataUrl}
+                    alt={`Generated: ${gen.prompt}`}
+                    className="pp-gen-preview-img"
+                  />
+                  <div className="pp-gen-preview-badge">Generated UI</div>
+                </div>
+              )}
+              {gen.status === 'done' && !gen.imageDataUrl && gen.result && (
                 <pre className="pp-gen-code">{gen.result}</pre>
+              )}
+              {gen.status === 'error' && gen.result && (
+                <div className="pp-gen-error">{gen.result}</div>
               )}
             </div>
           ))}
@@ -273,7 +287,18 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           className="pp-textarea"
           placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
           value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
-          onChange={(e) => setPrompt(e.target.value)}
+          onChange={(e) => {
+            const raw = e.target.value;
+            // Strip interim transcript suffix so it doesn't get baked into state
+            if (interimTranscript) {
+              const suffix = (prompt ? ' ' : '') + interimTranscript;
+              if (raw.endsWith(suffix)) {
+                setPrompt(raw.slice(0, raw.length - suffix.length));
+                return;
+              }
+            }
+            setPrompt(raw);
+          }}
           onKeyDown={handleKeyDown}
           rows={3}
         />
