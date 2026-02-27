@@ -71,11 +71,16 @@ export function LibraryPanel({
     const existing = libraries.find((l) => l.name.toLowerCase() === name.toLowerCase());
 
     if (existing) {
-      // Already added — if it's the selected one, deselect & remove. Otherwise do nothing (locked out).
       if (selectedLibraryId === existing.id) {
+        // Already selected — deselect & remove
         onSelectLibrary(undefined);
         onRemoveLibrary(existing.id);
+      } else if (!hasSelection) {
+        // Exists but not selected, and nothing else is selected — select it
+        onSelectLibrary(existing.id);
+        setExpandedLibs((prev) => new Set([...prev, existing.id]));
       }
+      // Otherwise another library is selected — locked out, do nothing
       return;
     }
 
