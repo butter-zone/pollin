@@ -73,7 +73,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  /* ── Speech-to-text (Web Speech API + Handy fallback) ── */
+  /* ── Speech-to-text (Web Speech API + Whisper fallback) ── */
   const handleSpeechTranscript = useCallback((text: string) => {
     setPrompt((prev) => {
       const needsSpace = prev.length > 0 && !prev.endsWith(' ');
@@ -83,7 +83,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   }, []);
 
   const {
-    isSupported: speechSupported,
     isListening,
     interimTranscript,
     toggleListening,
@@ -278,13 +277,10 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           onKeyDown={handleKeyDown}
           rows={3}
         />
-        {/* Speech error / Handy tip */}
+        {/* Speech status / error */}
         {speechError && (
           <div className="pp-speech-tip">
             <span>{speechError}</span>
-            <a href="https://handy.computer" target="_blank" rel="noopener noreferrer" className="pp-speech-link">
-              Get Handy →
-            </a>
           </div>
         )}
         <div className="pp-input-actions">
@@ -302,7 +298,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
             <button
               className={`pp-icon-btn ${isListening ? 'pp-icon-btn--active' : ''}`}
               onClick={toggleListening}
-              title={isListening ? 'Stop listening' : speechSupported ? 'Voice input (speech-to-text)' : 'Install Handy for voice input (handy.computer)'}
+              title={isListening ? 'Stop listening' : 'Voice input (speech-to-text)'}
               aria-label={isListening ? 'Stop listening' : 'Voice input'}
               aria-pressed={isListening}
             >
