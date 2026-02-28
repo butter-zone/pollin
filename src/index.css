@@ -2158,3 +2158,269 @@ canvas {
   vertical-align: middle;
   margin-right: 4px;
 }
+
+/* ══ Component Editor ════════════════════════════════════ */
+
+.ce-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-surface-2);
+  border-left: 1px solid var(--c-border);
+  box-shadow: var(--shadow-panel);
+  z-index: 50;
+  user-select: none;
+}
+
+.ce-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c-border-subtle);
+  flex-shrink: 0;
+}
+
+.ce-header-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--c-text-dim);
+}
+
+.ce-header-close {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background var(--dur) var(--ease);
+}
+
+.ce-header-close:hover {
+  background: var(--c-surface-3);
+  color: var(--c-text);
+}
+
+.ce-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-surface-4) transparent;
+}
+
+.ce-body::-webkit-scrollbar { width: 4px; }
+.ce-body::-webkit-scrollbar-track { background: transparent; }
+.ce-body::-webkit-scrollbar-thumb { background: var(--c-surface-4); border-radius: 2px; }
+
+.ce-section {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+
+.ce-section:last-child { border-bottom: none; }
+
+.ce-section--actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ce-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-muted);
+  margin-bottom: 6px;
+}
+
+.ce-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ce-row:last-child { margin-bottom: 0; }
+
+.ce-label {
+  font-size: 11px;
+  color: var(--c-text-muted);
+}
+
+.ce-input,
+.ce-textarea,
+.ce-select {
+  padding: 5px 8px;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--c-text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color var(--dur) var(--ease);
+  width: 100%;
+}
+
+.ce-input:focus,
+.ce-textarea:focus,
+.ce-select:focus {
+  border-color: var(--c-accent);
+}
+
+.ce-textarea {
+  resize: vertical;
+  font-family: inherit;
+  min-height: 48px;
+}
+
+.ce-select {
+  cursor: pointer;
+}
+
+/* ── Tree view ───────────────────────────── */
+
+.ce-tree {
+  display: flex;
+  flex-direction: column;
+}
+
+.ce-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  transition: background var(--dur) var(--ease);
+}
+
+.ce-tree-item:hover { background: var(--c-surface-3); }
+.ce-tree-item--selected { background: oklch(0.67 0.185 55 / 0.15); }
+.ce-tree-item--selected:hover { background: oklch(0.67 0.185 55 / 0.2); }
+
+.ce-tree-item--depth-1 { padding-left: 20px; }
+.ce-tree-item--depth-2 { padding-left: 32px; }
+.ce-tree-item--depth-3 { padding-left: 44px; }
+.ce-tree-item--depth-4 { padding-left: 56px; }
+.ce-tree-item--depth-5 { padding-left: 68px; }
+
+.ce-tree-toggle {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.ce-tree-toggle--leaf {
+  color: var(--c-border);
+  cursor: default;
+}
+
+.ce-tree-type {
+  color: var(--c-accent);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.ce-tree-preview {
+  color: var(--c-text-muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── KV editor ───────────────────────────── */
+
+.ce-kv-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ce-kv-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ce-kv-row--add {
+  margin-top: 4px;
+}
+
+.ce-kv-key {
+  flex: 0 0 38%;
+  min-width: 0;
+  font-family: 'SF Mono', 'Cascadia Code', 'Menlo', monospace;
+  font-size: 11px;
+}
+
+.ce-kv-value {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Buttons ─────────────────────────────── */
+
+.ce-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-3);
+  color: var(--c-text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.ce-btn:hover {
+  background: var(--c-surface-4);
+  color: var(--c-text);
+}
+
+.ce-btn--small {
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.ce-btn--danger {
+  color: var(--c-danger);
+}
+
+.ce-btn--danger:hover {
+  background: oklch(0.63 0.25 29 / 0.15);
+  color: var(--c-danger-hover);
+}
+
+/* ── Node editor ─────────────────────────── */
+
+.ce-node-editor {
+  display: flex;
+  flex-direction: column;
+}

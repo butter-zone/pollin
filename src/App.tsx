@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@/components/Canvas';
 import { ControlPanel } from '@/components/ControlPanel';
 import { Toolbar } from '@/components/Toolbar';
@@ -7,12 +7,15 @@ import { ConversionDialog } from '@/components/ConversionDialog';
 import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
 import { PromptPanel } from '@/components/PromptPanel';
+import { ComponentEditor } from '@/components/ComponentEditor';
 import type { GenerationEntry, ImageAttachment, ReasoningStep } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
 import { convertToUI, generateFromPrompt } from '@/services/conversion';
 import type { ConversionPayload } from '@/components/ConversionDialog';
-import type { Tool, CanvasObject, LibraryComponent } from '@/types/canvas';
+import type { Tool, CanvasObject, ComponentObject, LibraryComponent } from '@/types/canvas';
+import type { ComponentTree } from '@/types/component-tree';
+import { renderTreeToHTML } from '@/services/component-renderer';
 import { renderHTMLToImage } from '@/services/ui-renderer';
 import { generateComponentPreviewHTML } from '@/services/component-preview';
 import { getTheme } from '@/services/ui-templates';
@@ -57,6 +60,48 @@ function App() {
 
   // ── Panel mode: prompt (default) vs draw ───────────────
   const [panelMode, setPanelMode] = useState<PanelMode>('prompt');
+
+  // ── Derive selected component (for property editor) ────
+  const selectedComponent = useMemo<ComponentObject | null>(() => {
+    if (state.selectedIds.length !== 1) return null;
+    const obj = state.objects.find((o) => o.id === state.selectedIds[0]);
+    if (!obj || obj.kind !== 'component') return null;
+    return obj as ComponentObject;
+  }, [state.selectedIds, state.objects]);
+
+  const [showComponentEditor, setShowComponentEditor] = useState(false);
+
+  // Auto-show editor when a component is selected
+  useEffect(() => {
+    setShowComponentEditor(!!selectedComponent);
+  }, [selectedComponent]);
+
+  // ── Component tree update handler ──────────────────────
+  const handleUpdateComponentTree = useCallback(
+    async (newTree: ComponentTree) => {
+      if (!selectedComponent) return;
+      // Re-render the tree to a bitmap
+      const html = renderTreeToHTML(newTree);
+      const { width, height } = newTree.metadata.viewport;
+      try {
+        const result = await renderHTMLToImage(html, width, height);
+        const ref = await storeImage(result.dataUrl);
+        updateObject(selectedComponent.id, {
+          tree: newTree,
+          cachedImageRef: ref,
+          name: newTree.metadata.name || selectedComponent.name,
+        } as Partial<CanvasObject>);
+      } catch (err) {
+        // Even if render fails, save the tree update
+        updateObject(selectedComponent.id, {
+          tree: newTree,
+          name: newTree.metadata.name || selectedComponent.name,
+        } as Partial<CanvasObject>);
+        console.warn('[pollin] Component re-render failed:', err);
+      }
+    },
+    [selectedComponent, updateObject],
+  );
 
   // ── Library panel toggle ──────────────────────────────
   const [showLibPanel, setShowLibPanel] = useState(false);
@@ -610,6 +655,15 @@ function App() {
           onRemoveLibrary={removeLibrary}
           onClose={() => setShowLibPanel(false)}
           onComponentSelect={handleComponentSelect}
+        />
+      )}
+
+      {/* Component property editor (shown when a component object is selected) */}
+      {showComponentEditor && selectedComponent && (
+        <ComponentEditor
+          component={selectedComponent}
+          onUpdateTree={handleUpdateComponentTree}
+          onClose={() => setShowComponentEditor(false)}
         />
       )}
 
