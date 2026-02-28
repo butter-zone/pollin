@@ -407,12 +407,53 @@ function App() {
   const handleConvert = useCallback(
     async (payload: ConversionPayload) => {
       const result = await convertToUI(payload);
-      if (result.success) {
+      if (result.success && result.imageDataUrl) {
+        // Place rendered UI image on canvas
+        const ref = await storeImage(result.imageDataUrl);
+        if (result.componentTree) {
+          const compObj: CanvasObject = {
+            id: `obj-${Date.now()}-cv`,
+            kind: 'component',
+            x: (conversionTarget?.x ?? state.panX) + 40,
+            y: (conversionTarget?.y ?? state.panY) + 40,
+            rotation: 0,
+            opacity: 1,
+            locked: false,
+            visible: true,
+            name: result.componentTree.metadata.name || `Converted: ${payload.prompt?.slice(0, 40) ?? 'UI'}`,
+            timestamp: Date.now(),
+            tree: result.componentTree,
+            cachedImageRef: ref,
+            width: result.imageWidth ?? 420,
+            height: result.imageHeight ?? 580,
+          };
+          addObject(compObj);
+        } else {
+          const imgObj: CanvasObject = {
+            id: `obj-${Date.now()}-cv`,
+            kind: 'image',
+            x: (conversionTarget?.x ?? state.panX) + 40,
+            y: (conversionTarget?.y ?? state.panY) + 40,
+            rotation: 0,
+            opacity: 1,
+            locked: false,
+            visible: true,
+            name: `Converted: ${payload.prompt?.slice(0, 40) ?? 'UI'}`,
+            timestamp: Date.now(),
+            src: ref,
+            width: result.imageWidth ?? 420,
+            height: result.imageHeight ?? 580,
+          };
+          addObject(imgObj);
+        }
+        setTool('select');
+      } else if (result.success && result.code) {
+        // Fallback: show code if no image was produced
         setConversionResult(result.code);
       }
       setConversionTarget(null);
     },
-    [],
+    [addObject, setTool, state.panX, state.panY, conversionTarget],
   );
 
   // ── Prompt-based generation ───────────────────────────

@@ -265,61 +265,29 @@ async function callRemoteAPI(
 /* ─── Mock conversion for development ───────────────────── */
 
 async function mockConversion(payload: ConversionPayload): Promise<ConversionResult> {
-  // Simulate API latency
-  await new Promise((r) => setTimeout(r, 1500));
-
-  const { framework, fidelity, prompt } = payload;
+  // Render an image mockup from the prompt — same as prompt-based generation
+  const { prompt } = payload;
   const desc = prompt || 'a UI component';
 
-  if (framework === 'react') {
+  try {
+    const { generateAndRender } = await import('./ui-renderer');
+    const result = await generateAndRender(desc);
+
     return {
       success: true,
-      framework: 'react',
-      code: `import React from 'react';
-
-export function GeneratedComponent() {
-  return (
-    <div className="p-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-      <h2 className="text-lg font-semibold mb-4">${desc}</h2>
-      <p className="text-gray-600 mb-4">
-        Generated from ${fidelity} conversion
-      </p>
-      <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-        Action
-      </button>
-    </div>
-  );
-}`,
+      framework: payload.framework,
+      code: '',
+      imageDataUrl: result.dataUrl,
+      imageWidth: result.width,
+      imageHeight: result.height,
+      uiType: result.uiType,
     };
-  }
-
-  if (framework === 'tailwind') {
+  } catch (err) {
     return {
-      success: true,
-      framework: 'tailwind',
-      code: `<div class="p-6 rounded-lg border border-gray-200 bg-white shadow-sm">
-  <h2 class="text-lg font-semibold mb-4">${desc}</h2>
-  <p class="text-gray-600 mb-4">
-    Generated from ${fidelity} conversion
-  </p>
-  <button class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-    Action
-  </button>
-</div>`,
+      success: false,
+      code: '',
+      framework: payload.framework,
+      error: err instanceof Error ? err.message : 'Render failed',
     };
   }
-
-  return {
-    success: true,
-    framework: 'html',
-    code: `<div style="padding: 24px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-  <h2 style="font-size: 18px; font-weight: 600; margin-bottom: 16px;">${desc}</h2>
-  <p style="color: #6b7280; margin-bottom: 16px;">
-    Generated from ${fidelity} conversion
-  </p>
-  <button style="padding: 8px 16px; background: #2563eb; color: white; border-radius: 6px; border: none; cursor: pointer;">
-    Action
-  </button>
-</div>`,
-  };
 }
