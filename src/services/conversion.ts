@@ -11,6 +11,8 @@
 
 import type { ConversionPayload } from '@/components/ConversionDialog';
 import type { ComponentTree } from '@/types/component-tree';
+import { classifyPrompt } from '@/services/ui-templates';
+import { getBuiltInEntries } from '@/services/library-registry';
 
 /* ─── Response types ────────────────────────────────────── */
 
@@ -93,7 +95,6 @@ function normalizeName(s: string): string {
 async function getLibraryName(libraryId?: string): Promise<string | undefined> {
   if (!libraryId) return undefined;
   if (!_libraryCache) {
-    const { getBuiltInEntries } = await import('./library-registry');
     _libraryCache = new Map();
     for (const entry of getBuiltInEntries()) {
       _libraryCache.set(normalizeName(entry.name), entry.name);
@@ -172,7 +173,6 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
     await new Promise((r) => setTimeout(r, 400));
 
     // Step 2: Classifying UI type
-    const { classifyPrompt, getTheme } = await import('./ui-templates');
     const uiType = classifyPrompt(payload.prompt);
     const uiLabel = uiType.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim();
     onStep?.({ id: 'classify', label: 'Classifying UI type', detail: uiLabel });
@@ -180,10 +180,8 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
 
     // Step 3: Selecting design system
     const libraryName = await getLibraryName(payload.libraryId);
-    const theme = getTheme(libraryName);
     const dsLabel = libraryName || 'Default';
     onStep?.({ id: 'theme', label: 'Applying design system', detail: dsLabel });
-    void theme; // used by generateAndRender internally
     await new Promise((r) => setTimeout(r, 300));
 
     // Step 4: Generating layout

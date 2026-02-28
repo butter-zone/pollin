@@ -10,10 +10,15 @@ const LARGE_H = 240;
 /** Component names that use the smaller 320×160 canvas */
 const SMALL_COMPONENTS = new Set([
   'button', 'badge', 'tag', 'chip', 'toggle', 'switch',
-  'checkbox', 'radio', 'slider', 'input', 'text field',
-  'label', 'link', 'separator', 'divider', 'progress',
-  'progress bar', 'spinner', 'loader', 'avatar', 'icon',
-  'tooltip',
+  'checkbox', 'radio', 'radio button', 'radio group', 'slider', 'range input',
+  'input', 'text input', 'text field', 'search input', 'search',
+  'label', 'form label', 'link', 'anchor', 'hyperlink',
+  'separator', 'divider', 'horizontal rule', 'vertical rule',
+  'progress', 'progress bar', 'spinner', 'loader', 'loading',
+  'avatar', 'icon', 'tooltip', 'toggletip',
+  'segmented control', 'toggle button group',
+  'stepper', 'nudger', 'counter', 'quantity',
+  'rating', 'color picker',
 ]);
 
 /* ─── Helpers ───────────────────────────────────────────── */
@@ -1399,6 +1404,338 @@ function renderIcon(t: ThemeTokens): string {
   `);
 }
 
+/* ─── New renderers from component.gallery patterns ─────── */
+
+function renderPopover(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <div class="surface" style="width:220px;padding:14px;${glassCSS(t)}">
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;">Dimensions</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:${t.textMuted};margin-bottom:3px;">Width</div>
+            <div style="padding:5px 8px;font-size:12px;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};">${escapeHTML('100%')}</div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:${t.textMuted};margin-bottom:3px;">Height</div>
+            <div style="padding:5px 8px;font-size:12px;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};">auto</div>
+          </div>
+        </div>
+        <span style="position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:${t.surface};border-right:1px solid ${t.border};border-bottom:1px solid ${t.border};transform:translateX(-50%) rotate(45deg);"></span>
+      </div>
+      <button style="padding:7px 14px;font-size:12px;background:${t.surface};color:${t.text};border:1px solid ${t.border};border-radius:${t.radiusSm};cursor:pointer;">Open popover</button>
+    </div>
+  `);
+}
+
+function renderDrawer(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:288px;height:200px;position:relative;overflow:hidden;border-radius:${t.radius};border:1px solid ${t.border};">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.3);"></div>
+      <div style="position:absolute;right:0;top:0;bottom:0;width:200px;background:${t.surface};border-left:1px solid ${t.border};padding:16px;${glassCSS(t)}">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px;">Settings</div>
+        <div style="font-size:12px;color:${t.textMuted};margin-bottom:14px;">Adjust your preferences.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="padding:8px 10px;font-size:12px;background:${t.surfaceHover};border-radius:${t.radiusSm};cursor:pointer;">Profile</div>
+          <div style="padding:8px 10px;font-size:12px;background:transparent;border-radius:${t.radiusSm};color:${t.textMuted};cursor:pointer;">Billing</div>
+          <div style="padding:8px 10px;font-size:12px;background:transparent;border-radius:${t.radiusSm};color:${t.textMuted};cursor:pointer;">Notifications</div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function renderCombobox(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:240px;">
+      <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:${t.text};">Assignee</label>
+      <div style="padding:8px 12px;font-size:13px;background:${t.inputBg};border:1px solid ${t.primary};border-radius:${t.radiusSm};display:flex;align-items:center;justify-content:space-between;${glassCSS(t)}">
+        <span>Search…</span>
+        <span style="font-size:10px;color:${t.textMuted};">&#9660;</span>
+      </div>
+      <div class="surface" style="margin-top:4px;padding:4px;border-radius:${t.radiusSm};${glassCSS(t)}">
+        <div style="padding:6px 10px;font-size:12px;background:${t.surfaceHover};border-radius:${t.radiusSm};cursor:pointer;">Alice Johnson</div>
+        <div style="padding:6px 10px;font-size:12px;color:${t.textMuted};cursor:pointer;">Bob Smith</div>
+        <div style="padding:6px 10px;font-size:12px;color:${t.textMuted};cursor:pointer;">Carol Davis</div>
+      </div>
+    </div>
+  `);
+}
+
+function renderDatepicker(t: ThemeTokens): string {
+  const days = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  const hdr = days.map(d => `<span style="width:28px;text-align:center;font-size:10px;color:${t.textMuted};font-weight:500;">${d}</span>`).join('');
+  const cells = [28,29,30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18];
+  const grid = cells.map((d) => {
+    const isToday = d === 12;
+    const isPast = d > 27;
+    return `<span style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:50%;cursor:pointer;${isToday ? `background:${t.primary};color:${t.primaryText};font-weight:600;` : isPast ? `color:${t.textMuted};opacity:0.4;` : `color:${t.text};`}">${d}</span>`;
+  }).join('');
+  return wrap(t, `
+    <div class="surface" style="width:240px;padding:14px;${glassCSS(t)}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:10px;color:${t.textMuted};cursor:pointer;">&laquo;</span>
+        <span style="font-size:13px;font-weight:600;">February 2026</span>
+        <span style="font-size:10px;color:${t.textMuted};cursor:pointer;">&raquo;</span>
+      </div>
+      <div style="display:flex;gap:2px;margin-bottom:4px;">${hdr}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:2px;">${grid}</div>
+    </div>
+  `);
+}
+
+function renderRating(t: ThemeTokens): string {
+  const stars = [1,2,3,4,5];
+  const filled = 3;
+  const els = stars.map(s => `<span style="font-size:22px;color:${s <= filled ? t.warning : t.surfaceHover};cursor:pointer;">&#9733;</span>`).join('');
+  return wrap(t, `
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center;">
+      <div style="display:flex;gap:2px;">${els}</div>
+      <span style="font-size:12px;color:${t.textMuted};">${filled} out of 5</span>
+    </div>
+  `);
+}
+
+function renderSegmentedControl(t: ThemeTokens): string {
+  const opts = ['Day', 'Week', 'Month'];
+  const els = opts.map((o, i) => {
+    const active = i === 1;
+    return `<span style="padding:6px 16px;font-size:12px;font-weight:${active ? '600' : '400'};background:${active ? t.primary : 'transparent'};color:${active ? t.primaryText : t.textMuted};border-radius:${t.radiusSm};cursor:pointer;">${o}</span>`;
+  }).join('');
+  return wrap(t, `<div style="display:inline-flex;background:${t.surfaceHover};border-radius:${t.radius};padding:3px;gap:2px;">${els}</div>`);
+}
+
+function renderFileUpload(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;border:2px dashed ${t.border};border-radius:${t.radius};padding:28px 16px;text-align:center;${glassCSS(t)}">
+      <div style="font-size:28px;color:${t.textMuted};margin-bottom:8px;">&#8682;</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:4px;">Drop files here</div>
+      <div style="font-size:11px;color:${t.textMuted};margin-bottom:12px;">or click to browse</div>
+      <button style="padding:6px 14px;font-size:12px;background:${t.primary};color:${t.primaryText};border:none;border-radius:${t.radiusSm};cursor:pointer;">Choose File</button>
+    </div>
+  `);
+}
+
+function renderEmptyState(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;text-align:center;padding:24px 16px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:${t.surfaceHover};display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+        <span style="font-size:24px;color:${t.textMuted};">&#128270;</span>
+      </div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:4px;">No results found</div>
+      <div style="font-size:12px;color:${t.textMuted};margin-bottom:14px;">Try adjusting your search or filter criteria.</div>
+      <button style="padding:7px 14px;font-size:12px;background:${t.primary};color:${t.primaryText};border:none;border-radius:${t.radiusSm};cursor:pointer;">Clear Filters</button>
+    </div>
+  `);
+}
+
+function renderToast(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="display:flex;flex-direction:column;gap:8px;width:280px;">
+      <div class="surface" style="padding:12px 16px;display:flex;align-items:center;gap:10px;${glassCSS(t)}">
+        <span style="color:${t.success};font-size:16px;">&#10003;</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:500;">Changes saved</div>
+          <div style="font-size:11px;color:${t.textMuted};">Your profile has been updated.</div>
+        </div>
+        <span style="color:${t.textMuted};cursor:pointer;font-size:14px;">&times;</span>
+      </div>
+    </div>
+  `);
+}
+
+function renderTextarea(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;">
+      <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:${t.text};">Message</label>
+      <div style="width:100%;height:80px;padding:8px 12px;font-size:13px;background:${t.inputBg};color:${t.textMuted};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};font-family:${t.fontFamily};${glassCSS(t)}">Type your message here…</div>
+      <div style="font-size:11px;color:${t.textMuted};margin-top:4px;text-align:right;">0 / 500</div>
+    </div>
+  `);
+}
+
+function renderTreeView(t: ThemeTokens): string {
+  const indent = (level: number) => `padding-left:${12 + level * 16}px`;
+  return wrap(t, `
+    <div style="width:220px;font-size:13px;">
+      <div style="padding:5px 0;${indent(0)};font-weight:500;cursor:pointer;"><span style="color:${t.textMuted};margin-right:4px;">&#9660;</span>src</div>
+      <div style="padding:5px 0;${indent(1)};font-weight:500;cursor:pointer;"><span style="color:${t.textMuted};margin-right:4px;">&#9660;</span>components</div>
+      <div style="padding:5px 0;${indent(2)};color:${t.primary};cursor:pointer;">Button.tsx</div>
+      <div style="padding:5px 0;${indent(2)};color:${t.textMuted};cursor:pointer;">Card.tsx</div>
+      <div style="padding:5px 0;${indent(1)};font-weight:500;cursor:pointer;"><span style="color:${t.textMuted};margin-right:4px;">&#9654;</span>services</div>
+      <div style="padding:5px 0;${indent(0)};color:${t.textMuted};cursor:pointer;">package.json</div>
+    </div>
+  `);
+}
+
+function renderCarousel(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:288px;position:relative;">
+      <div style="height:140px;background:linear-gradient(135deg,${t.primary},${t.accent});border-radius:${t.radius};display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:28px;color:${t.primaryText};opacity:0.8;">&#9654; Slide 1</span>
+      </div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${t.primary};"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${t.surfaceHover};"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${t.surfaceHover};"></span>
+      </div>
+      <button style="position:absolute;top:50%;left:8px;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:${t.surface};border:1px solid ${t.border};font-size:12px;cursor:pointer;color:${t.text};">&lsaquo;</button>
+      <button style="position:absolute;top:50%;right:8px;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:${t.surface};border:1px solid ${t.border};font-size:12px;cursor:pointer;color:${t.text};">&rsaquo;</button>
+    </div>
+  `);
+}
+
+function renderStepper(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="display:flex;align-items:center;gap:2px;">
+      <button style="width:32px;height:32px;border-radius:${t.radiusSm};background:${t.surface};border:1px solid ${t.border};font-size:16px;cursor:pointer;color:${t.text};display:flex;align-items:center;justify-content:center;">−</button>
+      <div style="width:48px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};">3</div>
+      <button style="width:32px;height:32px;border-radius:${t.radiusSm};background:${t.surface};border:1px solid ${t.border};font-size:16px;cursor:pointer;color:${t.text};display:flex;align-items:center;justify-content:center;">+</button>
+    </div>
+  `);
+}
+
+function renderHero(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:288px;padding:28px 20px;text-align:center;background:linear-gradient(180deg,${t.surface},${t.bg});border-radius:${t.radius};border:1px solid ${t.border};">
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.02em;margin-bottom:6px;">Build Better UIs</div>
+      <div style="font-size:12px;color:${t.textMuted};margin-bottom:16px;line-height:1.5;">Ship polished interfaces faster with production-ready components.</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button style="padding:8px 18px;font-size:12px;font-weight:500;background:${t.primary};color:${t.primaryText};border:none;border-radius:${t.radiusSm};cursor:pointer;">Get Started</button>
+        <button style="padding:8px 18px;font-size:12px;font-weight:500;background:transparent;color:${t.text};border:1px solid ${t.border};border-radius:${t.radiusSm};cursor:pointer;">Learn More</button>
+      </div>
+    </div>
+  `);
+}
+
+function renderSearchInput(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};${glassCSS(t)}">
+        <span style="font-size:14px;color:${t.textMuted};">&#128269;</span>
+        <span style="font-size:13px;color:${t.textMuted};flex:1;">Search…</span>
+        <span style="font-size:10px;color:${t.textMuted};padding:2px 6px;background:${t.surfaceHover};border-radius:4px;">⌘K</span>
+      </div>
+    </div>
+  `);
+}
+
+function renderColorPicker(t: ThemeTokens): string {
+  const colors = ['#ef4444','#f59e0b','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
+  const swatches = colors.map(c => `<span style="width:28px;height:28px;border-radius:6px;background:${c};cursor:pointer;border:2px solid ${c === '#3b82f6' ? t.text : 'transparent'};"></span>`).join('');
+  return wrap(t, `
+    <div style="width:200px;">
+      <div style="width:100%;height:80px;border-radius:${t.radiusSm};background:linear-gradient(to right,#ef4444,#f59e0b,#22c55e,#3b82f6);margin-bottom:10px;"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${swatches}</div>
+    </div>
+  `);
+}
+
+function renderQuote(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;padding:16px 20px;border-left:3px solid ${t.primary};background:${t.surface};border-radius:0 ${t.radiusSm} ${t.radiusSm} 0;">
+      <div style="font-size:13px;font-style:italic;color:${t.text};line-height:1.6;margin-bottom:8px;">&ldquo;Design is not just what it looks like and feels like. Design is how it works.&rdquo;</div>
+      <div style="font-size:11px;color:${t.textMuted};font-weight:500;">&mdash; Steve Jobs</div>
+    </div>
+  `);
+}
+
+function renderHeader(t: ThemeTokens): string {
+  return wrap(t, `
+    <div class="surface" style="width:288px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;${glassCSS(t)}">
+      <span style="font-size:15px;font-weight:700;color:${t.primary};">AppName</span>
+      <div style="display:flex;gap:14px;align-items:center;">
+        <span style="font-size:13px;color:${t.textMuted};cursor:pointer;">Docs</span>
+        <span style="font-size:13px;color:${t.textMuted};cursor:pointer;">Blog</span>
+        <div style="width:28px;height:28px;border-radius:50%;background:${t.primary};color:${t.primaryText};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">JD</div>
+      </div>
+    </div>
+  `);
+}
+
+function renderFooter(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:288px;padding:16px;border-top:1px solid ${t.border};">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;color:${t.textMuted};letter-spacing:0.05em;">Product</span>
+          <span style="font-size:12px;color:${t.text};cursor:pointer;">Features</span>
+          <span style="font-size:12px;color:${t.text};cursor:pointer;">Pricing</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:11px;font-weight:600;text-transform:uppercase;color:${t.textMuted};letter-spacing:0.05em;">Company</span>
+          <span style="font-size:12px;color:${t.text};cursor:pointer;">About</span>
+          <span style="font-size:12px;color:${t.text};cursor:pointer;">Blog</span>
+        </div>
+      </div>
+      <div style="font-size:10px;color:${t.textMuted};text-align:center;">&copy; 2026 AppName. All rights reserved.</div>
+    </div>
+  `);
+}
+
+function renderList(t: ThemeTokens): string {
+  const items = ['Design tokens exported', 'Component library synced', 'Theme published', 'Documentation updated'];
+  const els = items.map((item, i) => `
+    <div style="padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:${i < items.length - 1 ? `1px solid ${t.border}` : 'none'};cursor:pointer;">
+      <span style="width:8px;height:8px;border-radius:50%;background:${i < 2 ? t.success : t.surfaceHover};flex-shrink:0;"></span>
+      <span style="font-size:13px;color:${t.text};">${escapeHTML(item)}</span>
+    </div>
+  `).join('');
+  return wrap(t, `<div class="surface" style="width:270px;overflow:hidden;${glassCSS(t)}">${els}</div>`);
+}
+
+function renderProgressIndicator(t: ThemeTokens): string {
+  const steps = ['Details', 'Review', 'Confirm'];
+  const current = 1;
+  const els = steps.map((s, i) => {
+    const done = i < current;
+    const active = i === current;
+    const circle = `<span style="width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;${done ? `background:${t.primary};color:${t.primaryText};` : active ? `border:2px solid ${t.primary};color:${t.primary};` : `border:2px solid ${t.border};color:${t.textMuted};`}">${done ? '&#10003;' : i + 1}</span>`;
+    const line = i < steps.length - 1 ? `<div style="flex:1;height:2px;background:${done ? t.primary : t.border};"></div>` : '';
+    return `<div style="display:flex;align-items:center;gap:6px;flex:${i < steps.length - 1 ? '1' : '0 0 auto'};">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        ${circle}
+        <span style="font-size:10px;color:${active ? t.text : t.textMuted};font-weight:${active ? '500' : '400'};">${escapeHTML(s)}</span>
+      </div>
+      ${line}
+    </div>`;
+  }).join('');
+  return wrap(t, `<div style="width:260px;display:flex;align-items:flex-start;gap:0;">${els}</div>`);
+}
+
+function renderVideo(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:288px;border-radius:${t.radius};overflow:hidden;border:1px solid ${t.border};">
+      <div style="height:160px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <span style="font-size:20px;color:#ffffff;padding-left:3px;">&#9654;</span>
+        </div>
+      </div>
+      <div style="padding:8px 12px;background:${t.surface};display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:11px;color:${t.textMuted};">0:00 / 3:24</span>
+        <div style="flex:1;height:3px;background:${t.surfaceHover};border-radius:2px;margin:0 10px;"><div style="width:0;height:100%;background:${t.primary};border-radius:2px;"></div></div>
+        <span style="font-size:12px;color:${t.textMuted};cursor:pointer;">&#9881;</span>
+      </div>
+    </div>
+  `);
+}
+
+function renderForm(t: ThemeTokens): string {
+  return wrap(t, `
+    <div style="width:260px;display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:${t.text};">Name</label>
+        <div style="padding:7px 10px;font-size:13px;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};color:${t.textMuted};">Jane Doe</div>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:500;margin-bottom:4px;color:${t.text};">Email</label>
+        <div style="padding:7px 10px;font-size:13px;background:${t.inputBg};border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};color:${t.textMuted};">jane@example.com</div>
+      </div>
+      <button style="padding:8px 16px;font-size:13px;font-weight:500;background:${t.primary};color:${t.primaryText};border:none;border-radius:${t.radiusSm};cursor:pointer;width:100%;">Submit</button>
+    </div>
+  `);
+}
+
 function renderGeneric(t: ThemeTokens, componentName: string, category: string | undefined): string {
   return wrap(t, `
     <div class="surface" style="width:260px;padding:24px;text-align:center;${glassCSS(t)}">
@@ -1417,70 +1754,143 @@ type ComponentRenderers = Partial<Record<string, Renderer>>;
 
 const LIBRARY_OVERRIDES: Record<string, ComponentRenderers> = {
   'shadcn/ui': {
-    button: shadcnButton, input: shadcnInput, 'text field': shadcnInput,
-    card: shadcnCard, dialog: shadcnDialog, modal: shadcnDialog,
-    switch: shadcnSwitch, toggle: shadcnSwitch,
-    badge: shadcnBadge, tag: shadcnBadge, chip: shadcnBadge,
-    checkbox: shadcnCheckbox, select: shadcnSelect, dropdown: shadcnSelect,
-    tabs: shadcnTabs, table: shadcnTable, 'data table': shadcnTable,
-    alert: shadcnAlert, notification: shadcnAlert, toast: shadcnAlert,
-    avatar: shadcnAvatar, accordion: shadcnAccordion,
+    button: shadcnButton, input: shadcnInput, 'text input': shadcnInput, 'text field': shadcnInput,
+    card: shadcnCard, tile: shadcnCard,
+    dialog: shadcnDialog, modal: shadcnDialog, popup: shadcnDialog, 'modal window': shadcnDialog,
+    switch: shadcnSwitch, toggle: shadcnSwitch, lightswitch: shadcnSwitch, 'toggle button': shadcnSwitch,
+    badge: shadcnBadge, tag: shadcnBadge, chip: shadcnBadge, label: shadcnBadge,
+    checkbox: shadcnCheckbox,
+    select: shadcnSelect, dropdown: shadcnSelect, 'dropdown menu': shadcnSelect, 'select input': shadcnSelect, 'select menu': shadcnSelect,
+    tabs: shadcnTabs, 'tabbed interface': shadcnTabs,
+    table: shadcnTable, 'data table': shadcnTable, 'data grid': shadcnTable,
+    alert: shadcnAlert, notification: shadcnAlert, toast: shadcnAlert, snackbar: shadcnAlert, banner: shadcnAlert, callout: shadcnAlert, feedback: shadcnAlert, message: shadcnAlert,
+    avatar: shadcnAvatar, accordion: shadcnAccordion, collapse: shadcnAccordion, collapsible: shadcnAccordion, disclosure: shadcnAccordion, expandable: shadcnAccordion, expander: shadcnAccordion, details: shadcnAccordion,
   },
   'material ui 3': {
-    button: materialButton, input: materialInput, 'text field': materialInput,
-    card: materialCard, dialog: materialDialog, modal: materialDialog,
-    switch: materialSwitch, toggle: materialSwitch,
+    button: materialButton, input: materialInput, 'text input': materialInput, 'text field': materialInput,
+    card: materialCard, tile: materialCard,
+    dialog: materialDialog, modal: materialDialog, popup: materialDialog, 'modal window': materialDialog,
+    switch: materialSwitch, toggle: materialSwitch, lightswitch: materialSwitch, 'toggle button': materialSwitch,
     badge: materialBadge, tag: materialBadge, chip: materialBadge,
-    checkbox: materialCheckbox, select: materialSelect, dropdown: materialSelect,
-    tabs: materialTabs, table: materialTable, 'data table': materialTable,
-    alert: materialAlert, notification: materialAlert, toast: materialAlert,
-    avatar: materialAvatar, accordion: materialAccordion,
+    checkbox: materialCheckbox,
+    select: materialSelect, dropdown: materialSelect, 'dropdown menu': materialSelect, 'select input': materialSelect, 'select menu': materialSelect,
+    tabs: materialTabs, 'tabbed interface': materialTabs,
+    table: materialTable, 'data table': materialTable, 'data grid': materialTable,
+    alert: materialAlert, notification: materialAlert, toast: materialAlert, snackbar: materialAlert, banner: materialAlert, callout: materialAlert, feedback: materialAlert, message: materialAlert,
+    avatar: materialAvatar, accordion: materialAccordion, collapse: materialAccordion, collapsible: materialAccordion, disclosure: materialAccordion, expandable: materialAccordion, expander: materialAccordion, details: materialAccordion,
   },
   'radix ui': {
-    button: radixButton, input: radixInput, 'text field': radixInput,
-    card: radixCard, dialog: radixDialog, modal: radixDialog,
-    switch: radixSwitch, toggle: radixSwitch,
+    button: radixButton, input: radixInput, 'text input': radixInput, 'text field': radixInput,
+    card: radixCard, tile: radixCard,
+    dialog: radixDialog, modal: radixDialog, popup: radixDialog, 'modal window': radixDialog,
+    switch: radixSwitch, toggle: radixSwitch, lightswitch: radixSwitch, 'toggle button': radixSwitch,
     badge: radixBadge, tag: radixBadge, chip: radixBadge,
-    checkbox: radixCheckbox, select: radixSelect, dropdown: radixSelect,
-    tabs: radixTabs, table: radixTable, 'data table': radixTable,
-    alert: radixAlert, notification: radixAlert, toast: radixAlert,
-    avatar: radixAvatar, accordion: radixAccordion,
+    checkbox: radixCheckbox,
+    select: radixSelect, dropdown: radixSelect, 'dropdown menu': radixSelect, 'select input': radixSelect, 'select menu': radixSelect,
+    tabs: radixTabs, 'tabbed interface': radixTabs,
+    table: radixTable, 'data table': radixTable, 'data grid': radixTable,
+    alert: radixAlert, notification: radixAlert, toast: radixAlert, snackbar: radixAlert, banner: radixAlert, callout: radixAlert, feedback: radixAlert, message: radixAlert,
+    avatar: radixAvatar, accordion: radixAccordion, collapse: radixAccordion, collapsible: radixAccordion, disclosure: radixAccordion, expandable: radixAccordion, expander: radixAccordion, details: radixAccordion,
   },
   'fluent ui': {
-    button: fluentButton, input: fluentInput, 'text field': fluentInput,
-    card: fluentCard, dialog: fluentDialog, modal: fluentDialog,
-    switch: fluentSwitch, toggle: fluentSwitch,
+    button: fluentButton, input: fluentInput, 'text input': fluentInput, 'text field': fluentInput,
+    card: fluentCard, tile: fluentCard,
+    dialog: fluentDialog, modal: fluentDialog, popup: fluentDialog, 'modal window': fluentDialog,
+    switch: fluentSwitch, toggle: fluentSwitch, lightswitch: fluentSwitch, 'toggle button': fluentSwitch,
     badge: fluentBadge, tag: fluentBadge, chip: fluentBadge,
-    checkbox: fluentCheckbox, select: fluentSelect, dropdown: fluentSelect,
-    tabs: fluentTabs, table: fluentTable, 'data table': fluentTable,
-    alert: fluentAlert, notification: fluentAlert, toast: fluentAlert,
-    avatar: fluentAvatar, accordion: fluentAccordion,
+    checkbox: fluentCheckbox,
+    select: fluentSelect, dropdown: fluentSelect, 'dropdown menu': fluentSelect, 'select input': fluentSelect, 'select menu': fluentSelect,
+    tabs: fluentTabs, 'tabbed interface': fluentTabs,
+    table: fluentTable, 'data table': fluentTable, 'data grid': fluentTable,
+    alert: fluentAlert, notification: fluentAlert, toast: fluentAlert, snackbar: fluentAlert, banner: fluentAlert, callout: fluentAlert, feedback: fluentAlert, 'message bar': fluentAlert,
+    avatar: fluentAvatar, accordion: fluentAccordion, collapse: fluentAccordion, collapsible: fluentAccordion, disclosure: fluentAccordion, expandable: fluentAccordion, expander: fluentAccordion, details: fluentAccordion,
   },
   'apple liquid glass': {
-    button: glassButton, input: glassInput, 'text field': glassInput,
-    card: glassCard, dialog: glassDialog, modal: glassDialog,
-    switch: glassSwitch, toggle: glassSwitch,
+    button: glassButton, input: glassInput, 'text input': glassInput, 'text field': glassInput,
+    card: glassCard, tile: glassCard,
+    dialog: glassDialog, modal: glassDialog, popup: glassDialog, 'modal window': glassDialog, sheet: glassDialog,
+    switch: glassSwitch, toggle: glassSwitch, lightswitch: glassSwitch, 'toggle button': glassSwitch,
     badge: glassBadge, tag: glassBadge, chip: glassBadge,
-    checkbox: glassCheckbox, select: glassSelect, dropdown: glassSelect,
-    tabs: glassTabs, table: glassTable, 'data table': glassTable,
-    alert: glassAlert, notification: glassAlert, toast: glassAlert,
-    avatar: glassAvatar, accordion: glassAccordion,
+    checkbox: glassCheckbox,
+    select: glassSelect, dropdown: glassSelect, 'dropdown menu': glassSelect, 'select input': glassSelect, 'select menu': glassSelect, picker: glassSelect,
+    tabs: glassTabs, 'tabbed interface': glassTabs, 'segmented control': glassTabs, 'toggle button group': glassTabs,
+    table: glassTable, 'data table': glassTable, 'data grid': glassTable,
+    alert: glassAlert, notification: glassAlert, toast: glassAlert, snackbar: glassAlert, banner: glassAlert, callout: glassAlert, feedback: glassAlert,
+    avatar: glassAvatar, accordion: glassAccordion, collapse: glassAccordion, collapsible: glassAccordion, disclosure: glassAccordion, expandable: glassAccordion, expander: glassAccordion, details: glassAccordion,
   },
 };
 
 /* ─── Library name normalization ────────────────────────── */
 
+/**
+ * Maps common design system names/aliases to our internal library keys.
+ * Sources: component.gallery/design-systems, npm package names, common shorthands.
+ */
+const LIBRARY_ALIASES: Record<string, string> = {
+  // shadcn/ui
+  'shadcn': 'shadcn/ui', 'shadcn-ui': 'shadcn/ui', 'shadcnui': 'shadcn/ui',
+  // Material / MUI
+  'material': 'material ui 3', 'material ui': 'material ui 3', 'material design': 'material ui 3',
+  'mui': 'material ui 3', '@mui': 'material ui 3', '@mui/material': 'material ui 3',
+  'material-ui': 'material ui 3', 'materialui': 'material ui 3', 'md3': 'material ui 3',
+  'material design 3': 'material ui 3',
+  // Radix
+  'radix': 'radix ui', 'radix-ui': 'radix ui', 'radixui': 'radix ui',
+  'radix primitives': 'radix ui', 'radix themes': 'radix ui',
+  // Fluent
+  'fluent': 'fluent ui', 'fluentui': 'fluent ui', 'fluent-ui': 'fluent ui',
+  'fluent 2': 'fluent ui', 'fluent2': 'fluent ui', '@fluentui': 'fluent ui',
+  // Apple / Liquid Glass
+  'apple': 'apple liquid glass', 'liquid glass': 'apple liquid glass',
+  'apple glass': 'apple liquid glass', 'ios': 'apple liquid glass',
+  'swiftui': 'apple liquid glass', 'uikit': 'apple liquid glass',
+  'ios 26': 'apple liquid glass', 'glass': 'apple liquid glass',
+  // Popular design systems -> route to closest match
+  'chakra': 'radix ui', 'chakra ui': 'radix ui', 'chakra-ui': 'radix ui',
+  'mantine': 'radix ui', 'headless ui': 'radix ui', 'headlessui': 'radix ui',
+  'ariakit': 'radix ui', 'react aria': 'radix ui', 'ark ui': 'radix ui',
+  'ant design': 'material ui 3', 'antd': 'material ui 3', 'ant-design': 'material ui 3',
+  'bootstrap': 'material ui 3', 'bulma': 'material ui 3',
+  'carbon': 'fluent ui', 'carbon design': 'fluent ui',
+  'spectrum': 'fluent ui', 'adobe spectrum': 'fluent ui',
+  'polaris': 'fluent ui', 'shopify polaris': 'fluent ui',
+  'primer': 'shadcn/ui', 'github primer': 'shadcn/ui',
+  'geist': 'shadcn/ui', 'vercel geist': 'shadcn/ui', 'next ui': 'shadcn/ui', 'nextui': 'shadcn/ui',
+  'heroui': 'shadcn/ui',
+  'flowbite': 'shadcn/ui',
+  'base web': 'material ui 3', 'uber base web': 'material ui 3',
+  'lightning': 'fluent ui', 'salesforce lightning': 'fluent ui',
+  'atlassian': 'fluent ui', 'atlassian design': 'fluent ui',
+  'patternfly': 'fluent ui',
+  'gestalt': 'material ui 3', 'pinterest gestalt': 'material ui 3',
+  'evergreen': 'material ui 3', 'grommet': 'material ui 3',
+  'paste': 'fluent ui', 'twilio paste': 'fluent ui',
+  'orbit': 'material ui 3', 'kiwi orbit': 'material ui 3',
+  'clarity': 'fluent ui', 'vmware clarity': 'fluent ui',
+  'shoelace': 'radix ui', 'web awesome': 'radix ui',
+  'stacks': 'shadcn/ui', 'stackoverflow stacks': 'shadcn/ui',
+  '98.css': 'fluent ui',
+};
+
 function resolveLibraryKey(libraryName: string | undefined): string | undefined {
   if (!libraryName) return undefined;
   const lower = libraryName.toLowerCase().trim();
-  // Exact match
+  // Exact match on LIBRARY_OVERRIDES
   if (LIBRARY_OVERRIDES[lower]) return lower;
-  // Fuzzy matches
+  // Check alias table
+  if (LIBRARY_ALIASES[lower]) return LIBRARY_ALIASES[lower];
+  // Fuzzy match on override keys
   for (const key of Object.keys(LIBRARY_OVERRIDES)) {
-    const norm = key.replace(/[\\s/\\-_]+/g, '');
-    const lowerNorm = lower.replace(/[\\s/\\-_]+/g, '');
+    const norm = key.replace(/[\s/\-_]+/g, '');
+    const lowerNorm = lower.replace(/[\s/\-_]+/g, '');
     if (lowerNorm === norm) return key;
     if (lowerNorm.includes(norm) || norm.includes(lowerNorm)) return key;
+  }
+  // Fuzzy match on alias keys
+  const lowerNorm = lower.replace(/[\s/\-_]+/g, '');
+  for (const [alias, target] of Object.entries(LIBRARY_ALIASES)) {
+    const aliasNorm = alias.replace(/[\s/\-_]+/g, '');
+    if (lowerNorm.includes(aliasNorm) || aliasNorm.includes(lowerNorm)) return target;
   }
   return undefined;
 }
@@ -1512,70 +1922,78 @@ export function generateComponentPreviewHTML(
     }
   }
 
-  // Fall back to generic theme-based renderers
-  let html: string;
+  // Comprehensive alias → renderer lookup table
+  // Keys: every alias from component.gallery + common design system synonyms
+  const GENERIC_RENDERERS: Record<string, (t: ThemeTokens) => string> = {
+    // Inputs & Controls
+    button: renderButton,
+    input: renderInput, 'text input': renderInput, 'text field': renderInput,
+    textarea: renderTextarea, textbox: renderTextarea, 'text box': renderTextarea,
+    checkbox: renderCheckbox,
+    radio: renderRadio, 'radio button': renderRadio, 'radio group': renderRadio,
+    switch: renderSwitch, toggle: renderSwitch, lightswitch: renderSwitch, 'toggle button': renderSwitch,
+    select: renderSelect, dropdown: renderSelect, 'select input': renderSelect, 'select menu': renderSelect, 'dropdown menu': renderMenu,
+    slider: renderSlider, 'range input': renderSlider,
+    combobox: renderCombobox, autocomplete: renderCombobox, autosuggest: renderCombobox,
+    'search input': renderSearchInput, search: renderSearchInput,
+    'color picker': renderColorPicker,
+    'segmented control': renderSegmentedControl, 'toggle button group': renderSegmentedControl,
+    stepper: renderStepper, nudger: renderStepper, counter: renderStepper, quantity: renderStepper,
+    'file upload': renderFileUpload, 'file input': renderFileUpload, 'file uploader': renderFileUpload, dropzone: renderFileUpload,
+    'date input': renderDatepicker, datepicker: renderDatepicker, calendar: renderDatepicker, 'datetime picker': renderDatepicker,
+    rating: renderRating,
+    form: renderForm, fieldset: renderForm,
+    label: renderLabel, 'form label': renderLabel,
 
-  if (key === 'button') {
-    html = renderButton(theme);
-  } else if (key === 'input' || key === 'text field') {
-    html = renderInput(theme);
-  } else if (key === 'textarea') {
-    html = renderInput(theme);
-  } else if (key === 'card') {
-    html = renderCard(theme);
-  } else if (key === 'dialog' || key === 'modal') {
-    html = renderDialog(theme);
-  } else if (key === 'checkbox') {
-    html = renderCheckbox(theme);
-  } else if (key === 'radio' || key === 'radio group') {
-    html = renderRadio(theme);
-  } else if (key === 'switch' || key === 'toggle') {
-    html = renderSwitch(theme);
-  } else if (key === 'select' || key === 'dropdown') {
-    html = renderSelect(theme);
-  } else if (key === 'tabs') {
-    html = renderTabs(theme);
-  } else if (key === 'badge' || key === 'tag' || key === 'chip') {
-    html = renderBadge(theme);
-  } else if (key === 'avatar') {
-    html = renderAvatar(theme);
-  } else if (key === 'alert' || key === 'notification' || key === 'toast') {
-    html = renderAlert(theme);
-  } else if (key === 'progress' || key === 'progress bar') {
-    html = renderProgress(theme);
-  } else if (key === 'slider') {
-    html = renderSlider(theme);
-  } else if (key === 'accordion') {
-    html = renderAccordion(theme);
-  } else if (key === 'table' || key === 'data table' || key === 'data grid') {
-    html = renderTable(theme);
-  } else if (key === 'breadcrumb') {
-    html = renderBreadcrumb(theme);
-  } else if (key === 'pagination') {
-    html = renderPagination(theme);
-  } else if (key === 'tooltip') {
-    html = renderTooltip(theme);
-  } else if (key === 'navigation bar' || key === 'navbar' || key === 'navigation menu' || key === 'menubar') {
-    html = renderNavbar(theme);
-  } else if (key === 'sidebar') {
-    html = renderSidebar(theme);
-  } else if (key === 'menu' || key === 'context menu' || key === 'dropdown menu') {
-    html = renderMenu(theme);
-  } else if (key === 'skeleton') {
-    html = renderSkeleton(theme);
-  } else if (key === 'spinner' || key === 'loader') {
-    html = renderSpinner(theme);
-  } else if (key === 'separator' || key === 'divider') {
-    html = renderSeparator(theme);
-  } else if (key === 'label') {
-    html = renderLabel(theme);
-  } else if (key === 'link') {
-    html = renderLink(theme);
-  } else if (key === 'icon') {
-    html = renderIcon(theme);
-  } else {
-    html = renderGeneric(theme, componentName, category);
-  }
+    // Data Display
+    card: renderCard, tile: renderCard,
+    badge: renderBadge, tag: renderBadge, chip: renderBadge,
+    avatar: renderAvatar,
+    table: renderTable, 'data table': renderTable, 'data grid': renderTable,
+    list: renderList,
+    icon: renderIcon,
+    'tree view': renderTreeView,
+    carousel: renderCarousel, 'content slider': renderCarousel,
+    'empty state': renderEmptyState,
+    quote: renderQuote, 'pull quote': renderQuote, 'block quote': renderQuote, blockquote: renderQuote,
+    video: renderVideo, 'video player': renderVideo,
+    image: renderCard, picture: renderCard,
+    heading: renderLabel,
+
+    // Feedback
+    alert: renderAlert, notification: renderAlert, banner: renderAlert, callout: renderAlert, feedback: renderAlert, message: renderAlert,
+    toast: renderToast, snackbar: renderToast,
+    'progress bar': renderProgress, progress: renderProgress,
+    'progress indicator': renderProgressIndicator, 'progress tracker': renderProgressIndicator, steps: renderProgressIndicator, timeline: renderProgressIndicator, meter: renderProgressIndicator,
+    spinner: renderSpinner, loader: renderSpinner, loading: renderSpinner,
+    skeleton: renderSkeleton, 'skeleton loader': renderSkeleton,
+
+    // Overlay
+    dialog: renderDialog, modal: renderDialog, popup: renderDialog, 'modal window': renderDialog,
+    popover: renderPopover,
+    tooltip: renderTooltip, toggletip: renderTooltip,
+    drawer: renderDrawer, tray: renderDrawer, flyout: renderDrawer, sheet: renderDrawer,
+    menu: renderMenu, 'context menu': renderMenu,
+
+    // Navigation
+    accordion: renderAccordion, collapse: renderAccordion, collapsible: renderAccordion, 'collapsible sections': renderAccordion, disclosure: renderAccordion, expandable: renderAccordion, expander: renderAccordion, details: renderAccordion,
+    tabs: renderTabs, 'tabbed interface': renderTabs,
+    breadcrumb: renderBreadcrumb, breadcrumbs: renderBreadcrumb, 'breadcrumb trail': renderBreadcrumb,
+    pagination: renderPagination,
+    'navigation bar': renderNavbar, navbar: renderNavbar, 'navigation menu': renderNavbar, navigation: renderNavbar, nav: renderNavbar, menubar: renderNavbar,
+    header: renderHeader,
+    footer: renderFooter,
+    sidebar: renderSidebar,
+    'button group': renderSegmentedControl, toolbar: renderNavbar,
+    hero: renderHero, jumbotron: renderHero,
+
+    // Layout
+    separator: renderSeparator, divider: renderSeparator, 'horizontal rule': renderSeparator, 'vertical rule': renderSeparator,
+    link: renderLink, anchor: renderLink, hyperlink: renderLink,
+  };
+
+  const renderer = GENERIC_RENDERERS[key];
+  const html = renderer ? renderer(theme) : renderGeneric(theme, componentName, category);
 
   return { html, width, height };
 }

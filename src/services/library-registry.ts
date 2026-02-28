@@ -320,11 +320,54 @@ const REGISTRY: RegistryEntry[] = [
       { id: 'glass-radio', name: 'Glass Radio', category: 'Forms', description: 'Radio buttons with liquid glass indicators' },
     ],
   },
+
+  /* ── Ant Design (built-in) ─────────────────────────────── */
+  /* Other design systems (Chakra, Bootstrap, Carbon, Spectrum, Polaris, Primer, etc.) */
+  /* are handled via LIBRARY_ALIASES in component-preview.ts when users paste custom sources */
+
+  {
+    patterns: [/ant[\s-]?design/i, /antd/i],
+    name: 'Ant Design',
+    description: 'Enterprise-class UI design language and React component library',
+    source: 'github',
+    sourceUrl: 'https://github.com/ant-design/ant-design',
+    components: [
+      { id: 'antd-button', name: 'Button', category: 'General', description: 'Action button' },
+      { id: 'antd-input', name: 'Input', category: 'Data Entry', description: 'Text input' },
+      { id: 'antd-select', name: 'Select', category: 'Data Entry', description: 'Select dropdown' },
+      { id: 'antd-table', name: 'Table', category: 'Data Display', description: 'Data table' },
+      { id: 'antd-modal', name: 'Modal', category: 'Feedback', description: 'Dialog modal' },
+      { id: 'antd-tabs', name: 'Tabs', category: 'Data Display', description: 'Tab panels' },
+      { id: 'antd-card', name: 'Card', category: 'Data Display', description: 'Content card' },
+      { id: 'antd-form', name: 'Form', category: 'Data Entry', description: 'Form container' },
+      { id: 'antd-drawer', name: 'Drawer', category: 'Feedback', description: 'Side drawer' },
+      { id: 'antd-alert', name: 'Alert', category: 'Feedback', description: 'Alert message' },
+      { id: 'antd-badge', name: 'Badge', category: 'Data Display', description: 'Badge indicator' },
+      { id: 'antd-avatar', name: 'Avatar', category: 'Data Display', description: 'User avatar' },
+      { id: 'antd-checkbox', name: 'Checkbox', category: 'Data Entry', description: 'Checkbox' },
+      { id: 'antd-switch', name: 'Switch', category: 'Data Entry', description: 'Toggle switch' },
+      { id: 'antd-datepicker', name: 'DatePicker', category: 'Data Entry', description: 'Date picker' },
+      { id: 'antd-pagination', name: 'Pagination', category: 'Navigation', description: 'Page navigation' },
+      { id: 'antd-breadcrumb', name: 'Breadcrumb', category: 'Navigation', description: 'Breadcrumb trail' },
+      { id: 'antd-menu', name: 'Menu', category: 'Navigation', description: 'Navigation menu' },
+      { id: 'antd-tooltip', name: 'Tooltip', category: 'Data Display', description: 'Hover tooltip' },
+      { id: 'antd-progress', name: 'Progress', category: 'Feedback', description: 'Progress bar' },
+      { id: 'antd-skeleton', name: 'Skeleton', category: 'Feedback', description: 'Loading placeholder' },
+      { id: 'antd-tree', name: 'Tree', category: 'Data Display', description: 'Tree view' },
+      { id: 'antd-upload', name: 'Upload', category: 'Data Entry', description: 'File upload' },
+      { id: 'antd-carousel', name: 'Carousel', category: 'Data Display', description: 'Content carousel' },
+      { id: 'antd-steps', name: 'Steps', category: 'Navigation', description: 'Step indicator' },
+      { id: 'antd-rate', name: 'Rate', category: 'Data Entry', description: 'Star rating' },
+      { id: 'antd-slider', name: 'Slider', category: 'Data Entry', description: 'Range slider' },
+      { id: 'antd-radio', name: 'Radio', category: 'Data Entry', description: 'Radio button group' },
+      { id: 'antd-color-picker', name: 'ColorPicker', category: 'Data Entry', description: 'Color selector' },
+    ],
+  },
 ];
 
 /* ─── Registry lookup (instant, curated) ────────────────── */
 
-export function lookupRegistry(url: string): DesignLibrary | null {
+function lookupRegistry(url: string): DesignLibrary | null {
   const normalized = url.trim().toLowerCase();
   for (const entry of REGISTRY) {
     for (const pattern of entry.patterns) {
@@ -384,7 +427,7 @@ interface GitHubTreeItem {
  * Fetch component list from a GitHub repository.
  * Uses the Trees API to get the full repo structure in a single request.
  */
-export async function fetchFromGitHub(url: string): Promise<DesignLibrary | null> {
+async function fetchFromGitHub(url: string): Promise<DesignLibrary | null> {
   // Extract owner/repo from GitHub URL
   const match = url.match(/github\.com\/([^/]+)\/([^/\s?#]+)/i);
   if (!match) return null;
@@ -474,7 +517,7 @@ function extractFigmaFileKey(url: string): string | null {
  *
  * Reads both published components and component sets (variants).
  */
-export async function fetchFromFigma(url: string): Promise<DesignLibrary | null> {
+async function fetchFromFigma(url: string): Promise<DesignLibrary | null> {
   const fileKey = extractFigmaFileKey(url);
   if (!fileKey) return null;
 
@@ -572,7 +615,7 @@ export async function fetchFromFigma(url: string): Promise<DesignLibrary | null>
  * Fetch a URL's HTML and extract component names from headings and common patterns.
  * Works for docs sites like Storybook, Chakra docs, component galleries, etc.
  */
-export async function fetchFromHTML(url: string): Promise<DesignLibrary | null> {
+async function fetchFromHTML(url: string): Promise<DesignLibrary | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -732,11 +775,6 @@ export async function resolveLibrary(
 
   onStatus?.('error', 'No components found at this URL');
   return null;
-}
-
-/** Get all supported library names for display */
-export function getSupportedLibraries(): string[] {
-  return REGISTRY.map((e) => e.name).sort();
 }
 
 /** Get the full curated registry entries for the built-in panel */

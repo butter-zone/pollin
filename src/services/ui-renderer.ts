@@ -6,6 +6,7 @@
  */
 
 import html2canvas from 'html2canvas';
+import { generateUIHTML } from '@/services/ui-templates';
 
 export interface RenderResult {
   dataUrl: string;
@@ -135,8 +136,6 @@ export async function generateAndRender(
   prompt: string,
   libraryName?: string,
 ): Promise<RenderResult & { uiType: string }> {
-  // Lazy import to allow tree-shaking if not used
-  const { generateUIHTML } = await import('./ui-templates');
   const generated = generateUIHTML(prompt, libraryName);
   const result = await renderHTMLToImage(generated.html, generated.width, generated.height);
   return {
