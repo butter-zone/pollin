@@ -850,13 +850,12 @@ function glassButton(t: ThemeTokens): string {
   return wrap(t, `
     <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
       <div style="display:flex;gap:10px;align-items:center;">
-        <button style="${base}height:44px;padding:0 20px;border-radius:22px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.25);box-shadow:0 4px 16px rgba(0,0,0,0.1);">Glass</button>
-        <button style="${base}height:44px;padding:0 20px;border-radius:22px;background:rgba(0,122,255,0.55);color:#ffffff;border:1px solid rgba(255,255,255,0.15);box-shadow:0 4px 16px rgba(0,0,0,0.12);">Tinted</button>
-        <button style="${base}height:44px;padding:0 20px;border-radius:22px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85);border:1px solid rgba(255,255,255,0.12);">Subtle</button>
+        <button style="${base}height:44px;padding:0 22px;border-radius:22px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.25);box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 4px 16px rgba(0,0,0,0.1);">.glass</button>
+        <button style="${base}height:44px;padding:0 22px;border-radius:22px;background:rgba(0,122,255,0.55);color:#ffffff;border:1px solid rgba(255,255,255,0.18);box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.12);">.glassProminent</button>
       </div>
       <div style="display:flex;gap:10px;align-items:center;">
-        <button style="${base}width:44px;height:44px;border-radius:22px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,0.1);">+</button>
-        <button style="${base}width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-size:18px;">&#9881;</button>
+        <button style="${base}height:44px;padding:0 22px;border-radius:22px;background:transparent;color:rgba(255,255,255,0.85);border:none;">Plain</button>
+        <button style="${base}width:50px;height:50px;border-radius:16px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 4px 16px rgba(0,0,0,0.1);">+</button>
       </div>
     </div>
   `);
@@ -877,14 +876,13 @@ function glassInput(t: ThemeTokens): string {
 
 function glassCard(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:280px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:20px;overflow:hidden;font-family:${SF};${GLASS}box-shadow:0 8px 32px rgba(0,0,0,0.15);">
-      <div style="height:6px;background:linear-gradient(90deg,rgba(0,122,255,0.6),rgba(175,82,222,0.6));"></div>
-      <div style="padding:20px;">
-        <div style="font-size:17px;font-weight:600;color:#ffffff;margin-bottom:4px;">Control Center</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:16px;">Customize your quick actions and widgets.</div>
-        <div style="display:flex;gap:8px;">
-          <button style="height:36px;padding:0 16px;border-radius:18px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:14px;font-weight:500;cursor:pointer;${GLASS}">Customize</button>
-          <button style="height:36px;padding:0 16px;border-radius:18px;background:rgba(0,122,255,0.5);color:#ffffff;border:none;font-size:14px;font-weight:500;cursor:pointer;${GLASS}">Done</button>
+    <div style="width:280px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:22px;overflow:hidden;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 8px 32px rgba(0,0,0,0.15);">
+      <div style="padding:22px;">
+        <div style="font-size:17px;font-weight:600;color:#ffffff;letter-spacing:-0.02em;margin-bottom:6px;">Control Center</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.45;margin-bottom:18px;">Customize your quick actions and widgets.</div>
+        <div style="display:flex;gap:10px;">
+          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:14px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">Customize</button>
+          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(0,122,255,0.55);color:#ffffff;border:none;font-size:14px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">Done</button>
         </div>
       </div>
     </div>
@@ -892,14 +890,14 @@ function glassCard(t: ThemeTokens): string {
 }
 
 function glassSwitch(t: ThemeTokens): string {
-  const sw = (label: string, on: boolean, icon: string) => `
+  const sw = (label: string, on: boolean) => `
     <label style="display:flex;align-items:center;gap:12px;font-size:15px;color:#ffffff;cursor:pointer;font-family:${SF};">
-      <span style="width:51px;height:31px;border-radius:16px;background:${on ? 'rgba(52,199,89,0.8)' : 'rgba(255,255,255,0.15)'};position:relative;display:inline-block;${GLASS}border:1px solid ${on ? 'rgba(52,199,89,0.3)' : 'rgba(255,255,255,0.12)'};">
-        <span style="position:absolute;top:2px;left:${on ? '22px' : '2px'};width:27px;height:27px;border-radius:14px;background:rgba(255,255,255,0.95);box-shadow:0 2px 8px rgba(0,0,0,0.2);transition:left .2s;display:flex;align-items:center;justify-content:center;font-size:12px;">${icon}</span>
+      <span style="width:51px;height:31px;border-radius:16px;background:${on ? 'rgba(52,199,89,0.85)' : 'rgba(255,255,255,0.15)'};position:relative;display:inline-block;${GLASS}border:1px solid ${on ? 'rgba(52,199,89,0.35)' : 'rgba(255,255,255,0.12)'};box-shadow:inset 0 1px 0 ${on ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'};">
+        <span style="position:absolute;top:2px;left:${on ? '22px' : '2px'};width:27px;height:27px;border-radius:14px;background:rgba(255,255,255,0.97);box-shadow:0 2px 8px rgba(0,0,0,0.22),inset 0 -1px 2px rgba(0,0,0,0.06);transition:left .2s;"></span>
       </span>
       ${escapeHTML(label)}
     </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:16px;">${sw('Wi-Fi', true, '&#128246;')}${sw('Airplane Mode', false, '&#9992;')}</div>`);
+  return wrap(t, `<div style="display:flex;flex-direction:column;gap:16px;">${sw('Wi-Fi', true)}${sw('Airplane Mode', false)}</div>`);
 }
 
 function glassBadge(t: ThemeTokens): string {
@@ -927,13 +925,13 @@ function glassCheckbox(t: ThemeTokens): string {
 function glassDialog(t: ThemeTokens): string {
   return wrap(t, `
     <div style="position:relative;width:300px;">
-      <div style="position:absolute;inset:-16px;background:rgba(0,0,0,0.45);border-radius:24px;"></div>
-      <div style="position:relative;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:24px;font-family:${SF};${GLASS}box-shadow:0 12px 40px rgba(0,0,0,0.2);">
-        <div style="font-size:17px;font-weight:600;color:#ffffff;margin-bottom:4px;text-align:center;">Remove Widget?</div>
-        <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:20px;text-align:center;">This widget will be removed from your Control Center.</div>
+      <div style="position:absolute;inset:-16px;background:rgba(0,0,0,0.45);border-radius:30px;"></div>
+      <div style="position:relative;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.2);border-radius:26px;padding:28px 24px 24px;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 12px 40px rgba(0,0,0,0.2);">
+        <div style="font-size:17px;font-weight:600;color:#ffffff;letter-spacing:-0.02em;margin-bottom:6px;text-align:center;">Remove Widget?</div>
+        <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:22px;text-align:center;line-height:1.4;">This widget will be removed from your Control Center.</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button style="height:44px;padding:0 20px;border-radius:12px;background:rgba(255,69,58,0.6);color:#ffffff;border:none;font-size:15px;font-weight:600;cursor:pointer;${GLASS}">Remove</button>
-          <button style="height:44px;padding:0 20px;border-radius:12px;background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-size:15px;font-weight:500;cursor:pointer;${GLASS}">Cancel</button>
+          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,59,48,0.6);color:#ffffff;border:none;font-size:17px;font-weight:600;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Remove</button>
+          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-size:17px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Cancel</button>
         </div>
       </div>
     </div>
@@ -955,29 +953,29 @@ function glassSelect(t: ThemeTokens): string {
 function glassTabs(t: ThemeTokens): string {
   return wrap(t, `
     <div style="width:280px;font-family:${SF};">
-      <div style="display:flex;background:rgba(255,255,255,0.1);border-radius:10px;padding:3px;gap:2px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.08);">
-        <span style="flex:1;text-align:center;padding:8px 14px;font-size:14px;font-weight:600;background:rgba(255,255,255,0.2);color:#ffffff;border-radius:8px;${GLASS}">Controls</span>
-        <span style="flex:1;text-align:center;padding:8px 14px;font-size:14px;font-weight:400;color:rgba(255,255,255,0.6);border-radius:8px;">Widgets</span>
+      <div style="display:inline-flex;background:rgba(255,255,255,0.12);border-radius:22px;padding:3px;gap:2px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+        <span style="padding:8px 18px;font-size:14px;font-weight:600;background:rgba(255,255,255,0.22);color:#ffffff;border-radius:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">Controls</span>
+        <span style="padding:8px 18px;font-size:14px;font-weight:400;color:rgba(255,255,255,0.55);border-radius:20px;">Widgets</span>
       </div>
-      <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:16px;${GLASS}">
-        <div style="font-size:15px;font-weight:500;color:#ffffff;margin-bottom:4px;">Quick Controls</div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.55);">Manage your frequently used controls.</div>
+      <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+        <div style="font-size:15px;font-weight:500;color:#ffffff;letter-spacing:-0.01em;margin-bottom:4px;">Quick Controls</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.45;">Manage your frequently used controls.</div>
       </div>
     </div>
   `);
 }
 
 function glassTable(t: ThemeTokens): string {
-  const th = `padding:10px 14px;font-size:12px;font-weight:500;text-align:left;color:rgba(255,255,255,0.5);border-bottom:1px solid rgba(255,255,255,0.1);`;
-  const td = `padding:10px 14px;font-size:14px;color:#ffffff;border-bottom:1px solid rgba(255,255,255,0.06);`;
+  const th = `padding:14px 16px;font-size:12px;font-weight:500;text-align:left;color:rgba(255,255,255,0.5);border-bottom:1px solid rgba(255,255,255,0.1);letter-spacing:0.02em;`;
+  const td = `padding:14px 16px;font-size:15px;color:#ffffff;border-bottom:1px solid rgba(255,255,255,0.06);`;
   return wrap(t, `
-    <div style="width:288px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:16px;overflow:hidden;font-family:${SF};${GLASS}">
+    <div style="width:288px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:18px;overflow:hidden;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">
       <table style="width:100%;border-collapse:collapse;">
         <thead><tr><th style="${th}">Device</th><th style="${th}">Status</th><th style="${th}">Battery</th></tr></thead>
         <tbody>
-          <tr><td style="${td}">iPhone</td><td style="${td}"><span style="color:rgba(52,199,89,0.9);">&#9679;</span> Active</td><td style="${td}">87%</td></tr>
-          <tr><td style="${td}">iPad</td><td style="${td}"><span style="color:rgba(255,214,10,0.9);">&#9679;</span> Idle</td><td style="${td}">62%</td></tr>
-          <tr><td style="${td};border-bottom:none;">Mac</td><td style="${td};border-bottom:none;"><span style="color:rgba(52,199,89,0.9);">&#9679;</span> Active</td><td style="${td};border-bottom:none;">100%</td></tr>
+          <tr><td style="${td}">iPhone</td><td style="${td}"><span style="color:#34C759;">&#9679;</span> Active</td><td style="${td}">87%</td></tr>
+          <tr><td style="${td}">iPad</td><td style="${td}"><span style="color:#FFD60A;">&#9679;</span> Idle</td><td style="${td}">62%</td></tr>
+          <tr><td style="${td};border-bottom:none;">Mac</td><td style="${td};border-bottom:none;"><span style="color:#34C759;">&#9679;</span> Active</td><td style="${td};border-bottom:none;">100%</td></tr>
         </tbody>
       </table>
     </div>
@@ -986,12 +984,12 @@ function glassTable(t: ThemeTokens): string {
 
 function glassAlert(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:280px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:16px;font-family:${SF};${GLASS}box-shadow:0 8px 32px rgba(0,0,0,0.12);">
-      <div style="display:flex;gap:10px;align-items:flex-start;">
-        <span style="width:28px;height:28px;border-radius:8px;background:rgba(0,122,255,0.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:#ffffff;">&#9432;</span>
-        <div>
-          <div style="font-size:15px;font-weight:600;color:#ffffff;margin-bottom:2px;">Software Update</div>
-          <div style="font-size:13px;color:rgba(255,255,255,0.6);">iOS 26.1 is now available for your device.</div>
+    <div style="width:280px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:18px;padding:18px;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 8px 32px rgba(0,0,0,0.12);">
+      <div style="display:flex;gap:12px;align-items:flex-start;">
+        <span style="width:30px;height:30px;border-radius:10px;background:rgba(0,122,255,0.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;color:#ffffff;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">&#9432;</span>
+        <div style="padding-top:2px;">
+          <div style="font-size:15px;font-weight:600;color:#ffffff;letter-spacing:-0.01em;margin-bottom:3px;">Software Update</div>
+          <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.45;">iOS 26.1 is now available for your device.</div>
         </div>
       </div>
     </div>
