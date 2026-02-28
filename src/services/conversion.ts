@@ -168,8 +168,8 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
 async function mockGeneration(payload: GenerationPayload): Promise<ConversionResult> {
   const onStep = payload.onStep;
   try {
-    // Step 1: Analyzing prompt
-    onStep?.({ id: 'analyze', label: 'Analyzing prompt' });
+    // Step 1: Analyzing prompt (show which model is selected)
+    onStep?.({ id: 'analyze', label: 'Analyzing prompt', detail: payload.model || undefined });
     await new Promise((r) => setTimeout(r, 400));
 
     // Step 2: Classifying UI type
@@ -269,7 +269,8 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
 
   try {
     const { generateAndRender } = await import('./ui-renderer');
-    const result = await generateAndRender(desc);
+    const libraryName = await getLibraryName(payload.libraryId ?? undefined);
+    const result = await generateAndRender(desc, libraryName);
 
     return {
       success: true,

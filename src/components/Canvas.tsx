@@ -703,6 +703,10 @@ export function Canvas({
           const img = new Image();
           img.onload = async () => {
             const ref = await storeImage(src);
+            // Scale to fit within 400×300 while preserving aspect ratio
+            const maxW = 400;
+            const maxH = 300;
+            const scale = Math.min(1, maxW / img.width, maxH / img.height);
             const imgObj: CanvasObject = {
               id: uid(),
               kind: 'image',
@@ -715,8 +719,8 @@ export function Canvas({
               name: file.name,
               timestamp: Date.now(),
               src: ref,
-              width: Math.min(img.width, 400),
-              height: Math.min(img.height, 300),
+              width: Math.round(img.width * scale),
+              height: Math.round(img.height * scale),
             };
             onAddObject(imgObj);
           };

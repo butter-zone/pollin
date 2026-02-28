@@ -459,6 +459,11 @@ function App() {
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
     async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
+      // Resolve generated library ID (e.g. "lib-1709...") to human-readable name
+      // so the conversion service can match it to a theme
+      const lib = libraryId ? state.libraries.find((l) => l.id === libraryId) : undefined;
+      const resolvedLibraryId = lib?.name ?? libraryId;
+
       const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
       // Define the initial reasoning steps
@@ -491,7 +496,7 @@ function App() {
           model,
           framework: 'react',
           imageRefs: attachments.map((a) => a.dataUrl),
-          libraryId,
+          libraryId: resolvedLibraryId,
           onStep: (step) => {
             completedStepIds.add(step.id);
             setGenerations((prev) =>
@@ -582,7 +587,7 @@ function App() {
         setIsGenerating(false);
       }
     },
-    [addObject, setTool, state.panX, state.panY],
+    [addObject, setTool, state.panX, state.panY, state.libraries],
   );
 
   // ── Add image attachment to canvas ────────────────────
