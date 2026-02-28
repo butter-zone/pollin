@@ -1,6 +1,6 @@
 # Learnings
 
-Notes on what worked, what didn't, and what we'd carry forward — compiled from building Pollin over Feb 25–26, 2026.
+Notes on what worked, what didn't, and what we'd carry forward — compiled from building Pollin over Feb 25–28, 2026.
 
 ---
 
@@ -200,6 +200,46 @@ Other STT fixes: `OfflineAudioContext` has poor codec support in some browsers �
 
 ---
 
+## Alias tables beat if-else chains
+
+The component preview renderer originally used a 35-branch `if-else` chain to map component names to render functions. Every new component or synonym required a new branch, and the pattern hid the full mapping behind imperative control flow.
+
+Replaced with a flat `GENERIC_RENDERERS` lookup table — 100+ component name aliases → renderer function. Adding a new alias is one line. The lookup is O(1) instead of O(n). A separate `LIBRARY_ALIASES` table (70+ entries) routes any design system name to the closest built-in visual match, so users can paste "Chakra UI" or "Primer" and get a reasonable preview without a dedicated renderer.
+
+**Takeaway:** When the logic is "match a string to a handler," use a Record/Map. If-else chains are write-once-read-never; lookup tables are self-documenting and trivially extensible.
+
+---
+
+## Six built-in libraries, infinite custom sources
+
+We started by adding registry entries for every popular design system (Chakra, Bootstrap, Carbon, Spectrum, Polaris, Primer). This bloated `library-registry.ts` by ~200 lines of component lists that were never rendered with unique visual DNA — they all routed through `LIBRARY_ALIASES` to the same 6 built-in renderers anyway.
+
+Trimmed to 6 curated built-in libraries: Ant Design, Apple Liquid Glass, Fluent UI, Material UI 3, Radix UI, shadcn/ui. The alias knowledge is retained in `component-preview.ts` so custom source URLs still resolve correctly.
+
+**Takeaway:** Don't ship registry data you can't visually differentiate. Keep the alias mapping (knowledge) but gate the UI exposure (entries) to what you can actually render distinctly.
+
+---
+
+## Delete dead code before it becomes "legacy"
+
+A single audit pass found: `layout-templates.ts` (511 lines, zero imports), `KeyboardShortcuts.tsx` (251 lines, shortcuts handled inline in App.tsx), `getSupportedLibraries()` (exported, never called), and four `export` keywords on internal-only functions. Total: ~960 lines removed, 10 KB off the gzipped bundle.
+
+The dynamic-vs-static import mismatch was a subtler form of debt. `ui-templates.ts` was dynamically imported by `conversion.ts` and `ui-renderer.ts` for tree-shaking, but statically imported by `App.tsx` and `Canvas.tsx` — so the dynamic imports provided zero benefit while generating build warnings. Standardizing to static imports eliminated both warnings.
+
+**Takeaway:** Dead code doesn't hurt performance much, but it hurts comprehension. `export` keywords on internal functions, files with zero imports, and dynamic imports that can't actually split — these are signals to prune. Run the audit before they become "that file nobody touches."
+
+---
+
+## Ambient effects need a kill switch
+
+The magnetic grid dot animation (cursor-following pull + glow) is delightful on an empty canvas — it rewards exploration and signals interactivity. But once objects exist or the user is in draw mode, it becomes a distraction: every `pointermove` triggers a `scheduleRender()` to update dots that the user isn't looking at, and the visual noise competes with actual content.
+
+Fix: pass `null` as cursor to `drawGrid()` when `activeTool` is a draw tool or `objects.length > 0`. The grid dots still render (they're useful for alignment), but the magnetic animation stops. The `scheduleRender()` calls on hover and pointer-leave are also gated on the same condition.
+
+**Takeaway:** Ambient polish should degrade gracefully as the workspace fills up. An effect that helps on an empty canvas can hurt on a busy one. Gate animations on context, not just a global toggle.
+
+---
+
 ## Subagent delegation scales file creation
 
 Three new service files (quadtree.ts, image-store.ts, component-preview.ts) were created by parallel subagents in a single round. Each subagent received: the type definitions, the design standards, and a clear interface contract. Integration (wiring into Canvas.tsx, App.tsx) was done in the main agent where cross-file context matters.
@@ -219,8 +259,9 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 - **Canvas resize** — `ResizeObserver` on the container instead of `window.resize` to catch panel collapses
 - **Persistence** — no save/load yet; canvas state is lost on refresh
 - **Component property editing** — library components land as images; need a property editor to tweak them post-placement
-- **Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping
+- ~~**Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping~~ ✅ Built, then deleted (zero imports — premature)
 - **Token export** — export resolved OKLCH tokens as CSS/JSON for handoff
+- **Renderer deduplication** — 5 library-specific renderer sets repeat ~65 near-identical functions; extract parameterized templates
 
 ---
 
@@ -230,13 +271,17 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 |--------|-------|
 | Commits | 40+ |
 | Days | 3 |
-| TypeScript/TSX | ~9,800 lines |
+| TypeScript/TSX | ~10,200 lines |
 | CSS | ~2,170 lines |
 | Runtime deps | 5 (React, GSAP, html2canvas, Lucide, HF Transformers) |
-| Files pruned in cleanup | ~50 |
+| Files pruned in cleanup | ~52 |
+| Dead code removed (Feb 27) | ~960 lines |
 | Undo stack depth | 50 snapshots |
 | Grid dot spacing | 40 px |
 | Surface levels | 5 |
-| Main chunk size | 270 KB (down from 1,489 KB) |
+| Main chunk size | 290 KB (down from 1,489 KB) |
+| Built-in libraries | 6 (Ant Design, Glass, Fluent, Material, Radix, shadcn) |
+| Component aliases | 100+ (generic renderers) + 70+ (library name mappings) |
+| Generic renderers | 20+ (popover, drawer, combobox, datepicker, etc.) |
 | Spatial index | QuadTree, depth 8, 8/leaf |
 | Image store | IndexedDB, SHA-256, LRU 20 |

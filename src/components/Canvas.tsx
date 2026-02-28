@@ -140,9 +140,12 @@ export function Canvas({
     ctx.translate(panX, panY);
     ctx.scale(zoom, zoom);
 
-    // grid
+    // grid — disable magnetic cursor effect in draw mode or when objects exist
     if (state.showGrid) {
-      drawGrid(ctx, w, h, zoom, panX, panY, state.gridSize, cursorWorld.current);
+      const isDrawTool = !['select', 'hand'].includes(state.activeTool);
+      const hasObjects = state.objects.length > 0;
+      const magneticCursor = (isDrawTool || hasObjects) ? null : cursorWorld.current;
+      drawGrid(ctx, w, h, zoom, panX, panY, state.gridSize, magneticCursor);
     }
 
     // objects
@@ -372,7 +375,7 @@ export function Canvas({
       const sy = e.clientY - rect.top;
       const world = screenToWorld(sx, sy, state.zoom, state.panX, state.panY);
 
-      // Always track cursor for magnetic grid dots
+      // Track cursor for magnetic grid dots (only used when no objects & not drawing)
       cursorWorld.current = world;
 
       // panning
@@ -518,8 +521,11 @@ export function Canvas({
         if (hit) onDeleteObjects([hit.id]);
       }
 
-      // Trigger render for magnetic grid effect on hover
-      if (state.showGrid) scheduleRender();
+      // Trigger render for magnetic grid effect on hover (skip when disabled)
+      const magneticActive = state.showGrid
+        && ['select', 'hand'].includes(state.activeTool)
+        && state.objects.length === 0;
+      if (magneticActive) scheduleRender();
     },
     [state, onSetPan, onUpdateObject, onDeleteObjects, scheduleRender],
   );
@@ -725,8 +731,11 @@ export function Canvas({
   // ── pointer leave (clear magnetic grid cursor) ─────
   const onPointerLeave = useCallback(() => {
     cursorWorld.current = null;
-    if (state.showGrid) scheduleRender();
-  }, [state.showGrid, scheduleRender]);
+    const magneticActive = state.showGrid
+      && ['select', 'hand'].includes(state.activeTool)
+      && state.objects.length === 0;
+    if (magneticActive) scheduleRender();
+  }, [state.showGrid, state.activeTool, state.objects.length, scheduleRender]);
 
   // ── inline text editing ──────────────────────────────
   const beginInlineTextEdit = useCallback(
