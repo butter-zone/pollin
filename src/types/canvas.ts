@@ -17,7 +17,7 @@ export interface Rect {
 }
 
 // ── Object types on the canvas ──────────────────────────
-export type ObjectKind = 'stroke' | 'rect' | 'ellipse' | 'line' | 'image' | 'text';
+export type ObjectKind = 'stroke' | 'rect' | 'ellipse' | 'line' | 'image' | 'text' | 'component';
 
 interface BaseObject {
   id: string;
@@ -82,13 +82,24 @@ export interface TextObject extends BaseObject {
   width: number;
 }
 
+export interface ComponentObject extends BaseObject {
+  kind: 'component';
+  /** Structured component tree (editable) */
+  tree: import('./component-tree').ComponentTree;
+  /** Cached render — pollin-img:// ref to the rasterized preview */
+  cachedImageRef?: string;
+  width: number;
+  height: number;
+}
+
 export type CanvasObject =
   | StrokeObject
   | RectObject
   | EllipseObject
   | LineObject
   | ImageObject
-  | TextObject;
+  | TextObject
+  | ComponentObject;
 
 // ── Legacy compat alias ─────────────────────────────────
 export interface DrawingStroke {

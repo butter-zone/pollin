@@ -1118,6 +1118,45 @@ function drawObject(
       ctx.restore();
       break;
     }
+    case 'component': {
+      // Render component objects using their cached bitmap (same approach as images)
+      const comp = obj as any;
+      const cacheKey = comp.cachedImageRef as string | undefined;
+      if (cacheKey) {
+        const cached = imageCache.get(cacheKey);
+        if (cached) {
+          ctx.translate(comp.x, comp.y);
+          ctx.rotate((comp.rotation * Math.PI) / 180);
+          ctx.drawImage(cached, -comp.width / 2, -comp.height / 2, comp.width, comp.height);
+        } else if (isImageRef(cacheKey)) {
+          loadImage(cacheKey).then((dataUrl) => {
+            const imgEl = new Image();
+            imgEl.onload = () => { imageCache.set(cacheKey, imgEl); };
+            imgEl.src = dataUrl;
+          }).catch(() => { /* missing */ });
+        } else {
+          const imgEl = new Image();
+          imgEl.onload = () => { imageCache.set(cacheKey, imgEl); };
+          imgEl.src = cacheKey;
+        }
+      } else {
+        // No cached render — draw a placeholder card
+        ctx.translate(comp.x, comp.y);
+        ctx.rotate((comp.rotation * Math.PI) / 180);
+        ctx.fillStyle = 'oklch(0.22 0.015 260)';
+        ctx.fillRect(-comp.width / 2, -comp.height / 2, comp.width, comp.height);
+        ctx.strokeStyle = 'oklch(0.4 0.02 260)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-comp.width / 2, -comp.height / 2, comp.width, comp.height);
+        ctx.fillStyle = 'oklch(0.6 0 0)';
+        ctx.font = '13px system-ui';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(comp.name || 'Component', 0, 0);
+        ctx.textAlign = 'start';
+      }
+      break;
+    }
     default:
       break;
   }
@@ -1238,6 +1277,15 @@ function getObjectBounds(obj: CanvasObject): { x: number; y: number; width: numb
         height: lineCount * t.fontSize * 1.4,
       };
     }
+    case 'component': {
+      const c = obj as any;
+      return {
+        x: c.x - c.width / 2,
+        y: c.y - c.height / 2,
+        width: c.width,
+        height: c.height,
+      };
+    }
     default:
       return { x: 0, y: 0, width: 0, height: 0 };
   }
@@ -1262,6 +1310,7 @@ function getResizeChanges(
         radiusY: newH / 2,
       } as Partial<CanvasObject>;
     case 'image':
+    case 'component':
       return {
         x: newX + newW / 2,
         y: newY + newH / 2,

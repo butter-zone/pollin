@@ -22,11 +22,13 @@ export default defineConfig({
         manualChunks: {
           // Heavy AI/ML runtime — loaded only when Whisper fallback activates
           'whisper': ['@huggingface/transformers'],
-          // Canvas rendering engine
+          // Canvas rendering engine + LLM integration
           'canvas-engine': [
             './src/services/ui-renderer.ts',
             './src/services/ui-templates.ts',
             './src/services/component-preview.ts',
+            './src/services/component-renderer.ts',
+            './src/services/llm-client.ts',
           ],
           // Animation library
           'gsap': ['gsap'],

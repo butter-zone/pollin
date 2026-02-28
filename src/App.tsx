@@ -443,26 +443,49 @@ function App() {
           ).slice(0, 20),
         );
 
-        // Place the rendered UI image directly on the canvas
+        // Place the rendered UI on the canvas
         if (result.success && result.imageDataUrl) {
           const ref = await storeImage(result.imageDataUrl);
-          const imgObj: CanvasObject = {
-            id: `obj-${Date.now()}-gen`,
-            kind: 'image',
-            x: state.panX + 120,
-            y: state.panY + 80,
-            rotation: 0,
-            opacity: 1,
-            locked: false,
-            visible: true,
-            name: `Generated: ${prompt.slice(0, 40)}`,
-            timestamp: Date.now(),
-            src: ref,
-            width: result.imageWidth ?? 420,
-            height: result.imageHeight ?? 580,
-          };
-          addObject(imgObj);
-          // Ensure the select tool is active so the user can interact with the image
+
+          if (result.componentTree) {
+            // LLM path: create an editable ComponentObject
+            const compObj: CanvasObject = {
+              id: `obj-${Date.now()}-gen`,
+              kind: 'component',
+              x: state.panX + 120,
+              y: state.panY + 80,
+              rotation: 0,
+              opacity: 1,
+              locked: false,
+              visible: true,
+              name: result.componentTree.metadata.name || `Generated: ${prompt.slice(0, 40)}`,
+              timestamp: Date.now(),
+              tree: result.componentTree,
+              cachedImageRef: ref,
+              width: result.imageWidth ?? 420,
+              height: result.imageHeight ?? 580,
+            };
+            addObject(compObj);
+          } else {
+            // Mock/API path: flat image
+            const imgObj: CanvasObject = {
+              id: `obj-${Date.now()}-gen`,
+              kind: 'image',
+              x: state.panX + 120,
+              y: state.panY + 80,
+              rotation: 0,
+              opacity: 1,
+              locked: false,
+              visible: true,
+              name: `Generated: ${prompt.slice(0, 40)}`,
+              timestamp: Date.now(),
+              src: ref,
+              width: result.imageWidth ?? 420,
+              height: result.imageHeight ?? 580,
+            };
+            addObject(imgObj);
+          }
+          // Ensure the select tool is active so the user can interact with the result
           setTool('select');
         }
       } catch {

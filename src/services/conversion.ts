@@ -1,15 +1,16 @@
 /**
  * Conversion & generation API client.
  *
- * Handles two flows:
- * 1. Prompt-based generation: user describes a design → AI generates UI code
- * 2. Object conversion: canvas sketches/images → UI code
+ * Handles three flows:
+ * 1. LLM generation: user prompt → LLM → ComponentTree → rendered preview
+ * 2. Remote API: user prompt → custom backend endpoint
+ * 3. Mock generation: template-based fallback for offline dev
  *
- * Currently stubbed with mock responses. Wire up to your preferred API
- * by setting VITE_CONVERSION_API_URL.
+ * Priority: remote API (VITE_CONVERSION_API_URL) > LLM (API key) > mock.
  */
 
 import type { ConversionPayload } from '@/components/ConversionDialog';
+import type { ComponentTree } from '@/types/component-tree';
 
 /* ─── Response types ────────────────────────────────────── */
 
@@ -27,6 +28,8 @@ export interface ConversionResult {
   imageHeight?: number;
   /** Classified UI type (login, dashboard, etc.) */
   uiType?: string;
+  /** Structured component tree (when generated via LLM) */
+  componentTree?: ComponentTree;
 }
 
 export interface GenerationPayload {
@@ -48,6 +51,7 @@ const API_BASE = import.meta.env.VITE_CONVERSION_API_URL || '';
 export async function generateFromPrompt(
   payload: GenerationPayload,
 ): Promise<ConversionResult> {
+  // Priority 1: Remote API endpoint
   if (API_BASE) {
     try {
       const response = await fetch(`${API_BASE}/generate`, {
@@ -67,6 +71,13 @@ export async function generateFromPrompt(
     }
   }
 
+  // Priority 2: Direct LLM API (OpenAI / Anthropic)
+  const { isLLMConfigured } = await import('./llm-client');
+  if (isLLMConfigured()) {
+    return llmGeneration(payload);
+  }
+
+  // Priority 3: Offline mock templates
   return mockGeneration(payload);
 }
 
@@ -100,6 +111,55 @@ async function getLibraryName(libraryId?: string): Promise<string | undefined> {
   // If not in the built-in cache, it may be a custom library — return the raw ID
   // so the prompt can still mention it
   return libraryId;
+}
+
+/* ─── LLM-powered generation ────────────────────────────── */
+
+async function llmGeneration(payload: GenerationPayload): Promise<ConversionResult> {
+  const onStep = payload.onStep;
+  try {
+    onStep?.({ id: 'analyze', label: 'Analyzing prompt' });
+
+    const { generateComponentTree } = await import('./llm-client');
+    const libraryName = await getLibraryName(payload.libraryId);
+
+    // Generate ComponentTree via LLM
+    const tree = await generateComponentTree(payload.prompt, {
+      imageRefs: payload.imageRefs,
+      designSystem: libraryName,
+      viewport: { width: 420, height: 580 },
+      onStep,
+    });
+
+    // Render ComponentTree → HTML → bitmap
+    onStep?.({ id: 'render', label: 'Rendering mockup' });
+    const { renderTreeToHTML } = await import('./component-renderer');
+    const { renderHTMLToImage } = await import('./ui-renderer');
+
+    const html = renderTreeToHTML(tree);
+    const vp = tree.metadata.viewport || { width: 420, height: 580 };
+    const renderResult = await renderHTMLToImage(html, vp.width, vp.height);
+
+    onStep?.({ id: 'complete', label: 'Complete' });
+
+    return {
+      success: true,
+      framework: payload.framework,
+      code: html,
+      imageDataUrl: renderResult.dataUrl,
+      imageWidth: renderResult.width,
+      imageHeight: renderResult.height,
+      uiType: tree.metadata.name,
+      componentTree: tree,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      code: '',
+      framework: payload.framework,
+      error: err instanceof Error ? err.message : 'Generation failed',
+    };
+  }
 }
 
 /* ─── Mock generation ───────────────────────────────────── */
