@@ -1,5 +1,6 @@
 import { useState, type FC, type ReactNode } from 'react';
 import type { CanvasState, Tool, DesignLibrary } from '@/types/canvas';
+import { exportTokensCSS, exportTokensJSON } from '@/services/token-export';
 
 /* ─── sub-components used inside the panel ──────────────────────────── */
 
@@ -350,6 +351,12 @@ export function ControlPanel({
             {onSaveNow && <Action label="Save Now" onClick={onSaveNow} />}
             {onExportCanvas && <Action label="Export .pollin" onClick={onExportCanvas} />}
             {onImportCanvas && <Action label="Import .pollin" onClick={onImportCanvas} />}
+          </Folder>
+
+          {/* ── Tokens ───────────────────────────── */}
+          <Folder label="Design Tokens" defaultOpen={false}>
+            <Action label="Export CSS" onClick={exportTokensCSS} />
+            <Action label="Export JSON" onClick={exportTokensJSON} />
           </Folder>
 
           {/* ── Objects list ──────────────────────── */}
