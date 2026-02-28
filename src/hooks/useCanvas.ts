@@ -120,7 +120,7 @@ function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): Extend
     case 'TOGGLE_GRID':
       return { ...state, showGrid: !state.showGrid };
     case 'SET_GRID_SIZE':
-      return { ...state, gridSize: Math.max(5, Math.min(100, action.payload)) };
+      return { ...state, gridSize: Math.max(10, Math.min(100, action.payload)) };
     case 'TOGGLE_SNAP':
       return { ...state, snapToGrid: !state.snapToGrid };
     case 'ADD_LIBRARY':

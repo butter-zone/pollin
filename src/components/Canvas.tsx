@@ -862,15 +862,18 @@ export function Canvas({
 // ── Drawing helpers ────────────────────────────────────
 
 /**
- * Draw a smooth stroke through points using quadratic Bézier curves.
- * Midpoints between consecutive points are used as on-curve positions,
- * with the original points as control points, giving C1 continuity.
+ * Draw a smooth stroke using Catmull-Rom spline interpolation.
+ *
+ * Catmull-Rom produces C1-continuous curves that pass through every
+ * control point, giving a natural hand-drawn feel even with sparse
+ * pointer events. Segment density adapts to inter-point distance so
+ * fast strokes get extra interpolated points.
  */
 function drawSmoothStroke(ctx: CanvasRenderingContext2D, points: Point[]) {
   if (points.length === 0) return;
   if (points.length === 1) {
     ctx.moveTo(points[0].x, points[0].y);
-    ctx.lineTo(points[0].x, points[0].y);
+    ctx.lineTo(points[0].x + 0.1, points[0].y);
     return;
   }
   if (points.length === 2) {
@@ -881,21 +884,38 @@ function drawSmoothStroke(ctx: CanvasRenderingContext2D, points: Point[]) {
 
   ctx.moveTo(points[0].x, points[0].y);
 
-  // First segment: line to the midpoint of p0→p1
-  const mid0x = (points[0].x + points[1].x) / 2;
-  const mid0y = (points[0].y + points[1].y) / 2;
-  ctx.lineTo(mid0x, mid0y);
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[Math.min(points.length - 1, i + 1)];
+    const p3 = points[Math.min(points.length - 1, i + 2)];
 
-  // Middle segments: quadratic curves with original points as control points
-  for (let i = 1; i < points.length - 1; i++) {
-    const midX = (points[i].x + points[i + 1].x) / 2;
-    const midY = (points[i].y + points[i + 1].y) / 2;
-    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+    // Adaptive segment count — more interpolation for longer gaps
+    const dist = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+    const segments = Math.max(1, Math.ceil(dist / 6));
+
+    for (let s = 1; s <= segments; s++) {
+      const t = s / segments;
+      const t2 = t * t;
+      const t3 = t2 * t;
+
+      // Uniform Catmull-Rom basis matrix
+      const x =
+        0.5 *
+        (2 * p1.x +
+          (-p0.x + p2.x) * t +
+          (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+          (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3);
+      const y =
+        0.5 *
+        (2 * p1.y +
+          (-p0.y + p2.y) * t +
+          (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+          (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3);
+
+      ctx.lineTo(x, y);
+    }
   }
-
-  // Last segment: line to the final point
-  const last = points[points.length - 1];
-  ctx.lineTo(last.x, last.y);
 }
 
 function snapToGrid(value: number, gridSize: number): number {
@@ -916,13 +936,20 @@ function drawGrid(
   gridSize: number,
   cursor: Point | null,
 ) {
-  const gs = gridSize;
+  // Adaptive grid step: skip dots when zoomed out to cap total count.
+  // At most ~200 dots per axis → ~40k total — well within budget.
+  const MAX_DOTS_PER_AXIS = 200;
+  const worldW = w / zoom;
+  const worldH = h / zoom;
+  const minStep = Math.max(worldW, worldH) / MAX_DOTS_PER_AXIS;
+  const gs = Math.max(gridSize, minStep);
+
   // Inset grid bounds so dots (including magnetic displacement) aren't clipped at edges
   const margin = gs * 0.5;
   const startX = Math.floor((-panX / zoom + margin) / gs) * gs;
   const startY = Math.floor((-panY / zoom + margin) / gs) * gs;
-  const endX = startX + w / zoom - margin * 2 + gs;
-  const endY = startY + h / zoom - margin * 2 + gs;
+  const endX = startX + worldW - margin * 2 + gs;
+  const endY = startY + worldH - margin * 2 + gs;
 
   // Dot radius scales with zoom but stays subtle
   const baseDotRadius = Math.max(0.8, 1.2 / zoom);

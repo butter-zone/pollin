@@ -13,6 +13,12 @@ import type { CanvasObject } from '@/types/canvas';
 
 const MAX_HISTORY = 50;
 
+/**
+ * Rapid mutations within this window (e.g. slider drags, fast property edits)
+ * coalesce into a single undo entry instead of flooding the stack.
+ */
+const COALESCE_WINDOW_MS = 300;
+
 interface Snapshot {
   objects: CanvasObject[];
   selectedIds: string[];
@@ -27,6 +33,7 @@ export function useHistory(
   const redoStack = useRef<Snapshot[]>([]);
   const inTransaction = useRef(false);
   const transactionPushed = useRef(false);
+  const lastPushTime = useRef(0);
 
   /** Start a transaction — only the first pushSnapshot inside it records state. */
   const beginTransaction = useCallback(() => {
@@ -40,12 +47,32 @@ export function useHistory(
     transactionPushed.current = false;
   }, []);
 
-  /** Take a snapshot of current state before a mutation */
+  /**
+   * Take a snapshot of current state before a mutation.
+   *
+   * Coalescing rules:
+   * - Inside a transaction → only the first call records (drag/rotate/resize).
+   * - Outside a transaction, within COALESCE_WINDOW_MS of the previous push →
+   *   skip (rapid slider changes collapse into one undo step).
+   * - Otherwise → push normally.
+   */
   const pushSnapshot = useCallback(() => {
     // Inside a transaction, only push once (at gesture start)
     if (inTransaction.current) {
       if (transactionPushed.current) return;
       transactionPushed.current = true;
+    }
+
+    const now = Date.now();
+    const withinCoalesceWindow =
+      !inTransaction.current && now - lastPushTime.current < COALESCE_WINDOW_MS;
+    lastPushTime.current = now;
+
+    // Rapid non-transactional mutations: the first push in the burst already
+    // captured the pre-mutation state, so subsequent pushes are no-ops.
+    if (withinCoalesceWindow && undoStack.current.length > 0) {
+      redoStack.current = [];
+      return;
     }
 
     undoStack.current.push({
