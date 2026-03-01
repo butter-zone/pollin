@@ -409,16 +409,11 @@ button, input, select, textarea {
   border: none;
   background: transparent;
   color: var(--c-text-dim);
-  cursor: pointer;
+  cursor: default;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.02em;
   text-align: left;
-  transition: color var(--dur) var(--ease);
-}
-
-.dk-folder-header:hover {
-  color: var(--c-text);
 }
 
 .dk-chevron {

@@ -5,7 +5,8 @@
  * returning a structured ComponentTree JSON response.
  */
 
-import type { ComponentTree } from '@/types/component-tree';
+import type { ComponentTree, ComponentNode, ComponentNodeType } from '@/types/component-tree';
+import { COMPONENT_TREE_JSON_SCHEMA } from '@/types/component-tree';
 
 // ── Types ───────────────────────────────────────────────
 
@@ -98,7 +99,18 @@ export function isLLMConfigured(): boolean {
 
 // ── System prompt ───────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a UI design generator for a design tool called Pollin. Your job is to produce structured component trees that describe user interfaces.
+// ── Allowed node types (derived from TypeScript type) ───
+
+const VALID_NODE_TYPES: ReadonlySet<string> = new Set<ComponentNodeType>([
+  'container', 'stack', 'grid', 'spacer', 'divider', 'scroll', 'section',
+  'text', 'heading', 'paragraph', 'image', 'icon', 'badge', 'avatar', 'code',
+  'button', 'input', 'textarea', 'select', 'checkbox', 'radio', 'toggle', 'slider',
+  'navbar', 'sidebar', 'tabs', 'breadcrumb', 'link', 'menu',
+  'alert', 'toast', 'progress', 'spinner', 'skeleton', 'tooltip', 'dialog',
+  'table', 'card', 'list', 'listItem', 'stat', 'chart',
+]);
+
+const SYSTEM_PROMPT = `You are a UI design generator for a design tool called Pollin. Your job is to produce structured component trees that describe pixel-perfect, production-quality user interfaces.
 
 You MUST respond with ONLY valid JSON matching the ComponentTree schema. Do not include any text, markdown, or explanation outside the JSON object.
 
@@ -110,7 +122,7 @@ Each node has the following shape:
   "id": string,       // unique ID within the tree, use format "n1", "n2", "n3", etc.
   "type": string,     // one of the allowed ComponentNodeType values listed below
   "props": object,    // component-specific props (label, placeholder, src, alt, href, etc.)
-  "styles": object,   // CSS properties in camelCase (e.g. "fontSize", "backgroundColor")
+  "styles": object,   // CSS properties in camelCase — values must be STRINGS (e.g. "16px" not 16)
   "children": array   // optional — array of child ComponentNode objects or strings (text content)
 }
 
@@ -125,13 +137,27 @@ Data:       table, card, list, listItem, stat, chart
 
 ## Rules
 
-1. The "styles" object must contain valid CSS properties in camelCase (e.g. "fontSize", "backgroundColor", "borderRadius", "padding", "gap").
+1. Every "styles" value MUST be a string (e.g. "fontSize": "14px", "gap": "16px"). Never use numbers.
 2. "children" can be strings (for text content) or nested ComponentNode objects.
-3. Use flexbox or CSS grid for layout by setting appropriate styles on container, stack, and grid nodes (e.g. "display": "flex", "flexDirection": "column", "gap": "16px").
-4. Generate realistic placeholder content — use real-looking names, emails, statistics, and copy instead of "Lorem ipsum" or "placeholder".
+3. Use flexbox or CSS grid for layout (e.g. "display": "flex", "flexDirection": "column", "gap": "16px").
+4. Generate realistic placeholder content — real-looking names, emails, statistics, and copy. Never use "Lorem ipsum" or generic placeholders.
 5. Each node must have a unique "id" using the format "n1", "n2", "n3", etc.
-6. The root node should typically be a "container" or "section".
-7. If a design system is specified, follow its conventions (rounded corners, spacing scale, color palette, typography, etc.).
+6. The root node should typically be a "container" or "section" with explicit width/height matching the viewport.
+7. Every leaf node must have "props" and "styles" objects (can be empty {}).
+8. Use at least 20–50 nodes for full-screen layouts (dashboards, settings, etc.). Be thorough — include navbars, sidebars, cards, stats, tables, and realistic content.
+9. Always set "background", "color", and "fontFamily" on the root node to establish the visual baseline.
+10. Use consistent spacing (4px/8px/12px/16px/24px grid) and a cohesive color palette.
+
+## Design System Guidelines
+
+When a design system is specified, strictly follow its visual language:
+
+- **Material UI 3**: Use rounded corners (12–16px), elevation shadows, surface containers, primary (#6750A4), on-primary (#FFF), surface (#FFFBFE), font: Roboto.
+- **Apple Liquid Glass**: Use backdrop-filter blur, translucent backgrounds (rgba), large corner radii (20px+), SF Pro font, high contrast text on glass.
+- **Ant Design**: Use compact 4px grid, #1677FF primary, border-radius 6px, clean borders, font: -apple-system/Segoe UI.
+- **Fluent UI**: Use subtle shadows, #0078D4 primary, Segoe UI font, 4px corners, acrylic effects.
+- **shadcn/ui**: Use zinc/slate neutrals, minimal borders, 6–8px radii, small text (13–14px), Inter/system font.
+- **Radix UI**: Use clean minimal style, accessible contrast, 6px radii, system fonts, subtle hover states.
 
 ## Response format
 
@@ -142,7 +168,7 @@ Return a JSON object with this structure:
   "metadata": {
     "name": string,         // human-readable name for this screen/component
     "description": string,  // brief description of what was generated
-    "designSystem": string, // optional — design system used
+    "designSystem": string, // design system used (if any)
     "viewport": { "width": number, "height": number },
     "prompt": string,       // the original prompt
     "generatedAt": string,  // ISO timestamp
@@ -170,9 +196,16 @@ async function callOpenAI(
     body: JSON.stringify({
       model: config.model,
       messages,
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-      max_tokens: 4096,
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'component_tree',
+          strict: true,
+          schema: COMPONENT_TREE_JSON_SCHEMA,
+        },
+      },
+      temperature: 0.4,
+      max_tokens: 16384,
     }),
   });
 
@@ -188,7 +221,14 @@ async function callOpenAI(
   }
 
   const data = await res.json();
-  return data.choices[0].message.content as string;
+
+  // Detect truncation
+  const choice = data.choices?.[0];
+  if (choice?.finish_reason === 'length') {
+    throw new Error('LLM output was truncated. The UI may be too complex for a single request.');
+  }
+
+  return choice.message.content as string;
 }
 
 // ── Anthropic ───────────────────────────────────────────
@@ -248,8 +288,8 @@ async function callAnthropic(
       model: config.model,
       system: typeof systemMessage?.content === 'string' ? systemMessage.content : SYSTEM_PROMPT,
       messages: anthropicMessages,
-      max_tokens: 4096,
-      temperature: 0.7,
+      max_tokens: 16384,
+      temperature: 0.4,
     }),
   });
 
@@ -265,7 +305,54 @@ async function callAnthropic(
   }
 
   const data = await res.json();
+
+  // Detect truncation
+  if (data.stop_reason === 'max_tokens') {
+    throw new Error('LLM output was truncated. The UI may be too complex for a single request.');
+  }
+
   return data.content[0].text as string;
+}
+
+// ── Tree validation ─────────────────────────────────────
+
+/**
+ * Recursively validate a ComponentNode tree, auto-fixing minor issues
+ * and throwing on structural errors the renderer can't handle.
+ */
+function validateNode(node: ComponentNode): void {
+  // Ensure required fields exist
+  if (!node.id || typeof node.id !== 'string') {
+    node.id = `n-fix-${Math.random().toString(36).slice(2, 6)}`;
+  }
+  if (!node.type || !VALID_NODE_TYPES.has(node.type)) {
+    // Map unknown types to container as a safe fallback
+    node.type = 'container' as ComponentNodeType;
+  }
+  if (!node.props || typeof node.props !== 'object') {
+    node.props = {};
+  }
+  if (!node.styles || typeof node.styles !== 'object') {
+    node.styles = {};
+  }
+
+  // Coerce numeric style values to strings (common LLM mistake)
+  for (const [key, val] of Object.entries(node.styles)) {
+    if (typeof val === 'number') {
+      (node.styles as Record<string, string>)[key] = `${val}px`;
+    } else if (typeof val !== 'string') {
+      delete (node.styles as Record<string, string>)[key];
+    }
+  }
+
+  // Validate children recursively
+  if (node.children && Array.isArray(node.children)) {
+    for (const child of node.children) {
+      if (typeof child !== 'string') {
+        validateNode(child);
+      }
+    }
+  }
 }
 
 // ── Main entry point ────────────────────────────────────
@@ -334,6 +421,8 @@ export async function generateComponentTree(
   }
 
   // Step 4 — Parse & validate
+  onStep?.({ id: 'llm-validate', label: 'Validating component tree' });
+
   let tree: ComponentTree;
   try {
     tree = JSON.parse(raw) as ComponentTree;
@@ -342,7 +431,15 @@ export async function generateComponentTree(
   }
 
   if (!tree.root || !tree.metadata) {
-    throw new Error('LLM returned invalid JSON. Try again.');
+    throw new Error('LLM response missing root or metadata. Try again.');
+  }
+
+  // Deep-validate every node in the tree
+  validateNode(tree.root);
+
+  // Ensure metadata has required fields
+  if (!tree.metadata.viewport?.width || !tree.metadata.viewport?.height) {
+    tree.metadata.viewport = viewport ?? { width: 780, height: 580 };
   }
 
   // Fill in metadata defaults
