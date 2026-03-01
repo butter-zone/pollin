@@ -317,3 +317,15 @@ This is faster (1 generation + 3 re-themes vs 4 generations), and lets users com
 | Generic renderers | 20+ (popover, drawer, combobox, datepicker, etc.) |
 | Spatial index | QuadTree, depth 8, 8/leaf |
 | Image store | IndexedDB, SHA-256, LRU 20 |
+
+---
+
+## Skills & Design References
+
+Installed design quality skills to guide rendering output:
+
+- **canvas-design** (`anthropics/skills`) — philosophy-driven design: craftsmanship emphasis, spatial composition, minimal text as visual accent, museum-quality bar
+- **frontend-design** (`anthropics/skills`) — production-grade frontend aesthetics: distinctive typography, bold color commitment, spatial composition, avoid generic AI slop
+- **web-design-guidelines** (`vercel-labs/agent-skills`) — Web Interface Guidelines compliance: accessibility, UX patterns, design system best practices
+
+Skills are installed in `.agents/skills/` and referenced by universal agents (Copilot, Codex, Cursor, etc.).

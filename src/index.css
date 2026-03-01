@@ -42,6 +42,7 @@ button, input, select, textarea {
   /* accent (oklch) */
   --c-accent: oklch(0.875 0.117 120);
   --c-accent-hover: oklch(0.92 0.1 120);
+  --c-accent-bg: oklch(0.3 0.06 120);
   --c-accent-fg: oklch(0.2 0.04 120);
   --c-danger: oklch(0.63 0.25 29);
   --c-danger-hover: oklch(0.68 0.22 29);

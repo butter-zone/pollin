@@ -442,6 +442,7 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       break;
     case 'divider':
       s.borderTop = `1px solid ${t.border}`;
+      if (s.borderLeft) s.borderLeft = `1px solid ${t.border}`;
       break;
     case 'input':
     case 'textarea':
@@ -461,6 +462,44 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       break;
     case 'tabs':
       s.borderBottom = `2px solid ${t.border}`;
+      break;
+    case 'table':
+      if (t.isDark) s.color = t.onSurface;
+      break;
+    case 'listItem':
+      s.borderBottom = `1px solid ${t.border}`;
+      break;
+    case 'stat':
+      if (t.isDark) s.color = t.onSurface;
+      break;
+    case 'dialog':
+      if (t.isDark) {
+        s.background = t.surfaceAlt;
+        s.color = t.onSurface;
+      }
+      break;
+    case 'code':
+      if (t.isDark) {
+        s.background = t.surfaceAlt;
+        s.color = t.onSurface;
+      }
+      break;
+    case 'image':
+      if (t.isDark) {
+        s.background = t.surfaceAlt;
+        s.color = t.muted;
+      }
+      break;
+    case 'progress':
+      if (t.isDark) s.background = t.border;
+      break;
+    case 'alert':
+    case 'toast':
+      if (t.isDark) {
+        s.background = t.surfaceAlt;
+        s.borderColor = t.border;
+        s.color = t.onSurface;
+      }
       break;
     default:
       break;

@@ -35,9 +35,9 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   section: {},
 
   // Content
-  text: {},
-  heading: {},
-  paragraph: {},
+  text: { lineHeight: '1.5' },
+  heading: { fontWeight: '700', lineHeight: '1.2' },
+  paragraph: { lineHeight: '1.6' },
   image: {},
   icon: {},
   badge: {
@@ -47,6 +47,8 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     borderRadius: '9999px',
     fontSize: '12px',
     fontWeight: '500',
+    background: '#eff6ff',
+    color: '#2563eb',
   },
   avatar: {
     width: '40px',
@@ -62,9 +64,11 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   code: {
     fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
     background: '#f3f4f6',
+    color: '#1f2937',
     padding: '12px 16px',
     borderRadius: '6px',
     fontSize: '13px',
+    lineHeight: '1.5',
     overflowX: 'auto',
   },
 
@@ -75,6 +79,14 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     padding: '8px 16px',
     borderRadius: '6px',
     fontWeight: '500',
+    fontSize: '14px',
+    lineHeight: '1',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    minHeight: '36px',
+    textAlign: 'center',
   },
   input: {
     padding: '8px 12px',
@@ -82,6 +94,10 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     borderRadius: '6px',
     outline: 'none',
     width: '100%',
+    height: '38px',
+    lineHeight: '1.4',
+    background: 'white',
+    color: '#111827',
   },
   textarea: {
     padding: '8px 12px',
@@ -91,6 +107,9 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     width: '100%',
     fontFamily: 'inherit',
     resize: 'vertical',
+    lineHeight: '1.4',
+    background: 'white',
+    color: '#111827',
   },
   select: {
     padding: '8px 12px',
@@ -98,6 +117,11 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     borderRadius: '6px',
     outline: 'none',
     width: '100%',
+    height: '38px',
+    lineHeight: '1.4',
+    background: 'white',
+    color: '#111827',
+    appearance: 'none',
   },
   checkbox: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' },
   radio: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' },
@@ -110,10 +134,14 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     alignItems: 'center',
     padding: '12px 24px',
     borderBottom: '1px solid #e5e7eb',
+    gap: '12px',
   },
   sidebar: {
     borderRight: '1px solid #e5e7eb',
     padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    overflowY: 'auto',
   },
   tabs: {
     display: 'flex',
@@ -167,6 +195,8 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     borderRadius: '8px',
     padding: '16px',
     background: 'white',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    overflow: 'hidden',
   },
   list: { listStyle: 'none', padding: '0', margin: '0' },
   listItem: { padding: '8px 0', borderBottom: '1px solid #f3f4f6' },
@@ -313,6 +343,17 @@ function renderNode(node: ComponentNode): string {
     }
 
     case 'divider': {
+      const isVertical = props.orientation === 'vertical';
+      if (isVertical) {
+        const vStyles: Record<string, string> = {
+          borderLeft: '1px solid #e5e7eb',
+          width: '1px',
+          alignSelf: 'stretch',
+          margin: '0',
+        };
+        const css = stylesToCSS(mergeStyles(vStyles, node.styles));
+        return `<div${da} style="${css}"></div>`;
+      }
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
       return `<hr${da} style="${css}" />`;
     }
@@ -337,7 +378,9 @@ function renderNode(node: ComponentNode): string {
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(props.level) || 2));
       const tag = `h${level}`;
-      const css = stylesToCSS(mergeStyles(defaults, node.styles));
+      const sizeByLevel: Record<number, string> = { 1: '2em', 2: '1.5em', 3: '1.25em', 4: '1.1em', 5: '1em', 6: '0.875em' };
+      const levelDefaults: Record<string, string> = { fontSize: sizeByLevel[level] || '1em' };
+      const css = stylesToCSS(mergeStyles({ ...defaults, ...levelDefaults }, node.styles));
       return `<${tag}${da} style="${css}">${renderChildren(children)}</${tag}>`;
     }
 
@@ -379,15 +422,25 @@ function renderNode(node: ComponentNode): string {
     }
 
     case 'badge': {
-      const css = stylesToCSS(mergeStyles(defaults, node.styles));
+      const badgeVariant = String(props.variant ?? 'default');
+      const BADGE_VARIANTS: Record<string, { bg: string; color: string }> = {
+        primary: { bg: '#2563eb', color: '#ffffff' },
+        success: { bg: '#dcfce7', color: '#166534' },
+        warning: { bg: '#fef3c7', color: '#92400e' },
+        error: { bg: '#fee2e2', color: '#991b1b' },
+        default: { bg: '#eff6ff', color: '#2563eb' },
+      };
+      const bv = BADGE_VARIANTS[badgeVariant] ?? BADGE_VARIANTS.default;
+      const badgeExtra: Record<string, string> = { background: bv.bg, color: bv.color };
+      const css = stylesToCSS(mergeStyles({ ...defaults, ...badgeExtra }, node.styles));
       return `<span${da} style="${css}">${renderChildren(children)}</span>`;
     }
 
     case 'avatar': {
-      const name = String(props.name ?? '');
-      const initial = name.charAt(0).toUpperCase() || '?';
+      const initials = String(props.initials ?? props.name ?? '');
+      const display = initials || '?';
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div${da} style="${css}">${escapeHTML(initial)}</div>`;
+      return `<div${da} style="${css}">${escapeHTML(display)}</div>`;
     }
 
     case 'code': {
@@ -498,35 +551,53 @@ function renderNode(node: ComponentNode): string {
     case 'tabs': {
       const activeIndex = Number(props.activeIndex ?? 0);
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      const items =
-        children
-          ?.map((child, i) => {
-            if (typeof child === 'string') {
-              const isActive = i === activeIndex;
-              const tabStyle = stylesToCSS({
-                padding: '8px 16px',
-                cursor: 'pointer',
-                borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
-                color: isActive ? '#2563eb' : '#6b7280',
-                fontWeight: isActive ? '600' : '400',
-                marginBottom: '-2px',
-              });
-              return `<div style="${tabStyle}">${escapeHTML(child)}</div>`;
-            }
+      // Support both children-based and items-prop-based tabs
+      const tabItems: string[] = (Array.isArray(props.items) ? props.items : []) as string[];
+      let tabsHTML = '';
+      if (children && children.length > 0) {
+        tabsHTML = children.map((child, i) => {
+          if (typeof child === 'string') {
             const isActive = i === activeIndex;
-            const tabStyle: Record<string, string> = {
+            const tabStyle = stylesToCSS({
               padding: '8px 16px',
               cursor: 'pointer',
               borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
               color: isActive ? '#2563eb' : '#6b7280',
               fontWeight: isActive ? '600' : '400',
               marginBottom: '-2px',
-            };
-            const merged = mergeStyles(tabStyle, child.styles);
-            return `<div style="${stylesToCSS(merged)}">${renderChildren(child.children)}</div>`;
-          })
-          .join('') ?? '';
-      return `<div style="${css}">${items}</div>`;
+              fontSize: '14px',
+            });
+            return `<div style="${tabStyle}">${escapeHTML(child)}</div>`;
+          }
+          const isActive = i === activeIndex;
+          const tabStyle: Record<string, string> = {
+            padding: '8px 16px',
+            cursor: 'pointer',
+            borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
+            color: isActive ? '#2563eb' : '#6b7280',
+            fontWeight: isActive ? '600' : '400',
+            marginBottom: '-2px',
+            fontSize: '14px',
+          };
+          const merged = mergeStyles(tabStyle, child.styles);
+          return `<div style="${stylesToCSS(merged)}">${renderChildren(child.children)}</div>`;
+        }).join('');
+      } else if (tabItems.length > 0) {
+        tabsHTML = tabItems.map((label, i) => {
+          const isActive = i === activeIndex;
+          const tabStyle = stylesToCSS({
+            padding: '8px 16px',
+            cursor: 'pointer',
+            borderBottom: isActive ? '2px solid #2563eb' : '2px solid transparent',
+            color: isActive ? '#2563eb' : '#6b7280',
+            fontWeight: isActive ? '600' : '400',
+            marginBottom: '-2px',
+            fontSize: '14px',
+          });
+          return `<div style="${tabStyle}">${escapeHTML(String(label))}</div>`;
+        }).join('');
+      }
+      return `<div style="${css}">${tabsHTML}</div>`;
     }
 
     case 'breadcrumb': {
@@ -544,7 +615,11 @@ function renderNode(node: ComponentNode): string {
 
     case 'link': {
       const href = escapeHTML(String(props.href ?? '#'));
-      const css = stylesToCSS(mergeStyles(defaults, node.styles));
+      const isActive = Boolean(props.active);
+      const activeStyles: Record<string, string> = isActive
+        ? { fontWeight: '600', background: '#eff6ff', borderRadius: '6px', padding: '6px 10px' }
+        : {};
+      const css = stylesToCSS(mergeStyles({ ...defaults, ...activeStyles }, node.styles));
       return `<a${da} href="${href}" style="${css}">${renderChildren(children)}</a>`;
     }
 
@@ -647,7 +722,7 @@ function renderNode(node: ComponentNode): string {
     // ── Data ────────────────────────────────────────────
 
     case 'table': {
-      const headers = (Array.isArray(props.headers) ? props.headers : []) as string[];
+      const headers = (Array.isArray(props.headers) ? props.headers : Array.isArray(props.columns) ? props.columns : []) as string[];
       const rows = (Array.isArray(props.rows) ? props.rows : []) as string[][];
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
 
@@ -782,7 +857,9 @@ export function renderTreeToHTML(tree: ComponentTree): string {
   p { margin: 0; }
   a { color: inherit; text-decoration: none; }
   button { font: inherit; cursor: pointer; border: none; background: none; padding: 0; }
-  input, select, textarea { font: inherit; }
+  input, select, textarea { font: inherit; line-height: 1.4; }
+  ::placeholder { color: #9ca3af; opacity: 1; }
+  hr { border: none; margin: 0; }
   ul, ol { list-style: none; margin: 0; padding: 0; }
   img { display: block; max-width: 100%; }
   @keyframes spin { to { transform: rotate(360deg); } }
