@@ -2070,6 +2070,39 @@ canvas {
   font-weight: 500;
 }
 
+/* ── Variations chip ──────────────────────────────────── */
+
+.pp-variations-chip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--c-text-dim);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.pp-variations-chip:hover {
+  background: var(--c-surface-4);
+  border-color: var(--c-border);
+}
+
+.pp-variations-chip--active {
+  background: var(--c-accent-bg);
+  border-color: var(--c-accent-bg);
+  color: var(--c-accent-fg);
+}
+
+.pp-variations-chip--active:hover {
+  opacity: 0.9;
+}
+
 /* ── Input right actions ──────────────────────────────── */
 
 .pp-input-right {

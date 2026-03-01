@@ -184,25 +184,34 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
     onStep?.({ id: 'theme', label: 'Applying design system', detail: dsLabel });
     await new Promise((r) => setTimeout(r, 300));
 
-    // Step 4: Generating layout
+    // Step 4: Build a ComponentTree (so output is editable via ComponentEditor)
     onStep?.({ id: 'layout', label: 'Generating layout', detail: `Building ${uiLabel} components` });
-    await new Promise((r) => setTimeout(r, 350));
+    const { buildMockComponentTree } = await import('./mock-trees');
+    const tree = buildMockComponentTree(payload.prompt, uiType, {
+      designSystem: libraryName,
+    });
+    await new Promise((r) => setTimeout(r, 200));
 
-    // Step 5: Rendering mockup
+    // Step 5: Render ComponentTree → HTML → bitmap
     onStep?.({ id: 'render', label: 'Rendering mockup' });
-    const { generateAndRender } = await import('./ui-renderer');
-    const result = await generateAndRender(payload.prompt, libraryName);
+    const { renderTreeToHTML } = await import('./component-renderer');
+    const { renderHTMLToImage } = await import('./ui-renderer');
+
+    const html = renderTreeToHTML(tree);
+    const vp = tree.metadata.viewport;
+    const renderResult = await renderHTMLToImage(html, vp.width, vp.height);
 
     onStep?.({ id: 'complete', label: 'Complete' });
 
     return {
       success: true,
       framework: payload.framework,
-      code: '',
-      imageDataUrl: result.dataUrl,
-      imageWidth: result.width,
-      imageHeight: result.height,
-      uiType: result.uiType,
+      code: html,
+      imageDataUrl: renderResult.dataUrl,
+      imageWidth: renderResult.width,
+      imageHeight: renderResult.height,
+      uiType,
+      componentTree: tree,
     };
   } catch (err) {
     return {
@@ -263,23 +272,36 @@ async function callRemoteAPI(
 /* ─── Mock conversion for development ───────────────────── */
 
 async function mockConversion(payload: ConversionPayload): Promise<ConversionResult> {
-  // Render an image mockup from the prompt — same as prompt-based generation
   const { prompt } = payload;
   const desc = prompt || 'a UI component';
 
   try {
-    const { generateAndRender } = await import('./ui-renderer');
+    const uiType = classifyPrompt(desc);
     const libraryName = await getLibraryName(payload.libraryId ?? undefined);
-    const result = await generateAndRender(desc, libraryName);
+
+    // Build an editable ComponentTree
+    const { buildMockComponentTree } = await import('./mock-trees');
+    const tree = buildMockComponentTree(desc, uiType, {
+      designSystem: libraryName,
+    });
+
+    // Render to bitmap
+    const { renderTreeToHTML } = await import('./component-renderer');
+    const { renderHTMLToImage } = await import('./ui-renderer');
+
+    const html = renderTreeToHTML(tree);
+    const vp = tree.metadata.viewport;
+    const result = await renderHTMLToImage(html, vp.width, vp.height);
 
     return {
       success: true,
       framework: payload.framework,
-      code: '',
+      code: html,
       imageDataUrl: result.dataUrl,
       imageWidth: result.width,
       imageHeight: result.height,
-      uiType: result.uiType,
+      uiType,
+      componentTree: tree,
     };
   } catch (err) {
     return {
@@ -289,4 +311,76 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
       error: err instanceof Error ? err.message : 'Render failed',
     };
   }
+}
+
+/* ─── Variation generation (ideation mode) ──────────────── */
+
+/** Design systems to cycle through for variations */
+const VARIATION_THEMES = [
+  'Material UI 3',
+  'shadcn/ui',
+  'Apple Liquid Glass',
+  'Ant Design',
+  'Fluent UI',
+  'Radix UI',
+];
+
+/**
+ * Generate multiple themed variations of the same prompt.
+ * Returns 3 ConversionResults, each with a different design system.
+ * The first uses the user's selected library (or a default), and the remaining
+ * use other design systems for contrast.
+ */
+export async function generateVariations(
+  payload: GenerationPayload,
+  count: number = 3,
+): Promise<ConversionResult[]> {
+  const libraryName = await getLibraryName(payload.libraryId);
+
+  // Pick themes: start with selected, then fill with others
+  const selectedNorm = (libraryName || '').toLowerCase();
+  const otherThemes = VARIATION_THEMES.filter(
+    (t) => t.toLowerCase() !== selectedNorm,
+  );
+  // Shuffle others for variety
+  for (let i = otherThemes.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherThemes[i], otherThemes[j]] = [otherThemes[j], otherThemes[i]];
+  }
+  const themes = [libraryName || 'Material UI 3', ...otherThemes].slice(0, count);
+
+  const { buildMockComponentTree } = await import('./mock-trees');
+  const { renderTreeToHTML } = await import('./component-renderer');
+  const { renderHTMLToImage } = await import('./ui-renderer');
+
+  const uiType = classifyPrompt(payload.prompt);
+
+  const results: ConversionResult[] = [];
+
+  for (const theme of themes) {
+    try {
+      const tree = buildMockComponentTree(payload.prompt, uiType, {
+        designSystem: theme,
+      });
+
+      const html = renderTreeToHTML(tree);
+      const vp = tree.metadata.viewport;
+      const renderResult = await renderHTMLToImage(html, vp.width, vp.height);
+
+      results.push({
+        success: true,
+        framework: payload.framework,
+        code: html,
+        imageDataUrl: renderResult.dataUrl,
+        imageWidth: renderResult.width,
+        imageHeight: renderResult.height,
+        uiType,
+        componentTree: tree,
+      });
+    } catch {
+      // Skip failed variations
+    }
+  }
+
+  return results;
 }

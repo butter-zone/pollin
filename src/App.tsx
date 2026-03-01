@@ -399,6 +399,26 @@ function App() {
         case 'reset-view':
           handleResetView();
           break;
+        case 'export-react':
+        case 'export-html':
+          if (target && target.kind === 'component' && 'tree' in target) {
+            import('@/services/code-export').then(({ exportCode }) => {
+              const format = actionId === 'export-react' ? 'react' : 'html';
+              const code = exportCode((target as import('@/types/canvas').ComponentObject).tree, format);
+              navigator.clipboard.writeText(code).catch(() => {
+                // fallback: download
+                const ext = format === 'react' ? 'tsx' : 'html';
+                const blob = new Blob([code], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `component.${ext}`;
+                a.click();
+                URL.revokeObjectURL(url);
+              });
+            });
+          }
+          break;
       }
     },
     [state.objects, addObject, setObjects, updateObject, deleteObjects, setSelection, toggleGrid, handleResetView],
@@ -458,7 +478,7 @@ function App() {
 
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
-    async (prompt: string, model: string, attachments: ImageAttachment[]) => {
+    async (prompt: string, model: string, attachments: ImageAttachment[], variations?: boolean) => {
       // Resolve selected library ID to human-readable name for theming
       const lib = selectedLibraryId ? state.libraries.find((l) => l.id === selectedLibraryId) : undefined;
       const resolvedLibraryId = lib?.name ?? selectedLibraryId;
@@ -466,13 +486,16 @@ function App() {
       const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
       // Define the initial reasoning steps
-      const initialSteps: ReasoningStep[] = [
+      const baseSteps: ReasoningStep[] = [
         { id: 'analyze', label: 'Analyzing prompt', status: 'pending' },
         { id: 'classify', label: 'Classifying UI type', status: 'pending' },
         { id: 'theme', label: 'Applying design system', status: 'pending' },
         { id: 'layout', label: 'Generating layout', status: 'pending' },
         { id: 'render', label: 'Rendering mockup', status: 'pending' },
       ];
+      const initialSteps: ReasoningStep[] = variations
+        ? [...baseSteps, { id: 'variations', label: 'Creating 3 themed variants', status: 'pending' }]
+        : baseSteps;
 
       const entry: GenerationEntry = {
         id: genId,
@@ -538,7 +561,7 @@ function App() {
           const ref = await storeImage(result.imageDataUrl);
 
           if (result.componentTree) {
-            // LLM path: create an editable ComponentObject
+            // LLM/mock path: create an editable ComponentObject
             const compObj: CanvasObject = {
               id: `obj-${Date.now()}-gen`,
               kind: 'component',
@@ -557,7 +580,7 @@ function App() {
             };
             addObject(compObj);
           } else {
-            // Mock/API path: flat image
+            // API path: flat image
             const imgObj: CanvasObject = {
               id: `obj-${Date.now()}-gen`,
               kind: 'image',
@@ -575,6 +598,62 @@ function App() {
             };
             addObject(imgObj);
           }
+
+          // ── Variations (ideation mode) ──────────────
+          if (variations) {
+            setGenerations((prev) =>
+              prev.map((g) => {
+                if (g.id !== genId) return g;
+                const updatedSteps = (g.reasoningSteps ?? []).map((s) =>
+                  s.id === 'variations' ? { ...s, status: 'active' as const, detail: 'Generating themed alternatives' } : s,
+                );
+                return { ...g, reasoningSteps: updatedSteps };
+              }),
+            );
+
+            const { generateVariations: genVars } = await import('@/services/conversion');
+            const varResults = await genVars(
+              { prompt, model, framework: 'react', imageRefs: attachments.map((a) => a.dataUrl), libraryId: resolvedLibraryId },
+              3,
+            );
+
+            // Place variations side-by-side, offset from the first result
+            const baseW = result.imageWidth ?? 420;
+            const gap = 40;
+            for (let i = 0; i < varResults.length; i++) {
+              const vr = varResults[i];
+              if (!vr.success || !vr.imageDataUrl) continue;
+              // Skip the first variation if it matches the main result's theme
+              const vrRef = await storeImage(vr.imageDataUrl);
+              if (vr.componentTree) {
+                addObject({
+                  id: `obj-${Date.now()}-var${i}`,
+                  kind: 'component',
+                  x: state.panX + 120 + (baseW + gap) * (i + 1),
+                  y: state.panY + 80,
+                  rotation: 0,
+                  opacity: 1,
+                  locked: false,
+                  visible: true,
+                  name: vr.componentTree.metadata.name || `Variant ${i + 1}`,
+                  timestamp: Date.now(),
+                  tree: vr.componentTree,
+                  cachedImageRef: vrRef,
+                  width: vr.imageWidth ?? 420,
+                  height: vr.imageHeight ?? 580,
+                } as CanvasObject);
+              }
+            }
+
+            setGenerations((prev) =>
+              prev.map((g) => {
+                if (g.id !== genId) return g;
+                const updatedSteps = (g.reasoningSteps ?? []).map((s) => ({ ...s, status: 'done' as const }));
+                return { ...g, reasoningSteps: updatedSteps };
+              }),
+            );
+          }
+
           // Ensure the select tool is active so the user can interact with the result
           setTool('select');
         }

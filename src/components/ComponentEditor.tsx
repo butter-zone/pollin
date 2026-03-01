@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, type FC } from 'react';
 import type { ComponentNode, ComponentNodeType, ComponentTree } from '@/types/component-tree';
 import type { ComponentObject } from '@/types/canvas';
 import { findNode, replaceNode, makeNodeId } from '@/types/component-tree';
+import { exportCode, type ExportFormat } from '@/services/code-export';
 
 // ── Constants ───────────────────────────────────────────
 
@@ -481,6 +482,28 @@ export const ComponentEditor: FC<ComponentEditorProps> = ({
     [tree, onUpdateTree],
   );
 
+  // ── Code export handler ──────────────────────────────
+  const handleExportCode = useCallback(
+    (format: ExportFormat) => {
+      const code = exportCode(tree, format);
+      // Copy to clipboard
+      navigator.clipboard.writeText(code).then(() => {
+        // Brief visual feedback (could add toast later)
+      }).catch(() => {
+        // Fallback: create a download
+        const ext = format === 'react' ? 'tsx' : 'html';
+        const blob = new Blob([code], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${tree.metadata.name.replace(/[^a-z0-9]/gi, '-').toLowerCase() || 'component'}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    },
+    [tree],
+  );
+
   return (
     <div className="ce-panel">
       <div className="ce-header">
@@ -510,6 +533,29 @@ export const ComponentEditor: FC<ComponentEditorProps> = ({
               rows={2}
               onChange={(e) => handleDescriptionChange(e.target.value)}
             />
+          </div>
+        </div>
+
+        {/* ── Export code ───────────────────────────── */}
+        <div className="ce-section">
+          <div className="ce-section-title">Export Code</div>
+          <div className="ce-row" style={{ gap: '8px' }}>
+            <button
+              className="ce-btn ce-btn--primary"
+              style={{ flex: 1 }}
+              onClick={() => handleExportCode('react')}
+              title="Copy React component to clipboard"
+            >
+              Copy React
+            </button>
+            <button
+              className="ce-btn"
+              style={{ flex: 1 }}
+              onClick={() => handleExportCode('html')}
+              title="Copy HTML to clipboard"
+            >
+              Copy HTML
+            </button>
           </div>
         </div>
 

@@ -35,6 +35,7 @@ function getMenuItems(target: CanvasObject | null): ContextMenuItem[] {
 
   const isImage = target.kind === 'image';
   const isSketch = target.kind === 'stroke';
+  const isComponent = target.kind === 'component';
 
   return [
     { id: 'convert-ui', label: 'Convert to UI…', icon: '✦' },
@@ -43,6 +44,13 @@ function getMenuItems(target: CanvasObject | null): ContextMenuItem[] {
       : []),
     ...(isSketch
       ? [{ id: 'convert-sketch', label: 'Sketch → UI…', icon: '✎' }]
+      : []),
+    ...(isComponent
+      ? [
+          { id: 'sep-export', label: '', separator: true } as ContextMenuItem,
+          { id: 'export-react', label: 'Copy as React', icon: '⟨⟩' } as ContextMenuItem,
+          { id: 'export-html', label: 'Copy as HTML', icon: '⟨/⟩' } as ContextMenuItem,
+        ]
       : []),
     { id: 'sep-1', label: '', separator: true },
     { id: 'duplicate', label: 'Duplicate', icon: '⧉' },

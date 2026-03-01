@@ -258,10 +258,42 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 - **Stroke smoothing** — simple `lineTo` looks jagged at low pointer event rates; Catmull-Rom or quadratic Bézier would help
 - **Canvas resize** — `ResizeObserver` on the container instead of `window.resize` to catch panel collapses
 - **Persistence** — no save/load yet; canvas state is lost on refresh
-- **Component property editing** — library components land as images; need a property editor to tweak them post-placement
+- ~~**Component property editing** — library components land as images; need a property editor to tweak them post-placement~~ ✅ Done (ComponentEditor with tree navigation + code export)
 - ~~**Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping~~ ✅ Built, then deleted (zero imports — premature)
-- **Token export** — export resolved OKLCH tokens as CSS/JSON for handoff
+- ~~**Token export** — export resolved OKLCH tokens as CSS/JSON for handoff~~ ✅ Done (token-export.ts)
 - **Renderer deduplication** — 5 library-specific renderer sets repeat ~65 near-identical functions; extract parameterized templates
+- **Multi-screen flows** — connect multiple generated screens into a clickable prototype flow
+- **Figma export** — export ComponentTree to Figma plugin JSON or .fig format
+
+---
+
+## Mock path must produce editable trees, not flat images
+
+The original mock generation path returned `ImageObject` — a rasterized bitmap with no tree structure. This meant clicking a mock-generated result opened nothing in ComponentEditor. Users in dev mode (no API key) had zero access to the edit-in-place workflow.
+
+Fix: created `mock-trees.ts` with 24 ComponentTree builders (one per classified UI type). Both `mockGeneration()` and `mockConversion()` now produce `ComponentObject` with a full `componentTree`. The same `renderTreeToHTML → renderHTMLToImage` pipeline as the LLM path runs, so mock output is visually and structurally identical.
+
+**Takeaway:** Every generation path must produce the richest possible output type. A "mock" that skips the core data model isn't testing the real workflow — it's hiding it.
+
+---
+
+## Code export is trivial once you own the tree
+
+With ComponentTree as the canonical representation, exporting to React JSX or HTML is a straightforward tree walk. `exportToReact()` maps node types to JSX elements with style objects; `exportToHTML()` maps to HTML tags with inline CSS strings. Both are ~150 lines and handle all 40 node types.
+
+The key: a `TYPE_TO_TAG` lookup table that maps every `ComponentNodeType` to its HTML equivalent. Special cases (table → thead/tbody, stat → value/label/change, chart → SVG placeholder) are handled inline.
+
+**Takeaway:** If your data model is a well-typed tree, code generation is just serialization with syntax rules. The hard part is having the tree, not transforming it.
+
+---
+
+## Variations as theme permutations, not regeneration
+
+Google Stitch generates 4 independent designs per prompt. That's expensive (4× LLM calls). Pollin's approach: generate one ComponentTree, then clone it with different `ThemeTokens` from the 6 built-in design systems. Three variations are placed side-by-side on the canvas with 40px gaps.
+
+This is faster (1 generation + 3 re-themes vs 4 generations), and lets users compare the same layout across visual languages. The `×3` chip in PromptPanel toggles variations mode.
+
+**Takeaway:** Variations don't need to be independent generations. Retheming the same structure is cheaper and arguably more useful for comparison.
 
 ---
 
@@ -271,8 +303,8 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 |--------|-------|
 | Commits | 40+ |
 | Days | 3 |
-| TypeScript/TSX | ~10,200 lines |
-| CSS | ~2,170 lines |
+| TypeScript/TSX | ~12,000 lines |
+| CSS | ~2,400 lines |
 | Runtime deps | 5 (React, GSAP, html2canvas, Lucide, HF Transformers) |
 | Files pruned in cleanup | ~52 |
 | Dead code removed (Feb 27) | ~960 lines |

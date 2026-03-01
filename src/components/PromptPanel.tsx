@@ -71,7 +71,7 @@ export interface GenerationEntry {
 
 /* ─── Props ─────────────────────────────────────────────── */
 interface PromptPanelProps {
-  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[]) => void;
+  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], variations?: boolean) => void;
   onImageToCanvas: (attachment: ImageAttachment) => void;
   isGenerating: boolean;
   generations: GenerationEntry[];
@@ -89,6 +89,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
+  const [variationsMode, setVariationsMode] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -201,10 +202,10 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   const handleSubmit = useCallback(() => {
     if (!prompt.trim() && attachments.length === 0) return;
-    onGenerate(prompt.trim(), selectedModel, attachments);
+    onGenerate(prompt.trim(), selectedModel, attachments, variationsMode);
     setPrompt('');
     setAttachments([]);
-  }, [prompt, selectedModel, attachments, onGenerate]);
+  }, [prompt, selectedModel, attachments, variationsMode, onGenerate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -421,6 +422,18 @@ export const PromptPanel: FC<PromptPanelProps> = ({
             <svg width="8" height="5" viewBox="0 0 10 6" fill="none" className="pp-chevron">
               <path d="M1 5L5 1L9 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+          </button>
+          <button
+            className={`pp-variations-chip${variationsMode ? ' pp-variations-chip--active' : ''}`}
+            onClick={() => setVariationsMode((v) => !v)}
+            title={variationsMode ? 'Variations: ON — generates 3 themed alternatives' : 'Variations: OFF — click to generate 3 themed alternatives'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="8" height="8" rx="1" />
+              <rect x="14" y="2" width="8" height="8" rx="1" />
+              <rect x="8" y="14" width="8" height="8" rx="1" />
+            </svg>
+            <span>×3</span>
           </button>
           <div className="pp-input-right">
             <button
