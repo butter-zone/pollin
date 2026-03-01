@@ -481,7 +481,17 @@ function App() {
     async (prompt: string, model: string, attachments: ImageAttachment[], variations?: boolean) => {
       // Resolve selected library ID to human-readable name for theming
       const lib = selectedLibraryId ? state.libraries.find((l) => l.id === selectedLibraryId) : undefined;
-      const resolvedLibraryId = lib?.name ?? selectedLibraryId;
+      let resolvedLibraryId = lib?.name ?? selectedLibraryId;
+
+      // When no library is selected + variations ON, pick a random library
+      // for the main result so all 4 outputs are visually distinct
+      let mainRandomTheme: string | undefined;
+      if (variations && !resolvedLibraryId) {
+        const { VARIATION_THEMES } = await import('@/services/conversion');
+        const shuffled = [...VARIATION_THEMES].sort(() => Math.random() - 0.5);
+        mainRandomTheme = shuffled[0];
+        resolvedLibraryId = mainRandomTheme;
+      }
 
       const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -613,8 +623,9 @@ function App() {
 
             const { generateVariations: genVars } = await import('@/services/conversion');
             const varResults = await genVars(
-              { prompt, model, framework: 'react', imageRefs: attachments.map((a) => a.dataUrl), libraryId: resolvedLibraryId },
+              { prompt, model, framework: 'react', imageRefs: attachments.map((a) => a.dataUrl), libraryId: undefined },
               3,
+              resolvedLibraryId, // exclude the main result's library so all 4 are distinct
             );
 
             // Place variations side-by-side, offset from the first result

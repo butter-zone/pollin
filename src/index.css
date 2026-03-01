@@ -1633,6 +1633,18 @@ canvas {
   padding-bottom: 12px;
 }
 
+/* ── Textarea wrapper with accent border animation ──── */
+.pp-textarea-wrap {
+  --border-opacity: 0;
+  --glow-opacity: 0;
+  --glow-spread: 0px;
+  position: relative;
+  border-radius: var(--radius-md);
+  box-shadow:
+    0 0 0 1.5px oklch(0.875 0.117 120 / var(--border-opacity)),
+    0 0 var(--glow-spread) oklch(0.875 0.117 120 / calc(var(--glow-opacity) * 0.12));
+}
+
 .pp-textarea {
   width: 100%;
   resize: none;
@@ -1645,7 +1657,7 @@ canvas {
   font-size: 12px;
   line-height: 1.4;
   outline: none;
-  transition: border-color var(--dur) var(--ease);
+  transition: border-color 0.15s ease;
 }
 
 .pp-textarea::placeholder {
@@ -1653,7 +1665,7 @@ canvas {
 }
 
 .pp-textarea:focus {
-  border-color: var(--c-accent);
+  border-color: oklch(0.875 0.117 120 / 0.5);
 }
 
 .pp-input-actions {

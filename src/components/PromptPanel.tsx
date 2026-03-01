@@ -2,6 +2,46 @@ import { useState, useRef, useCallback, useEffect, type FC } from 'react';
 import gsap from 'gsap';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
+/* ─── Accent border focus animation (Google-style) ─────── */
+function useAccentBorder(
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+  wrapRef: React.RefObject<HTMLDivElement | null>,
+) {
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    const wrap = wrapRef.current;
+    if (!textarea || !wrap) return;
+
+    const onFocus = () => {
+      // Smoothly show accent border + soft glow
+      gsap.to(wrap, {
+        '--border-opacity': 1,
+        '--glow-opacity': 1,
+        '--glow-spread': '8px',
+        duration: 0.2,
+        ease: 'power1.out',
+      });
+    };
+
+    const onBlur = () => {
+      gsap.to(wrap, {
+        '--border-opacity': 0,
+        '--glow-opacity': 0,
+        '--glow-spread': '0px',
+        duration: 0.15,
+        ease: 'power1.in',
+      });
+    };
+
+    textarea.addEventListener('focus', onFocus);
+    textarea.addEventListener('blur', onBlur);
+    return () => {
+      textarea.removeEventListener('focus', onFocus);
+      textarea.removeEventListener('blur', onBlur);
+    };
+  }, [textareaRef, wrapRef]);
+}
+
 /* ─── Inspirational quotes (shown when panel is empty) ── */
 const INSPIRATION_QUOTES = [
   { text: 'I begin with an idea and then it becomes something else.', author: 'Pablo Picasso' },
@@ -93,6 +133,10 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaWrapRef = useRef<HTMLDivElement>(null);
+
+  /* ── Accent border focus animation ── */
+  useAccentBorder(textareaRef, textareaWrapRef);
 
   /* ── Inspirational quote cycling (GSAP pollination) ── */
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -378,26 +422,28 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           </div>
         )}
 
-        <textarea
-          ref={textareaRef}
-          className="pp-textarea"
-          placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
-          value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
-          onChange={(e) => {
-            const raw = e.target.value;
-            // Strip interim transcript suffix so it doesn't get baked into state
-            if (interimTranscript) {
-              const suffix = (prompt ? ' ' : '') + interimTranscript;
-              if (raw.endsWith(suffix)) {
-                setPrompt(raw.slice(0, raw.length - suffix.length));
-                return;
+        <div className="pp-textarea-wrap" ref={textareaWrapRef}>
+          <textarea
+            ref={textareaRef}
+            className="pp-textarea"
+            placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
+            value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
+            onChange={(e) => {
+              const raw = e.target.value;
+              // Strip interim transcript suffix so it doesn't get baked into state
+              if (interimTranscript) {
+                const suffix = (prompt ? ' ' : '') + interimTranscript;
+                if (raw.endsWith(suffix)) {
+                  setPrompt(raw.slice(0, raw.length - suffix.length));
+                  return;
+                }
               }
-            }
             setPrompt(raw);
           }}
           onKeyDown={handleKeyDown}
           rows={3}
         />
+        </div>
         {/* Speech status — progress bar, error, backend badge */}
         {(speechError || whisperStatus === 'loading-model' || isListening) && (
           <div className="pp-speech-tip">

@@ -199,6 +199,8 @@ function buttonVariantStyles(variant: string): Record<string, string> {
   switch (variant) {
     case 'primary':
       return { background: '#2563eb', color: 'white' };
+    case 'secondary':
+      return { background: '#f3f4f6', color: '#111827', border: '1px solid #e5e7eb' };
     case 'outline':
       return { background: 'transparent', border: '1px solid #d1d5db', color: '#111827' };
     case 'ghost':
@@ -742,23 +744,23 @@ export function renderNodeToHTML(node: ComponentNode): string {
 // ── Design System Base Styles ───────────────────────────
 
 const DESIGN_SYSTEM_CSS: Record<string, string> = {
-  'material ui 3': `body { font-family: 'Roboto', 'Noto Sans', sans-serif; color: #1C1B1F; }
+  'material ui 3': `body { font-family: 'Roboto', 'Noto Sans', sans-serif; color: #1C1B1F; background: #fafafa; }
     button { border-radius: 20px; font-weight: 500; letter-spacing: 0.01em; }
     input, select, textarea { border-radius: 4px; border: 1px solid #79747E; }`,
-  'apple liquid glass': `body { font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; color: #1d1d1f; letter-spacing: -0.01em; }
+  'apple liquid glass': `body { font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; color: #ffffff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); letter-spacing: -0.01em; }
     button { border-radius: 12px; font-weight: 500; }`,
-  'ant design': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: rgba(0,0,0,0.88); font-size: 14px; }
+  'ant design': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: rgba(0,0,0,0.88); background: #ffffff; font-size: 14px; }
     button { border-radius: 6px; font-weight: 400; }
     input, select, textarea { border-radius: 6px; border: 1px solid #d9d9d9; }`,
-  'fluent ui': `body { font-family: 'Segoe UI', 'Segoe UI Web', sans-serif; color: #242424; }
+  'fluent ui': `body { font-family: 'Segoe UI', 'Segoe UI Web', sans-serif; color: #242424; background: #fafafa; }
     button { border-radius: 4px; font-weight: 600; }
     input, select, textarea { border-radius: 4px; border: 1px solid #d1d1d1; }`,
-  'shadcn/ui': `body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #09090b; font-size: 14px; }
+  'shadcn/ui': `body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #fafafa; background: #09090b; font-size: 14px; }
     button { border-radius: 6px; font-weight: 500; font-size: 14px; }
-    input, select, textarea { border-radius: 6px; border: 1px solid #e4e4e7; }`,
-  'radix ui': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #11181c; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #27272a; color: #fafafa; background: #18181b; }`,
+  'radix ui': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #eeeef0; background: #111113; }
     button { border-radius: 6px; font-weight: 500; }
-    input, select, textarea { border-radius: 6px; border: 1px solid #dfe3e6; }`,
+    input, select, textarea { border-radius: 6px; border: 1px solid #2b2c2f; color: #eeeef0; background: #18191b; }`,
 };
 
 export function renderTreeToHTML(tree: ComponentTree): string {
@@ -775,7 +777,7 @@ export function renderTreeToHTML(tree: ComponentTree): string {
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: ${width}px; height: ${height}px; overflow: hidden; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #111827; background: #ffffff; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   h1, h2, h3, h4, h5, h6 { margin: 0; font-size: inherit; font-weight: inherit; }
   p { margin: 0; }
   a { color: inherit; text-decoration: none; }
