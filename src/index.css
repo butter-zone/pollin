@@ -1568,29 +1568,6 @@ canvas {
   color: var(--c-text-muted);
 }
 
-/* ── Library selector in prompt ───────────────────────── */
-.pp-lib-bar {
-  padding: 0 12px 6px;
-}
-
-.pp-lib-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 5px 10px;
-  background: transparent;
-  border: 1px solid var(--c-border-subtle);
-  border-radius: var(--radius-sm);
-  color: var(--c-text-dim);
-  cursor: pointer;
-  font-size: 11px;
-  transition: background var(--dur) var(--ease);
-}
-
-.pp-lib-btn:hover {
-  background: var(--c-surface-3);
-}
 
 /* ── Image attachments ────────────────────────────────── */
 .pp-attachments {
@@ -2119,12 +2096,6 @@ canvas {
   box-shadow: var(--shadow-panel);
 }
 
-/* ── Top bar (design system selector) ─────────────────── */
-
-.pp-top-bar {
-  padding: 10px 12px 6px;
-  border-bottom: 1px solid var(--c-border-subtle);
-}
 
 /* ── Context bar (selected objects) ───────────────────── */
 

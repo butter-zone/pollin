@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type FC } from 'react';
 import gsap from 'gsap';
-import type { DesignLibrary } from '@/types/canvas';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
 /* ─── Inspirational quotes (shown when panel is empty) ── */
@@ -72,10 +71,7 @@ export interface GenerationEntry {
 
 /* ─── Props ─────────────────────────────────────────────── */
 interface PromptPanelProps {
-  libraries: DesignLibrary[];
-  selectedLibraryId?: string;
-  onSelectedLibraryChange: (libraryId: string | undefined) => void;
-  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => void;
+  onGenerate: (prompt: string, model: string, attachments: ImageAttachment[]) => void;
   onImageToCanvas: (attachment: ImageAttachment) => void;
   isGenerating: boolean;
   generations: GenerationEntry[];
@@ -83,9 +79,6 @@ interface PromptPanelProps {
 }
 
 export const PromptPanel: FC<PromptPanelProps> = ({
-  libraries,
-  selectedLibraryId,
-  onSelectedLibraryChange,
   onGenerate,
   onImageToCanvas,
   isGenerating,
@@ -96,9 +89,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const [selectedModel, setSelectedModel] = useState(AVAILABLE_MODELS[0].id);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [attachments, setAttachments] = useState<ImageAttachment[]>([]);
-  const selectedLibrary = selectedLibraryId;
-  const setSelectedLibrary = onSelectedLibraryChange;
-  const [showLibPicker, setShowLibPicker] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -243,10 +234,10 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   const handleSubmit = useCallback(() => {
     if (!prompt.trim() && attachments.length === 0) return;
-    onGenerate(prompt.trim(), selectedModel, attachments, selectedLibrary);
+    onGenerate(prompt.trim(), selectedModel, attachments);
     setPrompt('');
     setAttachments([]);
-  }, [prompt, selectedModel, attachments, selectedLibrary, onGenerate]);
+  }, [prompt, selectedModel, attachments, onGenerate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -299,44 +290,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   return (
     <div className="pp">
-      {/* ── Top bar: design system selector ──────────── */}
-      <div className="pp-top-bar">
-        <div className="pp-lib-bar">
-          <button className="pp-lib-btn" onClick={() => setShowLibPicker((v) => !v)}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
-            {selectedLibrary ? libraries.find((l) => l.id === selectedLibrary)?.name : 'None (freeform)'}
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" className="pp-chevron">
-              <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {showLibPicker && (
-            <div className="pp-model-dropdown">
-              <button
-                className={`pp-model-option ${!selectedLibrary ? 'pp-model-option--active' : ''}`}
-                onClick={() => { setSelectedLibrary(undefined); setShowLibPicker(false); }}
-              >
-                <span className="pp-model-option-name">None (freeform)</span>
-                <span className="pp-model-option-desc">Generate without a design system</span>
-              </button>
-              {libraries.map((lib) => (
-                <button
-                  key={lib.id}
-                  className={`pp-model-option ${lib.id === selectedLibrary ? 'pp-model-option--active' : ''}`}
-                  onClick={() => { setSelectedLibrary(lib.id); setShowLibPicker(false); }}
-                >
-                  <span className="pp-model-option-name">{lib.name}</span>
-                  <span className="pp-model-option-desc">{lib.components.length} components</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* ── Selected object context ───────────────────── */}
       {selectedObjectCount > 0 && (
         <div className="pp-context-bar">

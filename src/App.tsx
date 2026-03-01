@@ -458,11 +458,10 @@ function App() {
 
   // ── Prompt-based generation ───────────────────────────
   const handleGenerate = useCallback(
-    async (prompt: string, model: string, attachments: ImageAttachment[], libraryId?: string) => {
-      // Resolve generated library ID (e.g. "lib-1709...") to human-readable name
-      // so the conversion service can match it to a theme
-      const lib = libraryId ? state.libraries.find((l) => l.id === libraryId) : undefined;
-      const resolvedLibraryId = lib?.name ?? libraryId;
+    async (prompt: string, model: string, attachments: ImageAttachment[]) => {
+      // Resolve selected library ID to human-readable name for theming
+      const lib = selectedLibraryId ? state.libraries.find((l) => l.id === selectedLibraryId) : undefined;
+      const resolvedLibraryId = lib?.name ?? selectedLibraryId;
 
       const genId = `gen-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
@@ -587,7 +586,7 @@ function App() {
         setIsGenerating(false);
       }
     },
-    [addObject, setTool, state.panX, state.panY, state.libraries],
+    [addObject, setTool, state.panX, state.panY, state.libraries, selectedLibraryId],
   );
 
   // ── Add image attachment to canvas ────────────────────
@@ -639,9 +638,6 @@ function App() {
       <div className="left-panel">
         {panelMode === 'prompt' ? (
           <PromptPanel
-            libraries={state.libraries}
-            selectedLibraryId={selectedLibraryId}
-            onSelectedLibraryChange={setSelectedLibraryId}
             onGenerate={handleGenerate}
             onImageToCanvas={handleImageToCanvas}
             isGenerating={isGenerating}

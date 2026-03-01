@@ -221,6 +221,31 @@ export function LibraryPanel({
 
           {/* Alphabetical list of built-in entries */}
           <div className="dk-builtin-list">
+            {/* None (Freeform) — always first, default when no library selected */}
+            <div>
+              <div className={`dk-builtin-row ${!selectedLibraryId ? 'dk-builtin-row--active' : ''}`}>
+                <button
+                  className="dk-builtin-toggle"
+                  onClick={() => onSelectLibrary(undefined)}
+                  title={!selectedLibraryId ? 'Freeform mode active' : 'Switch to freeform mode'}
+                >
+                  <div className={`dk-builtin-check ${!selectedLibraryId ? 'dk-builtin-check--on' : ''}`}>
+                    {!selectedLibraryId && <Check size={10} strokeWidth={3} />}
+                  </div>
+                </button>
+                <div className="dk-builtin-info">
+                  <div className="dk-builtin-name">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    None (Freeform)
+                  </div>
+                  <div className="dk-builtin-meta">Generate without a design system</div>
+                </div>
+              </div>
+            </div>
+
             {builtInEntries.map((entry) => {
               const activeLib = activeBuiltIns.find(
                 (l) => l.name.toLowerCase() === entry.name.toLowerCase(),
