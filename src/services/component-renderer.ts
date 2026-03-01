@@ -226,19 +226,62 @@ function renderChildren(children?: (ComponentNode | string)[]): string {
     .join('');
 }
 
+// ── Data Attributes ─────────────────────────────────────
+
+function dataAttrs(node: ComponentNode): string {
+  return ` data-node-id="${escapeHTML(node.id)}" data-type="${escapeHTML(node.type)}"`;
+}
+
+// ── SVG Chart Stubs ─────────────────────────────────────
+
+function renderBarChart(color: string): string {
+  const bars = [40, 65, 45, 80, 55, 70, 50, 85, 60, 75, 45, 90];
+  return `<svg viewBox="0 0 240 100" width="100%" height="100%" preserveAspectRatio="none" style="display:block;">
+    ${bars.map((h, i) => `<rect x="${i * 20 + 2}" y="${100 - h}" width="16" height="${h}" rx="2" fill="${color}" opacity="${0.5 + (h / 180)}" />`).join('')}
+  </svg>`;
+}
+
+function renderLineChart(color: string): string {
+  const points = '0,70 20,55 40,60 60,40 80,45 100,30 120,35 140,20 160,25 180,15 200,22 220,10 240,18';
+  return `<svg viewBox="0 0 240 100" width="100%" height="100%" preserveAspectRatio="none" style="display:block;">
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline points="0,70 ${points.split(' ').slice(1).join(' ')} 240,100 0,100" fill="${color}" opacity="0.08" />
+  </svg>`;
+}
+
+function renderAreaChart(color: string): string {
+  const points = '0,65 30,50 60,55 90,35 120,40 150,25 180,30 210,18 240,22';
+  return `<svg viewBox="0 0 240 80" width="100%" height="100%" preserveAspectRatio="none" style="display:block;">
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.3"/><stop offset="100%" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>
+    <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <polygon points="0,65 ${points.split(' ').slice(1).join(' ')} 240,80 0,80" fill="url(#ag)" />
+  </svg>`;
+}
+
+// ── Image Placeholder SVG ───────────────────────────────
+
+function renderImagePlaceholder(): string {
+  return `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+    <circle cx="8.5" cy="8.5" r="1.5"/>
+    <polyline points="21 15 16 10 5 21"/>
+  </svg>`;
+}
+
 // ── Node Rendering ──────────────────────────────────────
 
 function renderNode(node: ComponentNode): string {
   const defaults = DEFAULT_STYLES[node.type] ?? {};
   const props = node.props ?? {};
   const children = node.children;
+  const da = dataAttrs(node);
 
   switch (node.type) {
     // ── Layout ──────────────────────────────────────────
 
     case 'container': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'stack': {
@@ -246,7 +289,7 @@ function renderNode(node: ComponentNode): string {
       const extra: Record<string, string> = { flexDirection: direction };
       if (props.gap) extra.gap = String(props.gap);
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'grid': {
@@ -254,7 +297,7 @@ function renderNode(node: ComponentNode): string {
       if (props.columns) extra.gridTemplateColumns = String(props.columns);
       if (props.gap) extra.gap = String(props.gap);
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'spacer': {
@@ -264,41 +307,41 @@ function renderNode(node: ComponentNode): string {
         extra.flex = 'none';
       }
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<div style="${css}"></div>`;
+      return `<div${da} style="${css}"></div>`;
     }
 
     case 'divider': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<hr style="${css}" />`;
+      return `<hr${da} style="${css}" />`;
     }
 
     case 'scroll': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'section': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<section style="${css}">${renderChildren(children)}</section>`;
+      return `<section${da} style="${css}">${renderChildren(children)}</section>`;
     }
 
     // ── Content ─────────────────────────────────────────
 
     case 'text': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<span style="${css}">${renderChildren(children)}</span>`;
+      return `<span${da} style="${css}">${renderChildren(children)}</span>`;
     }
 
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(props.level) || 2));
       const tag = `h${level}`;
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<${tag} style="${css}">${renderChildren(children)}</${tag}>`;
+      return `<${tag}${da} style="${css}">${renderChildren(children)}</${tag}>`;
     }
 
     case 'paragraph': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<p style="${css}">${renderChildren(children)}</p>`;
+      return `<p${da} style="${css}">${renderChildren(children)}</p>`;
     }
 
     case 'image': {
@@ -306,44 +349,48 @@ function renderNode(node: ComponentNode): string {
       const alt = escapeHTML(String(props.alt ?? ''));
       if (src) {
         const css = stylesToCSS(mergeStyles(defaults, node.styles));
-        return `<img src="${escapeHTML(src)}" alt="${alt}" style="${css}" />`;
+        return `<img${da} src="${escapeHTML(src)}" alt="${alt}" style="${css}" />`;
       }
-      // Gray placeholder
+      // SVG image placeholder
       const placeholderStyles: Record<string, string> = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#e5e7eb',
+        flexDirection: 'column',
+        gap: '8px',
+        background: '#f3f4f6',
         color: '#9ca3af',
-        fontSize: '14px',
+        fontSize: '11px',
+        fontWeight: '500',
         width: '100%',
         height: '150px',
+        borderRadius: '6px',
       };
       const css = stylesToCSS(mergeStyles(placeholderStyles, node.styles));
-      return `<div style="${css}">Image</div>`;
+      return `<div${da} style="${css}">${renderImagePlaceholder()}${alt ? `<span>${alt}</span>` : ''}</div>`;
     }
 
     case 'icon': {
       const name = String(props.name ?? '•');
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<span style="${css}">${escapeHTML(name)}</span>`;
+      return `<span${da} style="${css}">${escapeHTML(name)}</span>`;
     }
 
     case 'badge': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<span style="${css}">${renderChildren(children)}</span>`;
+      return `<span${da} style="${css}">${renderChildren(children)}</span>`;
     }
 
     case 'avatar': {
       const name = String(props.name ?? '');
       const initial = name.charAt(0).toUpperCase() || '?';
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}">${escapeHTML(initial)}</div>`;
+      return `<div${da} style="${css}">${escapeHTML(initial)}</div>`;
     }
 
     case 'code': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<pre style="${css}"><code>${renderChildren(children)}</code></pre>`;
+      return `<pre${da} style="${css}"><code>${renderChildren(children)}</code></pre>`;
     }
 
     // ── Input ───────────────────────────────────────────
@@ -352,21 +399,21 @@ function renderNode(node: ComponentNode): string {
       const variant = String(props.variant ?? 'primary');
       const variantStyles = buttonVariantStyles(variant);
       const css = stylesToCSS(mergeStyles({ ...defaults, ...variantStyles }, node.styles));
-      return `<button style="${css}">${renderChildren(children)}</button>`;
+      return `<button${da} style="${css}">${renderChildren(children)}</button>`;
     }
 
     case 'input': {
       const type = escapeHTML(String(props.type ?? 'text'));
       const placeholder = escapeHTML(String(props.placeholder ?? ''));
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<input type="${type}" placeholder="${placeholder}" style="${css}" />`;
+      return `<input${da} type="${type}" placeholder="${placeholder}" style="${css}" />`;
     }
 
     case 'textarea': {
       const placeholder = escapeHTML(String(props.placeholder ?? ''));
       const rows = Number(props.rows) || 3;
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<textarea placeholder="${placeholder}" rows="${rows}" style="${css}"></textarea>`;
+      return `<textarea${da} placeholder="${placeholder}" rows="${rows}" style="${css}"></textarea>`;
     }
 
     case 'select': {
@@ -375,21 +422,21 @@ function renderNode(node: ComponentNode): string {
       const optionsHTML = options
         .map((o) => `<option value="${escapeHTML(String(o))}">${escapeHTML(String(o))}</option>`)
         .join('');
-      return `<select style="${css}">${optionsHTML}</select>`;
+      return `<select${da} style="${css}">${optionsHTML}</select>`;
     }
 
     case 'checkbox': {
       const label = escapeHTML(String(props.label ?? ''));
       const checked = props.checked ? ' checked' : '';
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<label style="${css}"><input type="checkbox"${checked} /> ${label}</label>`;
+      return `<label${da} style="${css}"><input type="checkbox"${checked} /> ${label}</label>`;
     }
 
     case 'radio': {
       const label = escapeHTML(String(props.label ?? ''));
       const group = escapeHTML(String(props.group ?? ''));
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<label style="${css}"><input type="radio" name="${group}" /> ${label}</label>`;
+      return `<label${da} style="${css}"><input type="radio" name="${group}" /> ${label}</label>`;
     }
 
     case 'toggle': {
@@ -421,7 +468,7 @@ function renderNode(node: ComponentNode): string {
         boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
         transition: 'left 0.2s',
       });
-      return `<div style="${trackCSS}"><div style="${circleCSSStr}"></div></div>`;
+      return `<div${da} style="${trackCSS}"><div style="${circleCSSStr}"></div></div>`;
     }
 
     case 'slider': {
@@ -429,21 +476,21 @@ function renderNode(node: ComponentNode): string {
       const max = Number(props.max ?? 100);
       const value = Number(props.value ?? 50);
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<input type="range" min="${min}" max="${max}" value="${value}" style="${css}" />`;
+      return `<input${da} type="range" min="${min}" max="${max}" value="${value}" style="${css}" />`;
     }
 
     // ── Navigation ──────────────────────────────────────
 
     case 'navbar': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<nav style="${css}">${renderChildren(children)}</nav>`;
+      return `<nav${da} style="${css}">${renderChildren(children)}</nav>`;
     }
 
     case 'sidebar': {
       const width = String(props.width ?? '240px');
       const extra: Record<string, string> = { width };
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<aside style="${css}">${renderChildren(children)}</aside>`;
+      return `<aside${da} style="${css}">${renderChildren(children)}</aside>`;
     }
 
     case 'tabs': {
@@ -496,7 +543,7 @@ function renderNode(node: ComponentNode): string {
     case 'link': {
       const href = escapeHTML(String(props.href ?? '#'));
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<a href="${href}" style="${css}">${renderChildren(children)}</a>`;
+      return `<a${da} href="${href}" style="${css}">${renderChildren(children)}</a>`;
     }
 
     case 'menu': {
@@ -523,7 +570,7 @@ function renderNode(node: ComponentNode): string {
         color: colors.color,
       };
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'toast': {
@@ -535,7 +582,7 @@ function renderNode(node: ComponentNode): string {
         color: colors.color,
       };
       const css = stylesToCSS(mergeStyles({ ...defaults, ...extra }, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'progress': {
@@ -548,17 +595,17 @@ function renderNode(node: ComponentNode): string {
         borderRadius: '4px',
         transition: 'width 0.3s',
       });
-      return `<div style="${css}"><div style="${barCSS}"></div></div>`;
+      return `<div${da} style="${css}"><div style="${barCSS}"></div></div>`;
     }
 
     case 'spinner': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}"></div>`;
+      return `<div${da} style="${css}"></div>`;
     }
 
     case 'skeleton': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}"></div>`;
+      return `<div${da} style="${css}"></div>`;
     }
 
     case 'tooltip': {
@@ -592,7 +639,7 @@ function renderNode(node: ComponentNode): string {
           node.styles,
         ),
       );
-      return `<div style="${backdropCSS}"><div style="${cardCSS}">${renderChildren(children)}</div></div>`;
+      return `<div${da} style="${backdropCSS}"><div style="${cardCSS}">${renderChildren(children)}</div></div>`;
     }
 
     // ── Data ────────────────────────────────────────────
@@ -623,19 +670,19 @@ function renderNode(node: ComponentNode): string {
 
     case 'card': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
 
     case 'list': {
       const ordered = Boolean(props.ordered);
       const tag = ordered ? 'ol' : 'ul';
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<${tag} style="${css}">${renderChildren(children)}</${tag}>`;
+      return `<${tag}${da} style="${css}">${renderChildren(children)}</${tag}>`;
     }
 
     case 'listItem': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<li style="${css}">${renderChildren(children)}</li>`;
+      return `<li${da} style="${css}">${renderChildren(children)}</li>`;
     }
 
     case 'stat': {
@@ -649,20 +696,31 @@ function renderNode(node: ComponentNode): string {
         const changeColor = isPositive ? '#16a34a' : '#dc2626';
         changeHTML = `<div style="font-size: 13px; color: ${changeColor}; margin-top: 2px;">${escapeHTML(String(change))}</div>`;
       }
-      return `<div style="${css}"><div style="font-size: 28px; font-weight: 700; line-height: 1.2;">${escapeHTML(value)}</div><div style="font-size: 13px; color: #6b7280; margin-top: 4px;">${escapeHTML(label)}</div>${changeHTML}</div>`;
+      return `<div${da} style="${css}"><div style="font-size: 28px; font-weight: 700; line-height: 1.2;">${escapeHTML(value)}</div><div style="font-size: 13px; color: #6b7280; margin-top: 4px;">${escapeHTML(label)}</div>${changeHTML}</div>`;
     }
 
     case 'chart': {
-      const name = String(props.name ?? 'Untitled');
-      const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div style="${css}">Chart: ${escapeHTML(name)}</div>`;
+      const chartType = String(props.type ?? props.chartType ?? 'bar');
+      const color = String(node.styles?.color ?? '#2563eb');
+      const chartStyles: Record<string, string> = { ...defaults };
+      // Remove text-centric color from chart container
+      delete chartStyles.color;
+      delete chartStyles.fontSize;
+      const css = stylesToCSS(mergeStyles(chartStyles, node.styles));
+      let chartSVG: string;
+      switch (chartType) {
+        case 'line': chartSVG = renderLineChart(color); break;
+        case 'area': chartSVG = renderAreaChart(color); break;
+        default: chartSVG = renderBarChart(color); break;
+      }
+      return `<div${da} style="${css}">${chartSVG}</div>`;
     }
 
     // ── Fallback ────────────────────────────────────────
 
     default: {
       const css = stylesToCSS(mergeStyles({}, node.styles));
-      return `<div style="${css}">${renderChildren(children)}</div>`;
+      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
     }
   }
 }
@@ -681,9 +739,33 @@ export function renderNodeToHTML(node: ComponentNode): string {
  * Render a full `ComponentTree` into a self-contained HTML document.
  * The result can be loaded into an iframe and captured as a bitmap.
  */
+// ── Design System Base Styles ───────────────────────────
+
+const DESIGN_SYSTEM_CSS: Record<string, string> = {
+  'material ui 3': `body { font-family: 'Roboto', 'Noto Sans', sans-serif; color: #1C1B1F; }
+    button { border-radius: 20px; font-weight: 500; letter-spacing: 0.01em; }
+    input, select, textarea { border-radius: 4px; border: 1px solid #79747E; }`,
+  'apple liquid glass': `body { font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; color: #1d1d1f; letter-spacing: -0.01em; }
+    button { border-radius: 12px; font-weight: 500; }`,
+  'ant design': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: rgba(0,0,0,0.88); font-size: 14px; }
+    button { border-radius: 6px; font-weight: 400; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #d9d9d9; }`,
+  'fluent ui': `body { font-family: 'Segoe UI', 'Segoe UI Web', sans-serif; color: #242424; }
+    button { border-radius: 4px; font-weight: 600; }
+    input, select, textarea { border-radius: 4px; border: 1px solid #d1d1d1; }`,
+  'shadcn/ui': `body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #09090b; font-size: 14px; }
+    button { border-radius: 6px; font-weight: 500; font-size: 14px; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #e4e4e7; }`,
+  'radix ui': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #11181c; }
+    button { border-radius: 6px; font-weight: 500; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #dfe3e6; }`,
+};
+
 export function renderTreeToHTML(tree: ComponentTree): string {
   const { width, height } = tree.metadata.viewport;
   const body = renderNode(tree.root);
+  const ds = tree.metadata.designSystem?.toLowerCase() ?? '';
+  const dsCSS = DESIGN_SYSTEM_CSS[ds] ?? '';
 
   return `<!DOCTYPE html>
 <html>
@@ -691,11 +773,19 @@ export function renderTreeToHTML(tree: ComponentTree): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  *, *::before, *::after { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: ${width}px; height: ${height}px; overflow: hidden; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: ${width}px; height: ${height}px; overflow: hidden; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #111827; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, h4, h5, h6 { margin: 0; font-size: inherit; font-weight: inherit; }
+  p { margin: 0; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; padding: 0; }
+  input, select, textarea { font: inherit; }
+  ul, ol { list-style: none; margin: 0; padding: 0; }
+  img { display: block; max-width: 100%; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shimmer { to { background-position: -200% 0; } }
+  ${dsCSS}
 </style>
 </head>
 <body>

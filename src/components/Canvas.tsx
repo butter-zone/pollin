@@ -764,7 +764,7 @@ export function Canvas({
         font-family: ${obj.fontFamily};
         color: ${obj.color};
         background: transparent;
-        border: 1px solid oklch(0.67 0.185 55);
+        border: 1px solid oklch(0.875 0.117 120);
         border-radius: 2px;
         outline: none;
         resize: none;
@@ -1215,7 +1215,7 @@ function drawObject(
     const hw = bounds.width / 2 + 4;
     const hh = bounds.height / 2 + 4;
 
-    ctx.strokeStyle = 'oklch(0.67 0.185 55)';
+    ctx.strokeStyle = 'oklch(0.875 0.117 120)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
     ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
@@ -1229,7 +1229,7 @@ function drawObject(
       { x: hw, y: hh },
     ];
     ctx.fillStyle = 'oklch(1 0 0)';
-    ctx.strokeStyle = 'oklch(0.67 0.185 55)';
+    ctx.strokeStyle = 'oklch(0.875 0.117 120)';
     ctx.lineWidth = 1.5;
     corners.forEach((c) => {
       ctx.beginPath();
@@ -1239,7 +1239,7 @@ function drawObject(
     });
 
     // rotation affordance: small arc at each corner (visible outside the handle)
-    ctx.strokeStyle = 'oklch(0.67 0.185 55 / 0.4)';
+    ctx.strokeStyle = 'oklch(0.875 0.117 120 / 0.4)';
     ctx.lineWidth = 1;
     corners.forEach((c, i) => {
       // Draw a small curved arrow outside each corner

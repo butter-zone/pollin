@@ -40,8 +40,9 @@ button, input, select, textarea {
   --c-text-dim: oklch(0.62 0 0);
   --c-text-muted: oklch(0.45 0 0);
   /* accent (oklch) */
-  --c-accent: oklch(0.67 0.185 55);
-  --c-accent-hover: oklch(0.72 0.175 55);
+  --c-accent: oklch(0.875 0.117 120);
+  --c-accent-hover: oklch(0.92 0.1 120);
+  --c-accent-fg: oklch(0.2 0.04 120);
   --c-danger: oklch(0.63 0.25 29);
   --c-danger-hover: oklch(0.68 0.22 29);
   /* radii */
@@ -80,7 +81,7 @@ button, input, select, textarea {
   }
 
   ::selection {
-    background: oklch(0.67 0.185 55 / 0.35);
+    background: oklch(0.875 0.117 120 / 0.35);
   }
 }
 
@@ -199,7 +200,7 @@ button, input, select, textarea {
 
 .toolbar-btn--active {
   background: var(--c-accent) !important;
-  color: oklch(1 0 0) !important;
+  color: var(--c-accent-fg) !important;
 }
 
 /* ══ Status bar (bottom) ═════════════════════════════════ */
@@ -665,7 +666,7 @@ button, input, select, textarea {
 }
 
 .dk-object-row--selected {
-  background: oklch(0.67 0.185 55 / 0.12);
+  background: oklch(0.875 0.117 120 / 0.12);
 }
 
 .dk-object-kind {
@@ -821,7 +822,7 @@ button, input, select, textarea {
 }
 
 .dk-builtin-row--active {
-  background: oklch(0.67 0.185 55 / 0.06);
+  background: oklch(0.875 0.117 120 / 0.06);
 }
 
 .dk-builtin-row--disabled {
@@ -852,8 +853,9 @@ button, input, select, textarea {
 }
 
 .dk-builtin-check--on {
-  background: oklch(0.67 0.185 55);
-  border-color: oklch(0.67 0.185 55);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-fg);
 }
 
 .dk-builtin-info {
@@ -1286,7 +1288,7 @@ canvas {
 .cv-chip--active {
   background: var(--c-accent);
   border-color: var(--c-accent);
-  color: oklch(1 0 0);
+  color: var(--c-accent-fg);
 }
 
 /* ── Design system select + link ───── */
@@ -1381,7 +1383,7 @@ canvas {
 
 .cv-toggle-btn--active {
   background: var(--c-accent);
-  color: oklch(1 0 0);
+  color: var(--c-accent-fg);
 }
 
 .cv-footer {
@@ -1413,7 +1415,7 @@ canvas {
 
 .cv-btn--primary {
   background: var(--c-accent);
-  color: oklch(1 0 0);
+  color: var(--c-accent-fg);
 }
 
 .cv-btn--primary:hover {
@@ -1454,7 +1456,7 @@ canvas {
 
 .lib-toggle-btn--active {
   background: var(--c-accent);
-  color: oklch(1 0 0);
+  color: var(--c-accent-fg);
   border-color: var(--c-accent);
 }
 
@@ -1550,7 +1552,7 @@ canvas {
 }
 
 .pp-model-option--active {
-  background: oklch(0.67 0.185 55 / 0.12);
+  background: oklch(0.875 0.117 120 / 0.12);
 }
 
 .pp-model-option-name {
@@ -1754,15 +1756,26 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--c-accent);
-  border: none;
+  background: transparent;
+  border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
-  color: oklch(1 0 0);
+  color: var(--c-text-dim);
   cursor: pointer;
-  transition: opacity var(--dur) var(--ease);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 
 .pp-send-btn:hover {
+  background: var(--c-surface-3);
+  color: var(--c-text);
+}
+
+.pp-send-btn--active {
+  background: var(--c-accent);
+  border-color: var(--c-accent);
+  color: var(--c-accent-fg);
+}
+
+.pp-send-btn--active:hover {
   opacity: 0.85;
 }
 
@@ -1774,10 +1787,11 @@ canvas {
 .pp-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid oklch(1 0 0 / 0.3);
-  border-top-color: oklch(1 0 0);
+  border: 2px solid currentColor;
+  border-right-color: transparent;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  opacity: 0.7;
 }
 
 @keyframes spin {
@@ -2084,8 +2098,8 @@ canvas {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: oklch(0.67 0.185 55 / 0.08);
-  border-bottom: 1px solid oklch(0.67 0.185 55 / 0.15);
+  background: oklch(0.875 0.117 120 / 0.08);
+  border-bottom: 1px solid oklch(0.875 0.117 120 / 0.15);
   color: var(--c-accent);
   font-size: 11px;
   font-weight: 500;
@@ -2253,8 +2267,8 @@ canvas {
 }
 
 .ce-tree-item:hover { background: var(--c-surface-3); }
-.ce-tree-item--selected { background: oklch(0.67 0.185 55 / 0.15); }
-.ce-tree-item--selected:hover { background: oklch(0.67 0.185 55 / 0.2); }
+.ce-tree-item--selected { background: oklch(0.875 0.117 120 / 0.15); }
+.ce-tree-item--selected:hover { background: oklch(0.875 0.117 120 / 0.2); }
 
 .ce-tree-item--depth-1 { padding-left: 20px; }
 .ce-tree-item--depth-2 { padding-left: 32px; }

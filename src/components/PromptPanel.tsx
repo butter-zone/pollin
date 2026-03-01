@@ -445,7 +445,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
               </svg>
             </button>
             <button
-              className="pp-send-btn"
+              className={`pp-send-btn${prompt.trim() || attachments.length > 0 ? ' pp-send-btn--active' : ''}`}
               onClick={handleSubmit}
               disabled={isGenerating || (!prompt.trim() && attachments.length === 0)}
               title="Generate (Enter)"
