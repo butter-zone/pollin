@@ -1711,15 +1711,15 @@ canvas {
 
 /* ── Mic button active / pulse ── */
 .pp-icon-btn--active {
-  color: oklch(0.63 0.25 29);
-  border-color: oklch(0.63 0.25 29);
+  color: var(--c-accent);
+  border-color: var(--c-accent);
   position: relative;
 }
 .pp-mic-pulse {
   position: absolute;
   inset: -4px;
   border-radius: var(--radius-sm);
-  border: 2px solid oklch(0.63 0.25 29);
+  border: 2px solid var(--c-accent);
   animation: mic-ring 1.2s ease-out infinite;
   pointer-events: none;
 }
@@ -1766,15 +1766,7 @@ canvas {
   border-radius: 2px;
   transition: width 0.3s ease;
 }
-.pp-icon-btn--testing {
-  color: oklch(0.7 0.15 80);
-  border-color: oklch(0.7 0.15 80);
-  animation: testing-pulse 1s ease-in-out infinite;
-}
-@keyframes testing-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
+
 .pp-speech-link {
   color: var(--c-accent);
   text-decoration: none;

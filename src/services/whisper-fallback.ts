@@ -178,65 +178,6 @@ export class WhisperRecorder {
   }
 
   /**
-   * Quick mic permission + audio capture test.
-   * Returns { ok, error?, durationMs? }.
-   */
-  static async testMicrophone(): Promise<{
-    ok: boolean;
-    error?: string;
-    durationMs?: number;
-  }> {
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('NotAllowed') || msg.includes('Permission denied')) {
-        return { ok: false, error: 'Microphone access denied. Check browser permissions.' };
-      }
-      return { ok: false, error: `Microphone unavailable: ${msg}` };
-    }
-
-    // Record 1.5s of audio and verify we get data
-    return new Promise((resolve) => {
-      const mime = pickMimeType();
-      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      const start = performance.now();
-      recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const elapsed = Math.round(performance.now() - start);
-        const totalSize = chunks.reduce((s, c) => s + c.size, 0);
-        if (totalSize < 100) {
-          resolve({ ok: false, error: 'Mic connected but no audio data received.', durationMs: elapsed });
-          return;
-        }
-        // Try decoding to verify the pipeline works end-to-end
-        try {
-          const blob = new Blob(chunks, { type: recorder.mimeType });
-          await blobToFloat32(blob);
-          resolve({ ok: true, durationMs: elapsed });
-        } catch (err) {
-          resolve({
-            ok: false,
-            error: `Mic works but audio decode failed: ${err instanceof Error ? err.message : String(err)}`,
-            durationMs: elapsed,
-          });
-        }
-      };
-
-      recorder.start(100);
-      setTimeout(() => {
-        if (recorder.state !== 'inactive') recorder.stop();
-      }, 1500);
-    });
-  }
-
-  /**
    * Request mic access and start recording.
    */
   async startRecording(onProgress?: ProgressCallback): Promise<void> {

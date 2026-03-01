@@ -69,10 +69,7 @@ export interface UseSpeechToTextReturn {
   whisperStatus: WhisperStatus;
   /** Whisper model download progress 0-100 */
   modelProgress: number;
-  /** Run a quick mic test — returns result message */
-  testMic: () => Promise<string>;
-  /** Whether a mic test is currently running */
-  isTesting: boolean;
+
 }
 
 export function useSpeechToText(
@@ -85,7 +82,7 @@ export function useSpeechToText(
   const [backend, setBackend] = useState<'native' | 'whisper' | null>(null);
   const [whisperStatus, setWhisperStatus] = useState<WhisperStatus>('idle');
   const [modelProgress, setModelProgress] = useState(0);
-  const [isTesting, setIsTesting] = useState(false);
+
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const whisperRef = useRef<WhisperRecorder | null>(null);
   const onTranscriptRef = useRef(onTranscript);
@@ -268,26 +265,6 @@ export function useSpeechToText(
     }
   }, [isListening, startListening, stopListening]);
 
-  /* ── Mic test ────────────────────────────────────────── */
-  const testMic = useCallback(async (): Promise<string> => {
-    setIsTesting(true);
-    setError('Testing microphone…');
-    try {
-      const result = await WhisperRecorder.testMicrophone();
-      const msg = result.ok
-        ? `Mic test passed (${result.durationMs}ms)`
-        : `Mic test failed: ${result.error}`;
-      setError(result.ok ? null : msg);
-      return msg;
-    } catch (err) {
-      const msg = `Mic test error: ${err instanceof Error ? err.message : String(err)}`;
-      setError(msg);
-      return msg;
-    } finally {
-      setIsTesting(false);
-    }
-  }, []);
-
   return {
     isSupported: true, // always supported thanks to Whisper fallback
     isListening,
@@ -299,7 +276,5 @@ export function useSpeechToText(
     backend,
     whisperStatus,
     modelProgress,
-    testMic,
-    isTesting,
   };
 }
