@@ -5,8 +5,10 @@
  * Each template produces self-contained HTML with inline styles that renders
  * as a realistic UI design mockup — not code, but visual output.
  *
- * Supports design system theming (shadcn, Material, Fluent, Radix, Apple Glass).
+ * Supports design system theming (shadcn, Material, Fluent, Radix, Ant, Apple Glass).
  */
+
+import { icon, iconFilled } from '@/services/ui-icons';
 
 /* ─── HTML escape (prevent XSS from user prompts) ───────── */
 
@@ -185,6 +187,28 @@ const THEMES: Record<string, Partial<ThemeTokens>> = {
     success: '#34C759',
     warning: '#FFD60A',
   },
+  'ant design': {
+    fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`,
+    bg: '#ffffff',
+    surface: '#fafafa',
+    surfaceHover: '#f0f0f0',
+    border: '#d9d9d9',
+    text: 'rgba(0,0,0,0.88)',
+    textMuted: 'rgba(0,0,0,0.45)',
+    primary: '#1677ff',
+    primaryText: '#ffffff',
+    radius: '6px',
+    radiusSm: '4px',
+    radiusLg: '8px',
+    shadow: '0 1px 2px 0 rgba(0,0,0,0.03), 0 1px 6px -1px rgba(0,0,0,0.02), 0 2px 4px 0 rgba(0,0,0,0.02)',
+    shadowLg: '0 6px 16px 0 rgba(0,0,0,0.08), 0 3px 6px -4px rgba(0,0,0,0.12), 0 9px 28px 8px rgba(0,0,0,0.05)',
+    inputBg: '#ffffff',
+    inputBorder: '#d9d9d9',
+    accent: '#722ed1',
+    danger: '#ff4d4f',
+    success: '#52c41a',
+    warning: '#faad14',
+  },
 };
 
 function getTheme(libraryName?: string): ThemeTokens {
@@ -225,6 +249,8 @@ type UIType =
   | 'calendar'
   | 'email'
   | 'ecommerce'
+  | 'kanban'
+  | 'todo'
   | 'generic';
 
 const UI_PATTERNS: [RegExp, UIType][] = [
@@ -249,6 +275,8 @@ const UI_PATTERNS: [RegExp, UIType][] = [
   [/\b(calendar|schedule|event|appointment)\b/i, 'calendar'],
   [/\b(email|mail|compose|newsletter)\b/i, 'email'],
   [/\b(e-?commerce|shop|store|product|cart|checkout)\b/i, 'ecommerce'],
+  [/\b(kanban|board|trello|sprint|backlog|columns?\s*view)\b/i, 'kanban'],
+  [/\b(todo|to-?do|task\s*list|checklist|tasks?)\b/i, 'todo'],
 ];
 
 function classifyPrompt(prompt: string): UIType {
@@ -902,7 +930,7 @@ function ecommerceTemplate(t: ThemeTokens, _prompt: string, glass: boolean): str
         <div class="flex items-center gap-3">
           <input placeholder="Search products…" style="width:200px;" />
           <div style="position:relative;">
-            <span style="font-size:20px;">🛒</span>
+            ${icon('shopping-cart', 20, t.text)}
             <span style="position:absolute;top:-6px;right:-8px;background:${t.danger};color:white;font-size:10px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;">3</span>
           </div>
         </div>
@@ -1016,15 +1044,17 @@ function notificationTemplate(t: ThemeTokens, _prompt: string, glass: boolean): 
       <div class="text-sm text-muted" style="margin-bottom:20px;">You have 3 unread messages</div>
       <div class="flex flex-col">
         ${[
-          { icon: '🔔', title: 'New comment on your post', desc: 'Sarah replied to your design review', time: '2 min ago', unread: true },
-          { icon: '👋', title: 'Welcome to the team!', desc: 'You\'ve been added to the Design team workspace', time: '1 hour ago', unread: true },
-          { icon: '✅', title: 'Task completed', desc: 'Your export "Dashboard v2" has finished processing', time: '3 hours ago', unread: true },
-          { icon: '📦', title: 'Version 2.0 released', desc: 'Check out the newest features and improvements', time: 'Yesterday', unread: false },
-          { icon: '🔒', title: 'Security update', desc: 'Your password was changed successfully', time: '2 days ago', unread: false },
+          { ic: 'bell', title: 'New comment on your post', desc: 'Sarah replied to your design review', time: '2 min ago', unread: true, color: t.primary },
+          { ic: 'users', title: 'Welcome to the team!', desc: 'You\'ve been added to the Design team workspace', time: '1 hour ago', unread: true, color: t.accent },
+          { ic: 'check-circle', title: 'Task completed', desc: 'Your export "Dashboard v2" has finished processing', time: '3 hours ago', unread: true, color: t.success },
+          { ic: 'package', title: 'Version 2.0 released', desc: 'Check out the newest features and improvements', time: 'Yesterday', unread: false, color: t.warning },
+          { ic: 'shield', title: 'Security update', desc: 'Your password was changed successfully', time: '2 days ago', unread: false, color: t.textMuted },
         ].map(n => `
           <div style="${notifStyle} ${n.unread ? `border-left:3px solid ${t.primary};` : 'opacity:0.7;'}">
             <div class="flex gap-3">
-              <div style="font-size:20px; flex-shrink:0;">${n.icon}</div>
+              <div style="width:36px;height:36px;border-radius:${t.radius};background:${n.color}12;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                ${icon(n.ic, 18, n.color)}
+              </div>
               <div style="flex:1;">
                 <div class="flex justify-between items-center">
                   <div class="text-sm" style="font-weight:${n.unread ? '600' : '400'};">${n.title}</div>
@@ -1083,6 +1113,651 @@ function calendarTemplate(t: ThemeTokens, _prompt: string, glass: boolean): stri
             <div class="text-sm text-muted" style="width:70px; flex-shrink:0;">${e.time}</div>
             <div style="width:3px; height:24px; border-radius:2px; background:${e.color}; flex-shrink:0;"></div>
             <div class="text-sm" style="font-weight:500;">${e.title}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* ─── New dedicated templates (de-aliased + new types) ──── */
+
+function navbarTemplate(t: ThemeTokens, prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const title = safeTitle(prompt.replace(/\b(nav(?:bar|igation)?|header|top\s*bar|menu\s*bar|create|make|build|generate|design|a|an|the|with|for|my)\b/gi, '').trim(), 'App');
+  return `
+    <div class="container container--wide" style="padding:0;">
+      <!-- Primary navbar -->
+      <div style="padding:12px 24px; border-bottom:1px solid ${t.border}; ${glass ? gs : `background:${t.surface};`}" class="flex justify-between items-center">
+        <div class="flex items-center gap-4">
+          <div style="width:32px;height:32px;border-radius:8px;background:${t.primary};display:flex;align-items:center;justify-content:center;">
+            ${icon('zap', 18, t.primaryText)}
+          </div>
+          <span style="font-weight:700;font-size:17px;">${title.charAt(0).toUpperCase() + title.slice(1)}</span>
+          <div class="flex items-center gap-1" style="margin-left:12px;">
+            ${['Dashboard', 'Projects', 'Team', 'Reports'].map((item, i) =>
+              `<div style="padding:6px 12px;border-radius:${t.radiusSm};font-size:14px;${i === 0 ? `background:${t.surfaceHover};font-weight:500;` : `color:${t.textMuted};`}">${item}</div>`
+            ).join('')}
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div style="position:relative;">
+            <input placeholder="Search…" style="width:200px;padding-left:32px;font-size:13px;" />
+            <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">${icon('search', 14, t.textMuted)}</div>
+          </div>
+          <div style="position:relative;cursor:pointer;">
+            ${icon('bell', 18, t.textMuted)}
+            <div style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:${t.danger};border-radius:50%;border:2px solid ${t.surface};"></div>
+          </div>
+          <div class="avatar avatar--sm">U</div>
+        </div>
+      </div>
+      <!-- Page content preview -->
+      <div style="padding:32px 24px;">
+        <div class="flex justify-between items-center" style="margin-bottom:24px;">
+          <div>
+            <div class="text-xl">Overview</div>
+            <div class="text-sm text-muted" style="margin-top:2px;">Welcome back — here's what's new</div>
+          </div>
+          <button class="btn-primary" style="width:auto;padding:8px 16px;">${icon('plus', 14, t.primaryText)} New project</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+          ${[
+            { label: 'Active Projects', value: '12', ic: 'layers', color: t.primary },
+            { label: 'Open Tasks', value: '48', ic: 'check-circle', color: t.success },
+            { label: 'Team Members', value: '8', ic: 'users', color: t.accent },
+          ].map(c => `
+            <div style="${glass ? gs : `background:${t.surface};border:1px solid ${t.border};`} padding:20px;border-radius:${t.radius};">
+              <div class="flex items-center gap-2 text-sm text-muted" style="margin-bottom:8px;">
+                ${icon(c.ic, 16, c.color)}
+                ${c.label}
+              </div>
+              <div class="text-xl">${c.value}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function sidebarTemplate(t: ThemeTokens, prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const title = safeTitle(prompt.replace(/\b(sidebar|side\s*nav|drawer|left\s*panel|create|make|build|generate|design|a|an|the|with|for|my)\b/gi, '').trim(), 'Workspace');
+  const navItems = [
+    { ic: 'home', label: 'Home', active: true },
+    { ic: 'inbox', label: 'Inbox', badge: '3' },
+    { ic: 'calendar', label: 'Calendar' },
+    { ic: 'users', label: 'Team' },
+    { ic: 'folder', label: 'Documents' },
+    { ic: 'bar-chart', label: 'Analytics' },
+  ];
+  const bottomItems = [
+    { ic: 'settings', label: 'Settings' },
+    { ic: 'shield', label: 'Security' },
+  ];
+  return `
+    <div class="container container--wide" style="padding:0;display:flex;min-height:580px;">
+      <!-- Sidebar -->
+      <div style="width:240px;flex-shrink:0;border-right:1px solid ${t.border};${glass ? gs : `background:${t.surface};`} padding:16px 12px;display:flex;flex-direction:column;">
+        <div class="flex items-center gap-2" style="padding:8px 12px;margin-bottom:20px;">
+          <div style="width:28px;height:28px;border-radius:6px;background:${t.primary};display:flex;align-items:center;justify-content:center;">
+            ${icon('zap', 14, t.primaryText)}
+          </div>
+          <span style="font-weight:600;font-size:15px;">${title.charAt(0).toUpperCase() + title.slice(1)}</span>
+          <div style="margin-left:auto;">${icon('chevron-down', 14, t.textMuted)}</div>
+        </div>
+        <div class="flex flex-col gap-1" style="flex:1;">
+          ${navItems.map(item => `
+            <div class="flex items-center gap-3" style="padding:8px 12px;border-radius:${t.radiusSm};font-size:14px;cursor:pointer;${item.active ? `background:${t.surfaceHover};font-weight:500;` : `color:${t.textMuted};`}">
+              ${icon(item.ic, 16, item.active ? t.text : t.textMuted)}
+              <span style="flex:1;">${item.label}</span>
+              ${item.badge ? `<span style="background:${t.primary};color:${t.primaryText};font-size:11px;padding:1px 6px;border-radius:9999px;font-weight:500;">${item.badge}</span>` : ''}
+            </div>
+          `).join('')}
+          <div class="divider" style="margin:12px 0;"></div>
+          <div style="font-size:11px;font-weight:600;color:${t.textMuted};padding:4px 12px;text-transform:uppercase;letter-spacing:0.05em;">Projects</div>
+          ${['Design System', 'Marketing Site', 'Mobile App'].map((p, i) => `
+            <div class="flex items-center gap-3" style="padding:8px 12px;font-size:14px;color:${t.textMuted};cursor:pointer;">
+              <div style="width:8px;height:8px;border-radius:50%;background:${[t.primary, t.success, t.accent][i]};"></div>
+              ${p}
+            </div>
+          `).join('')}
+        </div>
+        <div class="flex flex-col gap-1" style="border-top:1px solid ${t.border};padding-top:12px;">
+          ${bottomItems.map(item => `
+            <div class="flex items-center gap-3" style="padding:8px 12px;border-radius:${t.radiusSm};font-size:14px;color:${t.textMuted};cursor:pointer;">
+              ${icon(item.ic, 16, t.textMuted)} ${item.label}
+            </div>
+          `).join('')}
+          <div class="flex items-center gap-3" style="padding:8px 12px;margin-top:4px;">
+            <div class="avatar avatar--sm" style="width:28px;height:28px;font-size:12px;">A</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;">Alex Johnson</div>
+              <div style="font-size:11px;color:${t.textMuted};">alex@email.com</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Main content -->
+      <div style="flex:1;padding:24px;">
+        <div class="flex justify-between items-center" style="margin-bottom:24px;">
+          <div class="text-xl">Home</div>
+          <div class="flex gap-2">
+            <button class="btn-secondary" style="width:auto;padding:8px 14px;font-size:13px;">${icon('filter', 14, t.textMuted)} Filter</button>
+            <button class="btn-primary" style="width:auto;padding:8px 14px;font-size:13px;">${icon('plus', 14, t.primaryText)} Add new</button>
+          </div>
+        </div>
+        <div class="flex flex-col gap-3">
+          ${[
+            { title: 'Component Library v2', desc: 'Update design tokens and add new variants', tag: 'In Progress', tagColor: t.primary },
+            { title: 'Landing Page Redesign', desc: 'New hero section with animated graphics', tag: 'Review', tagColor: t.warning },
+            { title: 'Mobile Navigation', desc: 'Bottom tab bar with gesture support', tag: 'Done', tagColor: t.success },
+          ].map(item => `
+            <div style="${glass ? gs : `background:${t.surface};border:1px solid ${t.border};`} padding:16px;border-radius:${t.radius};cursor:pointer;">
+              <div class="flex justify-between items-center" style="margin-bottom:4px;">
+                <div style="font-weight:500;font-size:14px;">${item.title}</div>
+                <span class="chip" style="background:${item.tagColor}18;color:${item.tagColor};border:none;font-size:11px;">${item.tag}</span>
+              </div>
+              <div class="text-sm text-muted">${item.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function modalTemplate(t: ThemeTokens, prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const title = safeTitle(prompt.replace(/\b(modal|dialog|popup|overlay|create|make|build|generate|design|a|an|the|with|for|my)\b/gi, '').trim(), 'Confirm Action');
+  const isDelete = /\b(delete|remove|destroy)\b/i.test(prompt);
+  const isSuccess = /\b(success|done|complet|confirm)\b/i.test(prompt);
+  return `
+    <div class="container flex items-center justify-center" style="background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);">
+      <div style="${glass ? gs : `background:${t.bg};`} border-radius:${t.radiusLg};box-shadow:${t.shadowLg};width:380px;overflow:hidden;">
+        <!-- Header -->
+        <div style="padding:20px 24px 0; display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="flex items-center gap-3">
+            <div style="width:40px;height:40px;border-radius:${t.radius};display:flex;align-items:center;justify-content:center;background:${isDelete ? t.danger : isSuccess ? t.success : t.primary}12;">
+              ${icon(isDelete ? 'alert-circle' : isSuccess ? 'check-circle' : 'info', 20, isDelete ? t.danger : isSuccess ? t.success : t.primary)}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:16px;">${title.charAt(0).toUpperCase() + title.slice(1)}</div>
+              <div class="text-sm text-muted" style="margin-top:2px;">${isDelete ? 'This action cannot be undone' : 'Please review before continuing'}</div>
+            </div>
+          </div>
+          <button style="background:none;padding:4px;color:${t.textMuted};border-radius:${t.radiusSm};">${icon('x', 16)}</button>
+        </div>
+        <!-- Body -->
+        <div style="padding:20px 24px;">
+          <div class="text-sm" style="line-height:1.6;color:${t.textMuted};">
+            ${isDelete
+              ? 'Are you sure you want to delete this item? All associated data will be permanently removed from our servers. This includes all files, comments, and activity history.'
+              : isSuccess
+                ? 'Your changes have been saved successfully. The updates will be reflected across all connected services within a few minutes.'
+                : 'You are about to perform an action that will affect your workspace. Please confirm that you want to proceed with these changes.'}
+          </div>
+          ${!isSuccess ? `
+            <div style="margin-top:16px;padding:12px;background:${t.surface};border:1px solid ${t.border};border-radius:${t.radiusSm};">
+              <div class="flex items-center gap-2">
+                <div style="width:16px;height:16px;border:1.5px solid ${t.inputBorder};border-radius:4px;"></div>
+                <span class="text-sm">I understand the consequences</span>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+        <!-- Footer -->
+        <div style="padding:16px 24px;border-top:1px solid ${t.border};display:flex;justify-content:flex-end;gap:8px;">
+          <button class="btn-secondary" style="width:auto;padding:8px 16px;">Cancel</button>
+          <button class="btn-primary" style="width:auto;padding:8px 16px;${isDelete ? `background:${t.danger};` : ''}">${isDelete ? 'Delete' : isSuccess ? 'Done' : 'Confirm'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function onboardingTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const steps = [
+    { ic: 'user', title: 'Create Profile', desc: 'Tell us about yourself', done: true },
+    { ic: 'mail', title: 'Verify Email', desc: 'Confirm your email address', done: true },
+    { ic: 'settings', title: 'Preferences', desc: 'Customize your experience', current: true },
+    { ic: 'zap', title: 'Get Started', desc: 'You\'re all set!' },
+  ];
+  return `
+    <div class="container" style="padding:0;display:flex;min-height:580px;">
+      <!-- Step indicator (left panel) -->
+      <div style="width:220px;flex-shrink:0;${glass ? gs : `background:${t.surface};`} padding:32px 20px;border-right:1px solid ${t.border};">
+        <div style="font-weight:700;font-size:18px;margin-bottom:4px;">Setup</div>
+        <div class="text-sm text-muted" style="margin-bottom:32px;">Step 3 of 4</div>
+        <div class="flex flex-col" style="gap:0;">
+          ${steps.map((step, i) => `
+            <div class="flex gap-3" style="position:relative;">
+              ${i < steps.length - 1 ? `<div style="position:absolute;left:14px;top:30px;width:2px;height:calc(100% - 4px);background:${step.done ? t.primary : t.border};"></div>` : ''}
+              <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;${step.done ? `background:${t.primary};` : step.current ? `border:2px solid ${t.primary};background:${t.bg};` : `border:2px solid ${t.border};background:${t.bg};`}">
+                ${step.done ? icon('check', 14, t.primaryText) : `<span style="font-size:12px;font-weight:600;color:${step.current ? t.primary : t.textMuted};">${i + 1}</span>`}
+              </div>
+              <div style="padding-bottom:32px;">
+                <div style="font-size:14px;font-weight:${step.current ? '600' : '400'};color:${step.done || step.current ? t.text : t.textMuted};">${step.title}</div>
+                <div style="font-size:12px;color:${t.textMuted};margin-top:2px;">${step.desc}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <!-- Current step content -->
+      <div style="flex:1;padding:32px;display:flex;flex-direction:column;">
+        <div style="flex:1;">
+          <div class="text-xl" style="margin-bottom:4px;">Preferences</div>
+          <div class="text-sm text-muted" style="margin-bottom:28px;">Customize how the app works for you</div>
+          <div class="flex flex-col gap-4" style="${glass ? gs + 'padding:20px;border-radius:' + t.radiusLg + ';' : ''}">
+            <div class="flex flex-col gap-2">
+              <label class="text-sm" style="font-weight:500;">Role</label>
+              <select style="padding:10px 12px;border:1px solid ${t.inputBorder};border-radius:${t.radiusSm};background:${t.inputBg};color:${t.text};font-size:14px;">
+                <option>Designer</option>
+                <option>Developer</option>
+                <option>Product Manager</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-sm" style="font-weight:500;">Team size</label>
+              <div class="flex gap-2">
+                ${['1-5', '6-20', '21-50', '50+'].map((s, i) => `
+                  <div style="flex:1;text-align:center;padding:8px;border:1px solid ${i === 1 ? t.primary : t.inputBorder};border-radius:${t.radiusSm};font-size:13px;cursor:pointer;${i === 1 ? `background:${t.primary}10;color:${t.primary};font-weight:500;` : ''}">${s}</div>
+                `).join('')}
+              </div>
+            </div>
+            <div class="flex flex-col gap-3">
+              <label class="text-sm" style="font-weight:500;">Notifications</label>
+              ${['Email updates', 'Push notifications', 'Weekly digest'].map((label, i) => `
+                <div class="flex justify-between items-center">
+                  <span class="text-sm">${label}</span>
+                  <div class="toggle-track${i < 2 ? ' toggle-track--on' : ''}"><div class="toggle-thumb"></div></div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between" style="margin-top:24px;padding-top:20px;border-top:1px solid ${t.border};">
+          <button class="btn-secondary" style="width:auto;padding:8px 20px;">${icon('arrow-left', 14, t.textMuted)} Back</button>
+          <button class="btn-primary" style="width:auto;padding:8px 20px;">Continue ${icon('arrow-right', 14, t.primaryText)}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function searchTemplate(t: ThemeTokens, prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const cardStyle = glass
+    ? `${gs} padding:16px; border-radius:${t.radiusLg};`
+    : `background:${t.surface}; border:1px solid ${t.border}; padding:16px; border-radius:${t.radius};`;
+  const query = safeTitle(prompt.replace(/\b(search|explore|discover|browse|results?|page|create|make|build|generate|design|a|an|the|with|for|my)\b/gi, '').trim(), 'design templates');
+  const results = [
+    { title: 'Getting Started with Components', desc: 'Learn how to build reusable UI components from scratch with best practices and common patterns.', tags: ['Tutorial', 'Components'], time: '5 min read' },
+    { title: 'Advanced Layout Techniques', desc: 'Master CSS Grid and Flexbox for complex, responsive user interfaces that scale beautifully.', tags: ['CSS', 'Layout'], time: '8 min read' },
+    { title: 'Design System Documentation', desc: 'Comprehensive guide to building and maintaining a design system for your team and organization.', tags: ['Design', 'Guide'], time: '12 min read' },
+    { title: 'Performance Optimization Tips', desc: 'Practical strategies for improving load times and runtime performance in modern web apps.', tags: ['Performance'], time: '6 min read' },
+  ];
+  return `
+    <div class="container container--wide" style="padding:24px;">
+      <!-- Search bar -->
+      <div style="margin-bottom:24px;">
+        <div style="position:relative;margin-bottom:12px;">
+          <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);">${icon('search', 20, t.textMuted)}</div>
+          <input value="${escapeHTML(query)}" style="width:100%;padding:14px 14px 14px 44px;font-size:16px;border-radius:${t.radiusLg};border:2px solid ${t.primary};box-shadow:${t.shadow};" />
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-muted">238 results</span>
+          <div class="flex gap-2">
+            ${['All', 'Articles', 'Docs', 'Videos'].map((f, i) =>
+              `<div style="padding:4px 12px;border-radius:9999px;font-size:13px;cursor:pointer;${i === 0 ? `background:${t.primary};color:${t.primaryText};font-weight:500;` : `background:${t.surface};border:1px solid ${t.border};color:${t.textMuted};`}">${f}</div>`
+            ).join('')}
+          </div>
+          <div style="margin-left:auto;" class="flex gap-2">
+            <button class="btn-secondary" style="width:auto;padding:6px 10px;">${icon('grid', 14, t.textMuted)}</button>
+            <button class="btn-secondary" style="width:auto;padding:6px 10px;background:${t.surfaceHover};">${icon('list', 14, t.text)}</button>
+          </div>
+        </div>
+      </div>
+      <!-- Results -->
+      <div class="flex flex-col gap-3">
+        ${results.map(r => `
+          <div style="${cardStyle} cursor:pointer;">
+            <div class="flex justify-between items-start">
+              <div style="flex:1;">
+                <div style="font-weight:600;font-size:15px;margin-bottom:4px;color:${t.primary};">${r.title}</div>
+                <div class="text-sm text-muted" style="line-height:1.5;margin-bottom:8px;">${r.desc}</div>
+                <div class="flex items-center gap-3">
+                  <div class="flex gap-2">
+                    ${r.tags.map(tg => `<span class="chip" style="font-size:11px;">${tg}</span>`).join('')}
+                  </div>
+                  <span class="text-xs text-muted">${icon('clock', 12, t.textMuted)} ${r.time}</span>
+                </div>
+              </div>
+              <div style="margin-left:12px;color:${t.textMuted};">${icon('chevron-right', 16, t.textMuted)}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      <!-- Pagination -->
+      <div class="flex justify-center items-center gap-2" style="margin-top:20px;">
+        ${['←', '1', '2', '3', '…', '12', '→'].map((p) =>
+          `<div style="width:32px;height:32px;border-radius:${t.radiusSm};display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;${p === '2' ? `background:${t.primary};color:${t.primaryText};font-weight:500;` : `color:${t.textMuted};border:1px solid ${t.border};`}">${p}</div>`
+        ).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function emailTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const emails = [
+    { from: 'Sarah Chen', subject: 'Design Review — Q4 Dashboard', preview: 'Hey, I\'ve finished the review of the dashboard designs. Overall looking great! A few notes…', time: '10:45 AM', unread: true, starred: true },
+    { from: 'Alex Thompson', subject: 'Meeting Notes: Sprint Planning', preview: 'Here are the notes from today\'s sprint planning. We agreed on the following priorities…', time: '9:30 AM', unread: true, starred: false },
+    { from: 'Team Updates', subject: 'Weekly Engineering Digest', preview: 'This week: 23 PRs merged, 4 releases shipped, 2 incidents resolved. Great work everyone!', time: 'Yesterday', unread: false, starred: false },
+    { from: 'Maya Rodriguez', subject: 'Re: Component Library RFC', preview: 'I like the approach for variant tokens. Let me think about the composability aspect…', time: 'Yesterday', unread: false, starred: true },
+    { from: 'CI/CD Pipeline', subject: 'Build Succeeded: main@a3f21c8', preview: 'All 847 tests passed. Coverage: 94.2%. Deploy to staging completed.', time: 'Mon', unread: false, starred: false },
+  ];
+  return `
+    <div class="container container--wide" style="padding:0;display:flex;min-height:580px;">
+      <!-- Mail sidebar -->
+      <div style="width:64px;flex-shrink:0;${glass ? gs : `background:${t.surface};`} border-right:1px solid ${t.border};padding:16px 0;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="width:36px;height:36px;border-radius:8px;background:${t.primary};display:flex;align-items:center;justify-content:center;margin-bottom:12px;">${icon('mail', 18, t.primaryText)}</div>
+        ${[
+          { ic: 'inbox', active: true, badge: '2' },
+          { ic: 'send', active: false },
+          { ic: 'star', active: false },
+          { ic: 'file', active: false },
+          { ic: 'trash', active: false },
+          { ic: 'archive', active: false },
+        ].map(item => `
+          <div style="width:40px;height:40px;border-radius:${t.radiusSm};display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;${item.active ? `background:${t.surfaceHover};` : ''}">
+            ${icon(item.ic, 18, item.active ? t.text : t.textMuted)}
+            ${item.badge ? `<div style="position:absolute;top:4px;right:4px;background:${t.primary};color:${t.primaryText};font-size:9px;width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;">${item.badge}</div>` : ''}
+          </div>
+        `).join('')}
+        <div style="margin-top:auto;">
+          <div style="width:40px;height:40px;border-radius:${t.radiusSm};display:flex;align-items:center;justify-content:center;">${icon('settings', 18, t.textMuted)}</div>
+        </div>
+      </div>
+      <!-- Email list -->
+      <div style="width:320px;flex-shrink:0;border-right:1px solid ${t.border};display:flex;flex-direction:column;">
+        <div style="padding:16px;border-bottom:1px solid ${t.border};">
+          <div style="font-weight:700;font-size:18px;margin-bottom:12px;">Inbox</div>
+          <div style="position:relative;">
+            <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);">${icon('search', 14, t.textMuted)}</div>
+            <input placeholder="Search mail…" style="width:100%;padding-left:32px;font-size:13px;" />
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;">
+          ${emails.map((e, i) => `
+            <div style="padding:12px 16px;border-bottom:1px solid ${t.border};cursor:pointer;${i === 0 ? `background:${t.surfaceHover};border-left:3px solid ${t.primary};` : ''} ${e.unread ? '' : 'opacity:0.75;'}">
+              <div class="flex justify-between items-center" style="margin-bottom:2px;">
+                <div style="font-size:13px;font-weight:${e.unread ? '600' : '400'};${e.unread ? '' : `color:${t.textMuted};`}">${e.from}</div>
+                <div class="flex items-center gap-2">
+                  ${e.starred ? iconFilled('star', 12, t.warning) : ''}
+                  <span class="text-xs text-muted">${e.time}</span>
+                </div>
+              </div>
+              <div style="font-size:13px;font-weight:${e.unread ? '500' : '400'};margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.subject}</div>
+              <div style="font-size:12px;color:${t.textMuted};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e.preview}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <!-- Email preview -->
+      <div style="flex:1;display:flex;flex-direction:column;">
+        <div style="padding:16px;border-bottom:1px solid ${t.border};">
+          <div class="flex justify-between items-center">
+            <div class="flex gap-2">
+              ${['archive', 'trash', 'mail-open', 'tag'].map(ic =>
+                `<button class="btn-secondary" style="width:auto;padding:6px 8px;">${icon(ic, 14, t.textMuted)}</button>`
+              ).join('')}
+            </div>
+            <div class="flex gap-2">
+              <button class="btn-secondary" style="width:auto;padding:6px 8px;">${icon('reply', 14, t.textMuted)}</button>
+              <button class="btn-secondary" style="width:auto;padding:6px 8px;">${icon('forward', 14, t.textMuted)}</button>
+              <button class="btn-secondary" style="width:auto;padding:6px 8px;">${icon('more-horizontal', 14, t.textMuted)}</button>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;padding:20px;">
+          <div style="font-size:18px;font-weight:600;margin-bottom:12px;">Design Review — Q4 Dashboard</div>
+          <div class="flex items-center gap-3" style="margin-bottom:20px;">
+            <div class="avatar avatar--sm" style="background:${t.accent};">S</div>
+            <div>
+              <div style="font-size:13px;"><strong>Sarah Chen</strong> <span class="text-muted">sarah@example.com</span></div>
+              <div style="font-size:12px;color:${t.textMuted};">to me — 10:45 AM</div>
+            </div>
+          </div>
+          <div class="text-sm" style="line-height:1.7;color:${t.textMuted};">
+            Hey,<br/><br/>
+            I've finished the review of the dashboard designs. Overall looking great! A few notes:<br/><br/>
+            • The chart colors could use more contrast for accessibility<br/>
+            • Love the new card layout — very clean<br/>
+            • Can we add a date range picker to the header?<br/><br/>
+            Let me know what you think.
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function mediaPlayerTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  return `
+    <div class="container" style="padding:0;display:flex;flex-direction:column;justify-content:flex-end;background:linear-gradient(180deg, ${t.primary}40 0%, ${t.accent}60 50%, ${t.bg} 100%);min-height:580px;">
+      <!-- Album art area -->
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:32px;">
+        <div style="width:260px;height:260px;border-radius:${t.radiusLg};background:linear-gradient(135deg, ${t.primary}, ${t.accent});box-shadow:${t.shadowLg};display:flex;align-items:center;justify-content:center;">
+          ${icon('music', 64, 'rgba(255,255,255,0.3)')}
+        </div>
+      </div>
+      <!-- Now playing info -->
+      <div style="${glass ? gs : `background:${t.bg};`} padding:28px 32px;border-radius:${t.radiusLg} ${t.radiusLg} 0 0;">
+        <div class="flex justify-between items-start" style="margin-bottom:20px;">
+          <div>
+            <div style="font-size:20px;font-weight:700;">Midnight Drive</div>
+            <div class="text-sm text-muted" style="margin-top:2px;">Lunar Echoes · Studio Sessions</div>
+          </div>
+          <div class="flex items-center gap-3">
+            ${icon('heart', 18, t.textMuted)}
+            ${icon('share', 18, t.textMuted)}
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div style="margin-bottom:8px;">
+          <div style="width:100%;height:4px;background:${t.border};border-radius:2px;position:relative;">
+            <div style="width:35%;height:100%;background:${t.primary};border-radius:2px;position:relative;">
+              <div style="position:absolute;right:-5px;top:-3px;width:10px;height:10px;background:${t.primary};border-radius:50%;"></div>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs text-muted" style="margin-top:6px;">
+            <span>1:23</span>
+            <span>3:45</span>
+          </div>
+        </div>
+        <!-- Controls -->
+        <div class="flex items-center justify-center gap-6" style="margin-bottom:16px;">
+          ${icon('shuffle', 18, t.textMuted)}
+          ${icon('skip-back', 22, t.text)}
+          <div style="width:52px;height:52px;border-radius:50%;background:${t.primary};display:flex;align-items:center;justify-content:center;box-shadow:${t.shadow};">
+            ${icon('play', 22, t.primaryText)}
+          </div>
+          ${icon('skip-forward', 22, t.text)}
+          ${icon('repeat', 18, t.textMuted)}
+        </div>
+        <!-- Volume -->
+        <div class="flex items-center justify-center gap-3">
+          ${icon('volume', 16, t.textMuted)}
+          <div style="width:120px;height:4px;background:${t.border};border-radius:2px;">
+            <div style="width:65%;height:100%;background:${t.textMuted};border-radius:2px;"></div>
+          </div>
+        </div>
+        <!-- Queue hint -->
+        <div class="flex justify-between items-center" style="margin-top:20px;padding-top:16px;border-top:1px solid ${t.border};">
+          <div class="text-sm text-muted">Up next: Solar Wind · Cosmic Keys</div>
+          ${icon('list', 16, t.textMuted)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function kanbanTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const cardStyle = glass
+    ? `${gs} padding:12px; border-radius:${t.radiusSm}; margin-bottom:8px;`
+    : `background:${t.bg}; border:1px solid ${t.border}; padding:12px; border-radius:${t.radiusSm}; box-shadow:${t.shadow}; margin-bottom:8px;`;
+  const columns = [
+    {
+      title: 'To Do', count: 4, color: t.textMuted,
+      cards: [
+        { title: 'Update design tokens', tags: ['Design'], priority: 'medium', assignee: 'S', done: false },
+        { title: 'Write API documentation', tags: ['Docs'], priority: 'low', assignee: 'A', done: false },
+        { title: 'Add dark mode support', tags: ['Feature'], priority: 'high', assignee: 'M', done: false },
+      ],
+    },
+    {
+      title: 'In Progress', count: 3, color: t.primary,
+      cards: [
+        { title: 'Refactor auth module', tags: ['Backend'], priority: 'high', assignee: 'J', done: false },
+        { title: 'Mobile responsive layout', tags: ['Frontend'], priority: 'medium', assignee: 'S', done: false },
+      ],
+    },
+    {
+      title: 'Review', count: 2, color: t.warning,
+      cards: [
+        { title: 'Search component tests', tags: ['Testing'], priority: 'medium', assignee: 'A', done: false },
+        { title: 'Accessibility audit fixes', tags: ['A11y'], priority: 'high', assignee: 'M', done: false },
+      ],
+    },
+    {
+      title: 'Done', count: 8, color: t.success,
+      cards: [
+        { title: 'Setup CI/CD pipeline', tags: ['DevOps'], priority: 'low', assignee: 'J', done: true },
+        { title: 'User onboarding flow', tags: ['UX'], priority: 'medium', assignee: 'S', done: true },
+      ],
+    },
+  ];
+  return `
+    <div class="container container--full" style="padding:20px;overflow:hidden;">
+      <div class="flex justify-between items-center" style="margin-bottom:20px;">
+        <div class="flex items-center gap-3">
+          <div class="text-xl">Sprint Board</div>
+          <span class="chip" style="font-size:11px;">Sprint 14</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="flex" style="margin-right:8px;">
+            ${['S', 'A', 'M', 'J'].map((a, i) =>
+              `<div class="avatar avatar--sm" style="width:28px;height:28px;font-size:11px;margin-left:${i > 0 ? '-6' : '0'}px;border:2px solid ${t.bg};background:${[t.primary, t.accent, t.success, t.warning][i]};">${a}</div>`
+            ).join('')}
+          </div>
+          <button class="btn-secondary" style="width:auto;padding:6px 12px;font-size:12px;">${icon('filter', 12, t.textMuted)} Filter</button>
+          <button class="btn-primary" style="width:auto;padding:6px 12px;font-size:12px;">${icon('plus', 12, t.primaryText)} Task</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;height:calc(100% - 60px);overflow:hidden;">
+        ${columns.map(col => `
+          <div style="${glass ? gs : `background:${t.surface};`} border-radius:${t.radius};padding:12px;display:flex;flex-direction:column;overflow:hidden;">
+            <div class="flex justify-between items-center" style="margin-bottom:12px;">
+              <div class="flex items-center gap-2">
+                <div style="width:8px;height:8px;border-radius:50%;background:${col.color};"></div>
+                <span style="font-size:13px;font-weight:600;">${col.title}</span>
+                <span style="font-size:11px;color:${t.textMuted};background:${t.surfaceHover};padding:0 6px;border-radius:9999px;">${col.count}</span>
+              </div>
+              ${icon('plus', 14, t.textMuted)}
+            </div>
+            <div style="flex:1;overflow:auto;">
+              ${col.cards.map(card => `
+                <div style="${cardStyle} ${card.done ? 'opacity:0.6;' : ''}">
+                  <div style="font-size:13px;font-weight:500;margin-bottom:6px;${card.done ? 'text-decoration:line-through;' : ''}">${card.title}</div>
+                  <div class="flex items-center gap-2" style="margin-bottom:8px;">
+                    ${card.tags.map(tg => `<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${t.primary}12;color:${t.primary};">${tg}</span>`).join('')}
+                  </div>
+                  <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-1">
+                      ${card.priority === 'high' ? icon('flag', 12, t.danger) : card.priority === 'medium' ? icon('flag', 12, t.warning) : icon('flag', 12, t.textMuted)}
+                    </div>
+                    <div class="avatar" style="width:22px;height:22px;font-size:10px;">${card.assignee}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function todoTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const itemStyle = glass
+    ? `${gs} padding:12px 16px; border-radius:${t.radiusSm}; margin-bottom:6px;`
+    : `background:${t.surface}; border:1px solid ${t.border}; padding:12px 16px; border-radius:${t.radiusSm}; margin-bottom:6px;`;
+  const tasks = [
+    { text: 'Review pull request #234', done: false, priority: 'high', category: 'Work', dueToday: true },
+    { text: 'Update project dependencies', done: false, priority: 'medium', category: 'Work' },
+    { text: 'Write unit tests for auth module', done: false, priority: 'high', category: 'Work' },
+    { text: 'Prepare weekly report', done: false, priority: 'low', category: 'Work' },
+    { text: 'Schedule dentist appointment', done: true, priority: 'medium', category: 'Personal' },
+    { text: 'Buy groceries', done: true, priority: 'low', category: 'Personal' },
+    { text: 'Read chapter 5 of Design Patterns', done: true, priority: 'low', category: 'Learning' },
+  ];
+  return `
+    <div class="container" style="padding:24px;">
+      <div class="flex justify-between items-center" style="margin-bottom:20px;">
+        <div>
+          <div class="text-xl">My Tasks</div>
+          <div class="text-sm text-muted" style="margin-top:2px;">4 remaining · 3 completed</div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-secondary" style="width:auto;padding:6px 12px;font-size:13px;">${icon('filter', 14, t.textMuted)} Filter</button>
+          <button class="btn-primary" style="width:auto;padding:6px 12px;font-size:13px;">${icon('plus', 14, t.primaryText)} Add task</button>
+        </div>
+      </div>
+      <!-- Category tabs -->
+      <div class="flex gap-2" style="margin-bottom:20px;">
+        ${['All', 'Work', 'Personal', 'Learning'].map((cat, i) =>
+          `<div style="padding:6px 14px;border-radius:9999px;font-size:13px;cursor:pointer;${i === 0 ? `background:${t.primary};color:${t.primaryText};font-weight:500;` : `background:${t.surface};border:1px solid ${t.border};color:${t.textMuted};`}">${cat}</div>`
+        ).join('')}
+      </div>
+      <!-- Today section -->
+      <div style="font-size:12px;font-weight:600;color:${t.textMuted};margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em;">Today</div>
+      <div class="flex flex-col" style="margin-bottom:20px;">
+        ${tasks.filter(t => !t.done).map(task => `
+          <div style="${itemStyle}" class="flex items-center gap-3">
+            <div style="width:18px;height:18px;border:2px solid ${task.priority === 'high' ? t.danger : task.priority === 'medium' ? t.warning : t.border};border-radius:50%;flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:14px;font-weight:400;">${task.text}</div>
+              <div class="flex items-center gap-2" style="margin-top:4px;">
+                <span style="font-size:11px;color:${t.textMuted};">${task.category}</span>
+                ${task.dueToday ? `<span style="font-size:11px;color:${t.danger};font-weight:500;">${icon('clock', 10, t.danger)} Due today</span>` : ''}
+              </div>
+            </div>
+            ${icon('more-horizontal', 14, t.textMuted)}
+          </div>
+        `).join('')}
+      </div>
+      <!-- Completed section -->
+      <div class="flex items-center gap-2" style="margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:600;color:${t.textMuted};text-transform:uppercase;letter-spacing:0.05em;">Completed</div>
+        ${icon('chevron-down', 12, t.textMuted)}
+      </div>
+      <div class="flex flex-col" style="opacity:0.6;">
+        ${tasks.filter(t => t.done).map(task => `
+          <div style="${itemStyle}" class="flex items-center gap-3">
+            <div style="width:18px;height:18px;border-radius:50%;background:${t.success};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              ${icon('check', 10, t.primaryText)}
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:14px;text-decoration:line-through;color:${t.textMuted};">${task.text}</div>
+            </div>
           </div>
         `).join('')}
       </div>
@@ -1151,20 +1826,22 @@ const TEMPLATE_MAP: Record<UIType, (t: ThemeTokens, prompt: string, glass: boole
   profile: profileTemplate,
   pricing: pricingTemplate,
   landing: landingTemplate,
-  navbar: landingTemplate, // uses landing (has a navbar)
-  sidebar: settingsTemplate, // uses settings (has a sidebar)
+  navbar: navbarTemplate,
+  sidebar: sidebarTemplate,
   card: cardTemplate,
   form: formTemplate,
   table: tableTemplate,
   chat: chatTemplate,
-  modal: formTemplate,
+  modal: modalTemplate,
   notification: notificationTemplate,
-  onboarding: signupTemplate,
-  search: tableTemplate,
-  'media-player': cardTemplate,
+  onboarding: onboardingTemplate,
+  search: searchTemplate,
+  'media-player': mediaPlayerTemplate,
   calendar: calendarTemplate,
-  email: chatTemplate,
+  email: emailTemplate,
   ecommerce: ecommerceTemplate,
+  kanban: kanbanTemplate,
+  todo: todoTemplate,
   generic: genericTemplate,
 };
 
@@ -1213,8 +1890,8 @@ export function generateUIHTML(
   const css = baseCSS(finalTheme);
 
   // Determine dimensions
-  const isWide = ['dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing'].includes(uiType);
-  const isFull = ['dashboard'].includes(uiType);
+  const isWide = ['dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
+  const isFull = ['dashboard', 'kanban'].includes(uiType);
   const width = isFull ? 900 : isWide ? 780 : 420;
   const height = isFull ? 620 : isWide ? 580 : 580;
 
