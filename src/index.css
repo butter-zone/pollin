@@ -1813,19 +1813,10 @@ canvas {
   overflow: hidden;
 }
 
-.pp-pollen-field {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.pp-pollen-particle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--c-accent) 0%, transparent 70%);
-  pointer-events: none;
+.pp-char {
+  display: inline-block;
   will-change: transform, opacity;
+  white-space: pre;
 }
 
 .pp-inspiration-quote {

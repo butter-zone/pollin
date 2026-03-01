@@ -100,7 +100,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
   const quoteRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
   const authorRef = useRef<HTMLSpanElement>(null);
-  const pollenRef = useRef<HTMLDivElement>(null);
   const initialReveal = useRef(true);
 
   // Build a shuffled order: Picasso (0) first, rest randomized
@@ -113,37 +112,47 @@ export const PromptPanel: FC<PromptPanelProps> = ({
     quoteOrder.current = [0, ...rest];
   }
 
-  // Animate pollen particles floating in
-  const spawnPollen = useCallback(() => {
-    if (!pollenRef.current) return;
-    const container = pollenRef.current;
-    const count = 6 + Math.floor(Math.random() * 4);
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'pp-pollen-particle';
-      const size = 3 + Math.random() * 4;
-      dot.style.width = `${size}px`;
-      dot.style.height = `${size}px`;
-      dot.style.left = `${10 + Math.random() * 80}%`;
-      dot.style.top = `${20 + Math.random() * 60}%`;
-      container.appendChild(dot);
-      gsap.fromTo(dot,
-        { opacity: 0, scale: 0, x: (Math.random() - 0.5) * 40, y: 20 + Math.random() * 20 },
-        {
-          opacity: 0.25 + Math.random() * 0.35,
-          scale: 1,
-          x: (Math.random() - 0.5) * 60,
-          y: -30 - Math.random() * 40,
-          duration: 2.5 + Math.random() * 2,
-          delay: Math.random() * 1.2,
-          ease: 'power1.out',
-          onComplete: () => dot.remove(),
-        },
-      );
+  /**
+   * Disintegrate an element's text into individual character-particles
+   * that scatter outward like pollen dust falling apart.
+   */
+  const disintegrateEl = useCallback((el: HTMLElement) => {
+    const text = el.textContent || '';
+    if (!text.trim()) return gsap.timeline();
+
+    // Replace text content with per-character <span> wrappers
+    el.innerHTML = '';
+    el.style.position = 'relative';
+    const chars: HTMLSpanElement[] = [];
+    for (const char of text) {
+      const span = document.createElement('span');
+      span.textContent = char;
+      span.className = 'pp-char';
+      el.appendChild(span);
+      chars.push(span);
     }
+
+    // Animate each character with pollen-like scatter physics
+    const tl = gsap.timeline();
+    chars.forEach((span) => {
+      const delay = Math.random() * 0.5;
+      const xDrift = (Math.random() - 0.5) * 140;
+      const yDrift = 25 + Math.random() * 55;
+      const rot = (Math.random() - 0.5) * 200;
+      tl.to(span, {
+        x: xDrift,
+        y: yDrift,
+        rotation: rot,
+        scale: 0.15 + Math.random() * 0.25,
+        opacity: 0,
+        duration: 0.9 + Math.random() * 0.7,
+        ease: 'power2.out',
+      }, delay);
+    });
+    return tl;
   }, []);
 
-  // Initial reveal animation
+  // Initial reveal animation (clean fade-in, no disintegration)
   useEffect(() => {
     if (!showQuotes || !initialReveal.current) return;
     initialReveal.current = false;
@@ -162,34 +171,28 @@ export const PromptPanel: FC<PromptPanelProps> = ({
         0.5,
       );
     }
-    spawnPollen();
-  }, [showQuotes, spawnPollen]);
+  }, [showQuotes]);
 
-  // Cycling transition with GSAP
+  // Cycling transition — text disintegrates into pollen dust
   useEffect(() => {
     if (!showQuotes) return;
     const interval = setInterval(() => {
-      // Drift out like pollen carried away
-      const tl = gsap.timeline({
+      const master = gsap.timeline({
         onComplete: () => {
           setQuoteIndex((i) => (i + 1) % quoteOrder.current.length);
         },
       });
+      // Disintegrate the quote text into scattered char-particles
       if (textRef.current) {
-        tl.to(textRef.current, {
-          opacity: 0, y: -18, scale: 0.96,
-          duration: 0.7, ease: 'power2.inOut',
-        }, 0);
+        master.add(disintegrateEl(textRef.current), 0);
       }
+      // Disintegrate the author a beat later
       if (authorRef.current) {
-        tl.to(authorRef.current, {
-          opacity: 0, y: -10,
-          duration: 0.5, ease: 'power2.in',
-        }, 0.1);
+        master.add(disintegrateEl(authorRef.current), 0.15);
       }
     }, 12000);
     return () => clearInterval(interval);
-  }, [showQuotes]);
+  }, [showQuotes, disintegrateEl]);
 
   // Animate in after quote index changes (skip initial)
   useEffect(() => {
@@ -207,7 +210,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
         0.25,
       );
     }
-    spawnPollen();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quoteIndex]);
 
@@ -303,7 +305,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
       {/* ── Inspirational quotes (empty state) ───────── */}
       {showQuotes && (
         <div className="pp-inspiration" ref={quoteRef}>
-          <div className="pp-pollen-field" ref={pollenRef} />
           <div className="pp-inspiration-quote">
             <p className="pp-inspiration-text" ref={textRef}>“{INSPIRATION_QUOTES[quoteOrder.current[quoteIndex]].text}”</p>
             <span className="pp-inspiration-author" ref={authorRef}>— {INSPIRATION_QUOTES[quoteOrder.current[quoteIndex]].author}</span>
