@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect, type FC } from 'react';
 import gsap from 'gsap';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
-/* ─── Accent border focus animation (Google-style) ─────── */
+/* ─── Accent border focus animation (Google Search-style) ─── */
 function useAccentBorder(
   textareaRef: React.RefObject<HTMLTextAreaElement | null>,
   wrapRef: React.RefObject<HTMLDivElement | null>,
@@ -13,23 +13,29 @@ function useAccentBorder(
     if (!textarea || !wrap) return;
 
     const onFocus = () => {
-      // Smoothly show accent border + soft glow
+      // Google-style: crisp border highlight + subtle lift shadow
+      gsap.to(textarea, {
+        borderColor: 'oklch(0.875 0.117 120)',
+        duration: 0.15,
+        ease: 'power2.out',
+      });
       gsap.to(wrap, {
-        '--border-opacity': 1,
-        '--glow-opacity': 1,
-        '--glow-spread': '8px',
-        duration: 0.2,
-        ease: 'power1.out',
+        boxShadow: '0 1px 6px oklch(0.875 0.117 120 / 0.18)',
+        duration: 0.15,
+        ease: 'power2.out',
       });
     };
 
     const onBlur = () => {
+      gsap.to(textarea, {
+        borderColor: 'oklch(0.37 0 0)',  // --c-border
+        duration: 0.12,
+        ease: 'power2.in',
+      });
       gsap.to(wrap, {
-        '--border-opacity': 0,
-        '--glow-opacity': 0,
-        '--glow-spread': '0px',
-        duration: 0.15,
-        ease: 'power1.in',
+        boxShadow: '0 0 0 transparent',
+        duration: 0.12,
+        ease: 'power2.in',
       });
     };
 
