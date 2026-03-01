@@ -22,12 +22,12 @@ const drawTools: Array<{ id: Tool; label: string; shortcut: string }> = [
   { id: 'eraser', label: 'Eraser', shortcut: 'E' },
 ];
 
-const ToolIcon: FC<{ toolId: Tool; isActive: boolean }> = ({ toolId, isActive }) => {
+const ToolIcon: FC<{ toolId: Tool }> = ({ toolId }) => {
   const svgByTool: Record<Tool, JSX.Element> = {
     select: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path d="M3 2L3 14L6.5 10.5L9.5 16L11.5 15L8.5 9L13 9L3 2Z"
-          fill={isActive ? 'oklch(1 0 0)' : 'currentColor'} />
+          fill="currentColor" />
       </svg>
     ),
     hand: (
@@ -189,7 +189,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
               aria-pressed={isActive}
               aria-label={tool.label}
             >
-              <ToolIcon toolId={tool.id} isActive={isActive} />
+              <ToolIcon toolId={tool.id} />
             </button>
           );
         })}

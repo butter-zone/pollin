@@ -204,7 +204,7 @@ function pricingTree(_prompt: string): ComponentNode {
     n('grid', { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', width: '100%', maxWidth: '900px' }, {}, [
       // Free
       n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.5' }, {}, ['Free']),
+        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, ['Free']),
         n('container', { display: 'flex', alignItems: 'baseline', gap: '4px' }, {}, [
           n('heading', { fontSize: '36px', fontWeight: '700' }, { level: 2 }, ['$0']),
           n('text', { fontSize: '14px', opacity: '0.5' }, {}, ['/month']),
@@ -218,7 +218,7 @@ function pricingTree(_prompt: string): ComponentNode {
         n('button', { marginTop: 'auto', width: '100%' }, { variant: 'secondary' }, ['Get started']),
       ]),
       // Pro
-      n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px', border: '2px solid' }, { highlighted: true }, [
+      n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px', borderWidth: '2px', borderStyle: 'solid' }, { highlighted: true }, [
         n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
           n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }, {}, ['Pro']),
           n('badge', {}, { variant: 'primary' }, ['Popular']),
@@ -238,7 +238,7 @@ function pricingTree(_prompt: string): ComponentNode {
       ]),
       // Enterprise
       n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.5' }, {}, ['Enterprise']),
+        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, ['Enterprise']),
         n('container', { display: 'flex', alignItems: 'baseline', gap: '4px' }, {}, [
           n('heading', { fontSize: '36px', fontWeight: '700' }, { level: 2 }, ['$99']),
           n('text', { fontSize: '14px', opacity: '0.5' }, {}, ['/month']),
@@ -300,8 +300,8 @@ function navbarTree(_prompt: string): ComponentNode {
       ]),
     ]),
     n('divider', {}, {}),
-    n('container', { padding: '32px 24px', opacity: '0.4', textAlign: 'center' }, {}, [
-      n('text', { fontSize: '14px' }, {}, ['Page content goes here']),
+    n('container', { padding: '32px 24px', textAlign: 'center' }, {}, [
+      n('text', { fontSize: '14px', opacity: '0.4' }, {}, ['Your page content will appear here']),
     ]),
   ]);
 }
@@ -409,8 +409,8 @@ function tableTree(_prompt: string): ComponentNode {
         ['Eve Wilson', 'eve@example.com', 'Admin', 'Active', 'May 8, 2024'],
       ],
     }),
-    n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', opacity: '0.6', fontSize: '13px' }, {}, [
-      n('text', {}, {}, ['Showing 1-5 of 48 users']),
+    n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }, {}, [
+      n('text', { opacity: '0.6' }, {}, ['Showing 1-5 of 48 users']),
       n('container', { display: 'flex', gap: '8px' }, {}, [
         n('button', {}, { variant: 'secondary', disabled: true }, ['Previous']),
         n('button', {}, { variant: 'secondary' }, ['Next']),
@@ -482,7 +482,7 @@ function modalTree(_prompt: string): ComponentNode {
       ]),
       n('container', { display: 'flex', justifyContent: 'flex-end', gap: '12px' }, {}, [
         n('button', {}, { variant: 'secondary' }, ['Cancel']),
-        n('button', {}, { variant: 'primary' }, ['Delete project']),
+        n('button', {}, { variant: 'destructive' }, ['Delete project']),
       ]),
     ]),
   ]);
@@ -509,18 +509,18 @@ function notificationTree(_prompt: string): ComponentNode {
         ]),
         n('badge', { flexShrink: '0' }, { variant: 'primary' }, ['New']),
       ]),
-      n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', opacity: '0.6' }, {}, [
+      n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }, {}, [
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'LS' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
-          n('text', { fontSize: '14px' }, {}, ['Lisa Smith completed the review']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['3 hours ago']),
+          n('text', { fontSize: '14px', opacity: '0.7' }, {}, ['Lisa Smith completed the review']),
+          n('text', { fontSize: '12px', opacity: '0.4' }, {}, ['3 hours ago']),
         ]),
       ]),
-      n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', opacity: '0.6' }, {}, [
+      n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }, {}, [
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'TC' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
-          n('text', { fontSize: '14px' }, {}, ['Tom Chen shared a file with you']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Yesterday']),
+          n('text', { fontSize: '14px', opacity: '0.7' }, {}, ['Tom Chen shared a file with you']),
+          n('text', { fontSize: '12px', opacity: '0.4' }, {}, ['Yesterday']),
         ]),
       ]),
     ]),
@@ -568,11 +568,11 @@ function searchTree(_prompt: string): ComponentNode {
       n('button', {}, { variant: 'primary' }, ['Search']),
     ]),
     n('container', { display: 'flex', gap: '8px', flexWrap: 'wrap' }, {}, [
-      n('badge', { cursor: 'pointer' }, {}, ['All']),
-      n('badge', { cursor: 'pointer', opacity: '0.6' }, {}, ['Images']),
-      n('badge', { cursor: 'pointer', opacity: '0.6' }, {}, ['Videos']),
-      n('badge', { cursor: 'pointer', opacity: '0.6' }, {}, ['Documents']),
-      n('badge', { cursor: 'pointer', opacity: '0.6' }, {}, ['People']),
+      n('badge', { cursor: 'pointer' }, { variant: 'primary' }, ['All']),
+      n('badge', { cursor: 'pointer' }, {}, ['Images']),
+      n('badge', { cursor: 'pointer' }, {}, ['Videos']),
+      n('badge', { cursor: 'pointer' }, {}, ['Documents']),
+      n('badge', { cursor: 'pointer' }, {}, ['People']),
     ]),
     n('text', { fontSize: '13px', opacity: '0.5' }, {}, ['Showing 24 results for "design system"']),
     n('container', { display: 'flex', flexDirection: 'column', gap: '12px' }, {}, [
@@ -605,9 +605,9 @@ function mediaPlayerTree(_prompt: string): ComponentNode {
           n('text', { fontSize: '14px', opacity: '0.6' }, {}, ['The Wanderers']),
         ]),
         n('progress', {}, { value: 65, max: 100 }),
-        n('container', { display: 'flex', justifyContent: 'space-between', fontSize: '12px', opacity: '0.5' }, {}, [
-          n('text', {}, {}, ['2:34']),
-          n('text', {}, {}, ['3:52']),
+        n('container', { display: 'flex', justifyContent: 'space-between', fontSize: '12px' }, {}, [
+          n('text', { opacity: '0.5' }, {}, ['2:34']),
+          n('text', { opacity: '0.5' }, {}, ['3:52']),
         ]),
         n('container', { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }, {}, [
           n('button', {}, { variant: 'ghost', icon: 'skip-back' }, ['⏮']),
@@ -630,22 +630,23 @@ function calendarTree(_prompt: string): ComponentNode {
         n('button', {}, { variant: 'secondary' }, ['→']),
       ]),
     ]),
-    n('grid', { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', textAlign: 'center' }, {}, [
+    n('grid', { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }, {}, [
       ...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d =>
-        n('text', { padding: '8px', fontSize: '12px', fontWeight: '600', opacity: '0.5' }, {}, [d])
+        n('text', { padding: '8px', fontSize: '12px', fontWeight: '600', opacity: '0.6' }, {}, [d])
       ),
-      ...[29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1].map((d, i) =>
-        n('container', {
+      ...[29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1].map((d, i) => {
+        const isOutside = i < 3 || i > 33;
+        const isToday = d === 10 && !isOutside;
+        return n('container', {
           padding: '8px',
           textAlign: 'center',
           borderRadius: '6px',
-          opacity: (i < 3 || i > 33) ? '0.3' : '1',
         }, {}, [
-          n('text', { fontSize: '14px' }, {}, [String(d)]),
-          ...(d === 15 ? [n('badge', { fontSize: '10px', marginTop: '2px' }, { variant: 'primary' }, ['Meeting'])] : []),
-          ...(d === 22 ? [n('badge', { fontSize: '10px', marginTop: '2px' }, {}, ['Deadline'])] : []),
-        ])
-      ),
+          n('text', { fontSize: '14px', ...(isOutside ? { opacity: '0.3' } : {}), ...(isToday ? { fontWeight: '700' } : {}) }, {}, [String(d)]),
+          ...(d === 15 && !isOutside ? [n('badge', { fontSize: '10px', marginTop: '2px' }, { variant: 'primary' }, ['Meeting'])] : []),
+          ...(d === 22 && !isOutside ? [n('badge', { fontSize: '10px', marginTop: '2px' }, {}, ['Deadline'])] : []),
+        ]);
+      }),
     ]),
   ]);
 }
@@ -660,7 +661,7 @@ function emailTree(_prompt: string): ComponentNode {
       ]),
       n('input', { margin: '0 16px 12px' }, { placeholder: 'Search mail…' }),
       n('container', { display: 'flex', flexDirection: 'column', flex: '1', overflowY: 'auto' }, {}, [
-        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: '3px solid', borderRadius: '0' }, {}, [
+        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderLeftWidth: '3px', borderLeftStyle: 'solid', borderRadius: '0' }, { highlighted: true }, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '600' }, {}, ['Alex Rivera']),
             n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['10:32 AM']),
@@ -668,7 +669,7 @@ function emailTree(_prompt: string): ComponentNode {
           n('text', { fontSize: '13px', fontWeight: '500' }, {}, ['Design Review Notes']),
           n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Here are my notes from the design review meeting…']),
         ]),
-        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0', opacity: '0.8' }, {}, [
+        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0' }, {}, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '600' }, {}, ['Team Updates']),
             n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['9:15 AM']),
@@ -676,7 +677,7 @@ function emailTree(_prompt: string): ComponentNode {
           n('text', { fontSize: '13px' }, {}, ['Weekly Sync Summary']),
           n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['This week\'s highlights and action items…']),
         ]),
-        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0', opacity: '0.7' }, {}, [
+        n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0' }, {}, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px' }, {}, ['Sarah Chen']),
             n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['Yesterday']),
@@ -768,12 +769,12 @@ function kanbanTree(_prompt: string): ComponentNode {
         n('text', { fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, [title]),
         n('badge', { fontSize: '11px' }, {}, [String(items.length)]),
       ]),
-      ...items.map(item =>
+      ...items.map((item, idx) =>
         n('card', { padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'grab' }, {}, [
           n('text', { fontSize: '14px', fontWeight: '500' }, {}, [item]),
           n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
             n('avatar', { width: '22px', height: '22px' }, { initials: item[0] }),
-            n('text', { fontSize: '11px', opacity: '0.4' }, {}, ['Dec 15']),
+            n('text', { fontSize: '11px', opacity: '0.4' }, {}, [['Jan 8', 'Jan 12', 'Jan 15', 'Dec 28', 'Jan 3'][idx % 5]]),
           ]),
         ])
       ),
@@ -836,7 +837,7 @@ function genericTree(prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%', padding: '32px', gap: '24px' }, {}, [
     n('heading', { fontSize: '24px', fontWeight: '700' }, { level: 1 }, [title]),
     n('paragraph', { fontSize: '14px', opacity: '0.6', lineHeight: '1.6' }, {}, [
-      'This is a generated UI component. You can edit any node by selecting it in the Component Editor panel.',
+      'Customize this layout by selecting and editing individual components in the panel.',
     ]),
     n('card', { padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
       n('container', { display: 'flex', flexDirection: 'column', gap: '6px' }, {}, [

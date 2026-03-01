@@ -332,7 +332,11 @@ interface ThemeColors {
   surfaceAlt: string;
   onSurface: string;
   border: string;
-  muted: string;
+  muted: string;       // secondary text (opacity ~0.6)
+  mutedFaint: string;  // tertiary text (opacity ~0.4)
+  danger: string;      // destructive actions
+  onDanger: string;    // text on danger background
+  success: string;     // positive indicators
   accent: string;
   link: string;
   cardBg: string;
@@ -344,33 +348,39 @@ interface ThemeColors {
 const THEME_COLORS: Record<string, ThemeColors> = {
   'Material UI 3': {
     primary: '#1976d2', onPrimary: '#ffffff', surface: '#fafafa', surfaceAlt: '#f5f5f5',
-    onSurface: '#212121', border: '#e0e0e0', muted: '#757575', accent: '#9c27b0',
-    link: '#1976d2', cardBg: '#ffffff', inputBorder: '#bdbdbd', inputBg: '#ffffff', isDark: false,
+    onSurface: '#212121', border: '#e0e0e0', muted: '#757575', mutedFaint: '#9e9e9e',
+    danger: '#d32f2f', onDanger: '#ffffff', success: '#2e7d32',
+    accent: '#9c27b0', link: '#1976d2', cardBg: '#ffffff', inputBorder: '#bdbdbd', inputBg: '#ffffff', isDark: false,
   },
   'shadcn/ui': {
     primary: '#fafafa', onPrimary: '#09090b', surface: '#09090b', surfaceAlt: '#18181b',
-    onSurface: '#fafafa', border: '#27272a', muted: '#a1a1aa', accent: '#a78bfa',
-    link: '#a78bfa', cardBg: '#18181b', inputBorder: '#27272a', inputBg: '#09090b', isDark: true,
+    onSurface: '#fafafa', border: '#27272a', muted: '#a1a1aa', mutedFaint: '#71717a',
+    danger: '#ef4444', onDanger: '#ffffff', success: '#22c55e',
+    accent: '#a78bfa', link: '#a78bfa', cardBg: '#18181b', inputBorder: '#27272a', inputBg: '#09090b', isDark: true,
   },
   'Apple Liquid Glass': {
     primary: 'rgba(0,122,255,0.65)', onPrimary: '#ffffff', surface: 'rgba(255,255,255,0.12)', surfaceAlt: 'rgba(255,255,255,0.08)',
-    onSurface: '#ffffff', border: 'rgba(255,255,255,0.2)', muted: 'rgba(255,255,255,0.6)', accent: 'rgba(0,122,255,0.55)',
-    link: 'rgba(100,180,255,0.9)', cardBg: 'rgba(255,255,255,0.18)', inputBorder: 'rgba(255,255,255,0.15)', inputBg: 'rgba(255,255,255,0.1)', isDark: true,
+    onSurface: '#ffffff', border: 'rgba(255,255,255,0.2)', muted: 'rgba(255,255,255,0.6)', mutedFaint: 'rgba(255,255,255,0.35)',
+    danger: 'rgba(255,59,48,0.75)', onDanger: '#ffffff', success: 'rgba(52,199,89,0.8)',
+    accent: 'rgba(0,122,255,0.55)', link: 'rgba(100,180,255,0.9)', cardBg: 'rgba(255,255,255,0.18)', inputBorder: 'rgba(255,255,255,0.15)', inputBg: 'rgba(255,255,255,0.1)', isDark: true,
   },
   'Ant Design': {
     primary: '#1677ff', onPrimary: '#ffffff', surface: '#ffffff', surfaceAlt: '#fafafa',
-    onSurface: 'rgba(0,0,0,0.88)', border: '#d9d9d9', muted: 'rgba(0,0,0,0.45)', accent: '#722ed1',
-    link: '#1677ff', cardBg: '#ffffff', inputBorder: '#d9d9d9', inputBg: '#ffffff', isDark: false,
+    onSurface: 'rgba(0,0,0,0.88)', border: '#d9d9d9', muted: 'rgba(0,0,0,0.45)', mutedFaint: 'rgba(0,0,0,0.25)',
+    danger: '#ff4d4f', onDanger: '#ffffff', success: '#52c41a',
+    accent: '#722ed1', link: '#1677ff', cardBg: '#ffffff', inputBorder: '#d9d9d9', inputBg: '#ffffff', isDark: false,
   },
   'Fluent UI': {
     primary: '#0078d4', onPrimary: '#ffffff', surface: '#fafafa', surfaceAlt: '#f5f5f5',
-    onSurface: '#242424', border: '#e0e0e0', muted: '#707070', accent: '#8764b8',
-    link: '#0078d4', cardBg: '#ffffff', inputBorder: '#8a8886', inputBg: '#ffffff', isDark: false,
+    onSurface: '#242424', border: '#e0e0e0', muted: '#707070', mutedFaint: '#a0a0a0',
+    danger: '#d13438', onDanger: '#ffffff', success: '#107c10',
+    accent: '#8764b8', link: '#0078d4', cardBg: '#ffffff', inputBorder: '#8a8886', inputBg: '#ffffff', isDark: false,
   },
   'Radix UI': {
     primary: '#3e63dd', onPrimary: '#ffffff', surface: '#111113', surfaceAlt: '#18191b',
-    onSurface: '#eeeef0', border: '#2b2c2f', muted: '#9b9ba7', accent: '#7c66dc',
-    link: '#7c66dc', cardBg: '#18191b', inputBorder: '#2b2c2f', inputBg: '#111113', isDark: true,
+    onSurface: '#eeeef0', border: '#2b2c2f', muted: '#9b9ba7', mutedFaint: '#6f7076',
+    danger: '#e5484d', onDanger: '#ffffff', success: '#30a46c',
+    accent: '#7c66dc', link: '#7c66dc', cardBg: '#18191b', inputBorder: '#2b2c2f', inputBg: '#111113', isDark: true,
   },
 };
 
@@ -388,9 +398,28 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
   const s = { ...node.styles };
   const variant = String(node.props?.variant ?? '');
 
+  /* ─── Resolve opacity → semantic color ──────────────── */
+  // Instead of CSS opacity (which dims backgrounds too), use theme-aware muted colors.
+  const opacityVal = parseFloat(s.opacity ?? '');
+  const isTextLike = ['text', 'paragraph', 'heading'].includes(node.type);
+
+  if (opacityVal > 0 && opacityVal < 1) {
+    if (isTextLike) {
+      // Replace opacity with an explicit muted color
+      s.color = opacityVal <= 0.45 ? t.mutedFaint : t.muted;
+      delete s.opacity;
+    } else if (node.type !== 'image') {
+      // For containers/cards with opacity (e.g. read notifications), remove it
+      delete s.opacity;
+    }
+  }
+
   switch (node.type) {
     case 'button':
-      if (variant === 'primary' || variant === '') {
+      if (variant === 'destructive' || variant === 'danger') {
+        s.background = t.danger;
+        s.color = t.onDanger;
+      } else if (variant === 'primary' || variant === '') {
         s.background = t.primary;
         s.color = t.onPrimary;
       } else if (variant === 'secondary') {
@@ -409,6 +438,13 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       s.background = t.cardBg;
       s.borderColor = t.border;
       if (t.isDark) s.color = t.onSurface;
+      // Highlighted cards (e.g. pricing "Pro") get an accent border
+      if (node.props?.highlighted) {
+        s.borderColor = t.primary;
+        if (s.borderLeft?.includes('currentColor')) {
+          s.borderLeft = s.borderLeft.replace('currentColor', t.primary);
+        }
+      }
       break;
     case 'container':
       // Only color root-level containers that have minHeight (page-level containers)
@@ -418,11 +454,13 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       break;
     case 'navbar':
       s.borderBottom = `1px solid ${t.border}`;
-      if (t.isDark) { s.background = t.surfaceAlt; s.color = t.onSurface; }
+      s.background = t.isDark ? t.surfaceAlt : t.surface;
+      s.color = t.onSurface;
       break;
     case 'sidebar':
       s.borderRight = `1px solid ${t.border}`;
-      if (t.isDark) { s.background = t.surfaceAlt; s.color = t.onSurface; }
+      s.background = t.isDark ? t.surfaceAlt : t.surface;
+      s.color = t.onSurface;
       break;
     case 'link':
       s.color = t.link;
@@ -454,11 +492,12 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       }
       break;
     case 'heading':
-      if (t.isDark) s.color = t.onSurface;
+      s.color = t.onSurface;
       break;
     case 'paragraph':
     case 'text':
-      if (t.isDark) s.color = t.onSurface;
+      // Only set onSurface if no muted color was already applied by opacity→color
+      if (!s.color) s.color = t.onSurface;
       break;
     case 'tabs':
       s.borderBottom = `2px solid ${t.border}`;
@@ -470,7 +509,8 @@ function colorizeNode(node: ComponentNode, t: ThemeColors): ComponentNode {
       s.borderBottom = `1px solid ${t.border}`;
       break;
     case 'stat':
-      if (t.isDark) s.color = t.onSurface;
+      s.color = t.onSurface;
+      // Stat change indicator coloring is handled via the renderer
       break;
     case 'dialog':
       if (t.isDark) {

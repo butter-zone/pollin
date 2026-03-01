@@ -2,52 +2,6 @@ import { useState, useRef, useCallback, useEffect, type FC } from 'react';
 import gsap from 'gsap';
 import { useSpeechToText } from '@/hooks/useSpeechToText';
 
-/* ─── Accent border focus animation (Google Search-style) ─── */
-function useAccentBorder(
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>,
-  wrapRef: React.RefObject<HTMLDivElement | null>,
-) {
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    const wrap = wrapRef.current;
-    if (!textarea || !wrap) return;
-
-    const onFocus = () => {
-      // Google-style: crisp border highlight + subtle lift shadow
-      gsap.to(textarea, {
-        borderColor: 'oklch(0.875 0.117 120)',
-        duration: 0.15,
-        ease: 'power2.out',
-      });
-      gsap.to(wrap, {
-        boxShadow: '0 1px 6px oklch(0.875 0.117 120 / 0.18)',
-        duration: 0.15,
-        ease: 'power2.out',
-      });
-    };
-
-    const onBlur = () => {
-      gsap.to(textarea, {
-        borderColor: 'oklch(0.37 0 0)',  // --c-border
-        duration: 0.12,
-        ease: 'power2.in',
-      });
-      gsap.to(wrap, {
-        boxShadow: '0 0 0 transparent',
-        duration: 0.12,
-        ease: 'power2.in',
-      });
-    };
-
-    textarea.addEventListener('focus', onFocus);
-    textarea.addEventListener('blur', onBlur);
-    return () => {
-      textarea.removeEventListener('focus', onFocus);
-      textarea.removeEventListener('blur', onBlur);
-    };
-  }, [textareaRef, wrapRef]);
-}
-
 /* ─── Inspirational quotes (shown when panel is empty) ── */
 const INSPIRATION_QUOTES = [
   { text: 'I begin with an idea and then it becomes something else.', author: 'Pablo Picasso' },
@@ -139,10 +93,6 @@ export const PromptPanel: FC<PromptPanelProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const textareaWrapRef = useRef<HTMLDivElement>(null);
-
-  /* ── Accent border focus animation ── */
-  useAccentBorder(textareaRef, textareaWrapRef);
 
   /* ── Inspirational quote cycling (GSAP pollination) ── */
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -428,28 +378,26 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           </div>
         )}
 
-        <div className="pp-textarea-wrap" ref={textareaWrapRef}>
-          <textarea
-            ref={textareaRef}
-            className="pp-textarea"
-            placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
-            value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
-            onChange={(e) => {
-              const raw = e.target.value;
-              // Strip interim transcript suffix so it doesn't get baked into state
-              if (interimTranscript) {
-                const suffix = (prompt ? ' ' : '') + interimTranscript;
-                if (raw.endsWith(suffix)) {
-                  setPrompt(raw.slice(0, raw.length - suffix.length));
-                  return;
-                }
+        <textarea
+          ref={textareaRef}
+          className="pp-textarea"
+          placeholder={isListening ? 'Listening… speak now' : 'Describe your idea...'}
+          value={prompt + (interimTranscript ? (prompt ? ' ' : '') + interimTranscript : '')}
+          onChange={(e) => {
+            const raw = e.target.value;
+            // Strip interim transcript suffix so it doesn't get baked into state
+            if (interimTranscript) {
+              const suffix = (prompt ? ' ' : '') + interimTranscript;
+              if (raw.endsWith(suffix)) {
+                setPrompt(raw.slice(0, raw.length - suffix.length));
+                return;
               }
+            }
             setPrompt(raw);
           }}
           onKeyDown={handleKeyDown}
           rows={3}
         />
-        </div>
         {/* Speech status — progress bar, error, backend badge */}
         {(speechError || whisperStatus === 'loading-model' || isListening) && (
           <div className="pp-speech-tip">

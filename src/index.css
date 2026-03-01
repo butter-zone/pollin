@@ -1634,12 +1634,6 @@ canvas {
   padding-bottom: 12px;
 }
 
-/* ── Textarea wrapper with accent border animation ──── */
-.pp-textarea-wrap {
-  position: relative;
-  border-radius: var(--radius-md);
-}
-
 .pp-textarea {
   width: 100%;
   resize: none;
@@ -1660,7 +1654,7 @@ canvas {
 }
 
 .pp-textarea:focus {
-  border-color: transparent;
+  border-color: var(--c-accent);
 }
 
 .pp-input-actions {
