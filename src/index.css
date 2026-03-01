@@ -1813,12 +1813,6 @@ canvas {
   overflow: hidden;
 }
 
-.pp-char {
-  display: inline-block;
-  will-change: transform, opacity;
-  white-space: pre;
-}
-
 .pp-inspiration-quote {
   text-align: center;
   position: relative;

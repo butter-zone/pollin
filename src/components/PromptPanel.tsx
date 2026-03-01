@@ -112,47 +112,7 @@ export const PromptPanel: FC<PromptPanelProps> = ({
     quoteOrder.current = [0, ...rest];
   }
 
-  /**
-   * Disintegrate an element's text into individual character-particles
-   * that scatter outward like pollen dust falling apart.
-   */
-  const disintegrateEl = useCallback((el: HTMLElement) => {
-    const text = el.textContent || '';
-    if (!text.trim()) return gsap.timeline();
-
-    // Replace text content with per-character <span> wrappers
-    el.innerHTML = '';
-    el.style.position = 'relative';
-    const chars: HTMLSpanElement[] = [];
-    for (const char of text) {
-      const span = document.createElement('span');
-      span.textContent = char;
-      span.className = 'pp-char';
-      el.appendChild(span);
-      chars.push(span);
-    }
-
-    // Animate each character with pollen-like scatter physics
-    const tl = gsap.timeline();
-    chars.forEach((span) => {
-      const delay = Math.random() * 0.5;
-      const xDrift = (Math.random() - 0.5) * 140;
-      const yDrift = 25 + Math.random() * 55;
-      const rot = (Math.random() - 0.5) * 200;
-      tl.to(span, {
-        x: xDrift,
-        y: yDrift,
-        rotation: rot,
-        scale: 0.15 + Math.random() * 0.25,
-        opacity: 0,
-        duration: 0.9 + Math.random() * 0.7,
-        ease: 'power2.out',
-      }, delay);
-    });
-    return tl;
-  }, []);
-
-  // Initial reveal animation (clean fade-in, no disintegration)
+  // Initial reveal animation
   useEffect(() => {
     if (!showQuotes || !initialReveal.current) return;
     initialReveal.current = false;
@@ -173,26 +133,31 @@ export const PromptPanel: FC<PromptPanelProps> = ({
     }
   }, [showQuotes]);
 
-  // Cycling transition — text disintegrates into pollen dust
+  // Cycling transition with GSAP
   useEffect(() => {
     if (!showQuotes) return;
     const interval = setInterval(() => {
-      const master = gsap.timeline({
+      // Drift out
+      const tl = gsap.timeline({
         onComplete: () => {
           setQuoteIndex((i) => (i + 1) % quoteOrder.current.length);
         },
       });
-      // Disintegrate the quote text into scattered char-particles
       if (textRef.current) {
-        master.add(disintegrateEl(textRef.current), 0);
+        tl.to(textRef.current, {
+          opacity: 0, y: -18, scale: 0.96,
+          duration: 0.7, ease: 'power2.inOut',
+        }, 0);
       }
-      // Disintegrate the author a beat later
       if (authorRef.current) {
-        master.add(disintegrateEl(authorRef.current), 0.15);
+        tl.to(authorRef.current, {
+          opacity: 0, y: -10,
+          duration: 0.5, ease: 'power2.in',
+        }, 0.1);
       }
     }, 12000);
     return () => clearInterval(interval);
-  }, [showQuotes, disintegrateEl]);
+  }, [showQuotes]);
 
   // Animate in after quote index changes (skip initial)
   useEffect(() => {
