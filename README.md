@@ -46,11 +46,33 @@ cd pollin
 # Install dependencies
 npm install
 
+# Configure environment (see below)
+cp .env.example .env
+
 # Start dev server
 npm run dev
 ```
 
 The app will open at `http://localhost:5173`
+
+### Environment Setup
+
+Pollin uses environment variables for LLM-powered UI generation and optional integrations. Copy the example file and add your keys:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Description | Get it at |
+|----------|----------|-------------|-----------|
+| `VITE_OPENAI_API_KEY` | One of these | OpenAI API key (GPT models) | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| `VITE_ANTHROPIC_API_KEY` | One of these | Anthropic API key (Claude models) | [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) |
+| `VITE_CONVERSION_API_URL` | No | Remote conversion API endpoint | Defaults to `http://localhost:3000` |
+| `VITE_FIGMA_TOKEN` | No | Figma personal access token for file import | [figma.com/developers/api](https://www.figma.com/developers/api#access-tokens) |
+
+> **No keys?** The app runs in **mock mode** — all generation produces placeholder UI trees so you can explore the full workflow without an API key.
+
+> **Security:** `.env` is git-ignored. Never commit API keys. See `SECURITY.md`.
 
 ### Scripts
 
