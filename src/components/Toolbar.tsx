@@ -1,4 +1,4 @@
-import { useRef, useCallback, type FC } from 'react';
+import { useRef, useCallback, useEffect, type FC } from 'react';
 import gsap from 'gsap';
 import { Tool } from '@/types/canvas';
 
@@ -128,6 +128,31 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
     });
   }, []);
 
+  // ── Global keyboard shortcuts ──────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip when typing in an input, textarea, or contenteditable
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable) return;
+      // Skip when modifier keys are held (Ctrl/Cmd/Alt combos are not ours)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+
+      // Mode switches: 1 = Prompt, 2 = Draw
+      if (key === '1') { onPanelModeChange('prompt'); return; }
+      if (key === '2') { onPanelModeChange('draw'); return; }
+
+      // Drawing tool shortcuts (only active in draw mode)
+      if (panelMode === 'draw') {
+        const match = drawTools.find((t) => t.shortcut.toLowerCase() === key);
+        if (match) { onToolChange(match.id); return; }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [panelMode, onPanelModeChange, onToolChange]);
+
   return (
     <div className="toolbar" role="toolbar" aria-label="Tools">
       <div
@@ -153,7 +178,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
         <button
           className={`toolbar-btn ${panelMode === 'prompt' ? 'toolbar-btn--active' : ''}`}
           onClick={() => onPanelModeChange('prompt')}
-          title="Prompt (describe your idea)"
+          title="Prompt — describe your idea (1)"
           aria-pressed={panelMode === 'prompt'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -163,7 +188,7 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
         <button
           className={`toolbar-btn ${panelMode === 'draw' ? 'toolbar-btn--active' : ''}`}
           onClick={() => onPanelModeChange('draw')}
-          title="Draw (pen & shape tools)"
+          title="Draw — pen & shape tools (2)"
           aria-pressed={panelMode === 'draw'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
