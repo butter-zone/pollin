@@ -10,6 +10,7 @@ import type {
   DrawPoint,
   Point,
   LibraryComponent,
+  Screen,
 } from '@/types/canvas';
 import { renderHTMLToImage } from '@/services/ui-renderer';
 import { generateComponentPreviewHTML } from '@/services/component-preview';
@@ -146,6 +147,11 @@ export function Canvas({
       const hasObjects = state.objects.length > 0;
       const magneticCursor = (isDrawTool || hasObjects) ? null : cursorWorld.current;
       drawGrid(ctx, w, h, zoom, panX, panY, state.gridSize, magneticCursor);
+    }
+
+    // ── screen frames ───────────────────────────────
+    if (state.screens && state.screens.length > 0) {
+      drawScreenFrames(ctx, state.screens, state.activeScreenId, zoom);
     }
 
     // objects
@@ -1511,4 +1517,80 @@ function buildShapePreview(
     color: state.strokeColor,
     lineWidth: state.strokeWidth,
   } as LineObject;
+}
+
+// ── Screen frame rendering ─────────────────────────────
+
+const TITLE_BAR_HEIGHT = 28;
+
+function drawScreenFrames(
+  ctx: CanvasRenderingContext2D,
+  screens: Screen[],
+  activeScreenId: string | undefined,
+  zoom: number,
+) {
+  for (const screen of screens) {
+    const isActive = screen.id === activeScreenId;
+    const x = screen.x;
+    const y = screen.y;
+    const w = screen.width;
+    const h = screen.height;
+
+    // Screen background
+    ctx.save();
+    ctx.fillStyle = screen.backgroundColor || 'oklch(1 0 0)';
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+
+    // Border
+    ctx.save();
+    ctx.strokeStyle = isActive
+      ? 'oklch(0.875 0.117 120)'
+      : 'oklch(0.5 0 0 / 0.5)';
+    ctx.lineWidth = isActive ? 2 / zoom : 1 / zoom;
+    ctx.strokeRect(x, y, w, h);
+    ctx.restore();
+
+    // Title bar — positioned above the screen frame
+    const titleH = TITLE_BAR_HEIGHT / zoom;
+    const titleY = y - titleH;
+
+    ctx.save();
+    ctx.fillStyle = isActive
+      ? 'oklch(0.3 0.06 120 / 0.9)'
+      : 'oklch(0.22 0.015 260 / 0.85)';
+    ctx.beginPath();
+    const tr = 4 / zoom;
+    ctx.moveTo(x + tr, titleY);
+    ctx.arcTo(x + w, titleY, x + w, titleY + titleH, tr);
+    ctx.arcTo(x + w, titleY + titleH, x, titleY + titleH, 0);
+    ctx.lineTo(x, titleY + titleH);
+    ctx.arcTo(x, titleY, x + w, titleY, tr);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Title text
+    ctx.save();
+    const fontSize = Math.max(11, 13 / zoom);
+    ctx.font = `500 ${fontSize}px system-ui, sans-serif`;
+    ctx.fillStyle = isActive
+      ? 'oklch(0.95 0 0)'
+      : 'oklch(0.7 0 0)';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(
+      screen.name,
+      x + 8 / zoom,
+      titleY + titleH / 2,
+    );
+
+    // Dimensions badge
+    const dims = `${screen.width}×${screen.height}`;
+    ctx.font = `400 ${Math.max(9, 10 / zoom)}px system-ui, sans-serif`;
+    ctx.fillStyle = 'oklch(0.5 0 0)';
+    ctx.textAlign = 'right';
+    ctx.fillText(dims, x + w - 8 / zoom, titleY + titleH / 2);
+    ctx.textAlign = 'start';
+    ctx.restore();
+  }
 }

@@ -9,7 +9,7 @@
  *   pollin:meta     – last-saved timestamp, version
  */
 
-import type { CanvasObject, DesignLibrary } from '@/types/canvas';
+import type { CanvasObject, DesignLibrary, Screen, FlowLink } from '@/types/canvas';
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -19,6 +19,8 @@ export interface CanvasSnapshot {
   savedAt: number;
   objects: CanvasObject[];
   libraries: DesignLibrary[];
+  screens?: Screen[];
+  flowLinks?: FlowLink[];
   viewport: {
     zoom: number;
     panX: number;
@@ -132,6 +134,8 @@ export function lastSavedAt(): number | null {
 export function buildSnapshot(state: {
   objects: CanvasObject[];
   libraries: DesignLibrary[];
+  screens: Screen[];
+  flowLinks: FlowLink[];
   zoom: number;
   panX: number;
   panY: number;
@@ -151,6 +155,8 @@ export function buildSnapshot(state: {
     savedAt: Date.now(),
     objects: state.objects,
     libraries: state.libraries,
+    screens: state.screens,
+    flowLinks: state.flowLinks,
     viewport: {
       zoom: state.zoom,
       panX: state.panX,

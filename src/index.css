@@ -2415,3 +2415,330 @@ canvas {
   display: flex;
   flex-direction: column;
 }
+
+/* ══ Screen Toggle Button ═════════════════════════════════ */
+
+.screen-toggle-btn {
+  position: fixed;
+  top: 8px;
+  right: 48px;
+  z-index: 40;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+  background: var(--c-surface-3);
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+
+.screen-toggle-btn:hover {
+  background: var(--c-surface-4);
+}
+
+.screen-toggle-btn--active {
+  background: var(--c-accent);
+  color: var(--c-accent-fg);
+  border-color: var(--c-accent);
+}
+
+/* ══ Screen Panel ═════════════════════════════════════════ */
+
+.dk-screen-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 100vh;
+  border-left: 1px solid var(--c-border);
+  box-shadow: var(--shadow-panel);
+  z-index: 50;
+  overflow: hidden;
+}
+
+.sp-preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px 12px 8px;
+}
+
+.sp-preset-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-1);
+  color: var(--c-text-dim);
+  cursor: pointer;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.sp-preset-card:hover {
+  background: var(--c-surface-3);
+  border-color: var(--c-border);
+  color: var(--c-text);
+}
+
+.sp-preset-label {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.sp-preset-dims {
+  font-size: 9px;
+  color: var(--c-text-muted);
+}
+
+.sp-empty {
+  padding: 16px 12px;
+  font-size: 11px;
+  color: var(--c-text-muted);
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sp-screen-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+
+.sp-screen-row:hover {
+  background: var(--c-surface-3);
+}
+
+.sp-screen-row--active {
+  background: var(--c-accent-bg);
+}
+
+.sp-screen-row--active:hover {
+  background: oklch(0.35 0.06 120);
+}
+
+.sp-screen-icon {
+  flex-shrink: 0;
+  color: var(--c-text-muted);
+}
+
+.sp-screen-row--active .sp-screen-icon {
+  color: var(--c-accent);
+}
+
+.sp-screen-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sp-screen-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sp-screen-dims {
+  font-size: 10px;
+  color: var(--c-text-muted);
+}
+
+.sp-screen-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.sp-screen-row:hover .sp-screen-actions {
+  opacity: 1;
+}
+
+.sp-rename-input {
+  width: 100%;
+  padding: 1px 4px;
+  border: 1px solid var(--c-accent);
+  border-radius: 2px;
+  background: var(--c-surface-1);
+  color: var(--c-text);
+  font-size: 12px;
+  outline: none;
+}
+
+.sp-play-btn {
+  color: var(--c-accent) !important;
+}
+
+/* ══ Prototype Player ═════════════════════════════════════ */
+
+.pp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: oklch(0.1 0 0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pp-toolbar {
+  flex-shrink: 0;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: oklch(0.15 0 0);
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+
+.pp-toolbar-left,
+.pp-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pp-toolbar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pp-screen-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.pp-screen-dims {
+  font-size: 11px;
+  color: var(--c-text-muted);
+}
+
+.pp-nav-btn,
+.pp-close-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+
+.pp-nav-btn:hover,
+.pp-close-btn:hover {
+  background: var(--c-surface-3);
+}
+
+.pp-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pp-close-btn {
+  background: var(--c-danger);
+  border-color: var(--c-danger);
+  color: white;
+}
+
+.pp-close-btn:hover {
+  background: var(--c-danger-hover);
+}
+
+.pp-viewport {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.pp-device-frame {
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 8px 40px oklch(0 0 0 / 0.6);
+  background: #fff;
+  transition: opacity 120ms var(--ease), transform 120ms var(--ease);
+}
+
+.pp-device-frame.pp-frame--fade {
+  opacity: 0.3;
+}
+
+.pp-device-frame.pp-frame--slide-left {
+  transform: translateX(-20px);
+  opacity: 0.3;
+}
+
+.pp-device-frame.pp-frame--slide-up {
+  transform: translateY(-20px);
+  opacity: 0.3;
+}
+
+.pp-device-frame.pp-frame--push {
+  transform: translateX(-40px);
+  opacity: 0.3;
+}
+
+.pp-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.pp-screen-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: oklch(0.15 0 0);
+  border-top: 1px solid var(--c-border-subtle);
+  overflow-x: auto;
+}
+
+.pp-screen-thumb {
+  padding: 4px 12px;
+  border: 1px solid var(--c-border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--c-surface-2);
+  color: var(--c-text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.pp-screen-thumb:hover {
+  background: var(--c-surface-3);
+}
+
+.pp-screen-thumb--active {
+  background: var(--c-accent);
+  color: var(--c-accent-fg);
+  border-color: var(--c-accent);
+}

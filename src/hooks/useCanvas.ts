@@ -5,6 +5,8 @@ import {
   CanvasObject,
   Tool,
   DesignLibrary,
+  Screen,
+  FlowLink,
 } from '@/types/canvas';
 import { useHistory } from './useHistory';
 import {
@@ -43,6 +45,10 @@ const defaultState: ExtendedCanvasState = {
   tool: 'select',
   offsetX: 0,
   offsetY: 0,
+  // Screens & flows
+  screens: [],
+  flowLinks: [],
+  activeScreenId: undefined,
   // New: library management
   libraries: [],
 };
@@ -56,6 +62,8 @@ function buildInitialState(): ExtendedCanvasState {
     ...defaultState,
     objects: saved.objects,
     libraries: saved.libraries ?? [],
+    screens: saved.screens ?? [],
+    flowLinks: saved.flowLinks ?? [],
     zoom: saved.viewport.zoom,
     panX: saved.viewport.panX,
     panY: saved.viewport.panY,
@@ -139,6 +147,35 @@ function canvasReducer(state: ExtendedCanvasState, action: CanvasAction): Extend
     case 'SET_CONVERSION_PROMPT':
       // These will be handled by a separate ConversionUI state
       return state;
+    // ── Screen & flow actions ────────────────────────────
+    case 'ADD_SCREEN':
+      return { ...state, screens: [...state.screens, action.payload] };
+    case 'UPDATE_SCREEN':
+      return {
+        ...state,
+        screens: state.screens.map((s) =>
+          s.id === action.payload.id ? { ...s, ...action.payload.changes } : s
+        ),
+      };
+    case 'DELETE_SCREEN':
+      return {
+        ...state,
+        screens: state.screens.filter((s) => s.id !== action.payload),
+        flowLinks: state.flowLinks.filter(
+          (l) => l.sourceScreenId !== action.payload && l.targetScreenId !== action.payload
+        ),
+        activeScreenId: state.activeScreenId === action.payload ? undefined : state.activeScreenId,
+      };
+    case 'SET_ACTIVE_SCREEN':
+      return { ...state, activeScreenId: action.payload };
+    case 'ADD_FLOW_LINK':
+      return { ...state, flowLinks: [...state.flowLinks, action.payload] };
+    case 'DELETE_FLOW_LINK':
+      return { ...state, flowLinks: state.flowLinks.filter((l) => l.id !== action.payload) };
+    case 'SET_SCREENS':
+      return { ...state, screens: action.payload };
+    case 'SET_FLOW_LINKS':
+      return { ...state, flowLinks: action.payload };
     default:
       return state;
   }
@@ -176,6 +213,8 @@ export function useCanvas() {
   }, [
     state.objects,
     state.libraries,
+    state.screens,
+    state.flowLinks,
     state.zoom,
     state.panX,
     state.panY,
@@ -300,6 +339,37 @@ export function useCanvas() {
     dispatch({ type: 'TOGGLE_LIBRARY', payload: libId });
   }, []);
 
+  // ── Screen & flow actions ────────────────────────────
+
+  const addScreen = useCallback((screen: Screen) => {
+    pushSnapshot();
+    dispatch({ type: 'ADD_SCREEN', payload: screen });
+  }, [pushSnapshot]);
+
+  const updateScreen = useCallback((id: string, changes: Partial<Screen>) => {
+    pushSnapshot();
+    dispatch({ type: 'UPDATE_SCREEN', payload: { id, changes } });
+  }, [pushSnapshot]);
+
+  const deleteScreen = useCallback((id: string) => {
+    pushSnapshot();
+    dispatch({ type: 'DELETE_SCREEN', payload: id });
+  }, [pushSnapshot]);
+
+  const setActiveScreen = useCallback((id: string | undefined) => {
+    dispatch({ type: 'SET_ACTIVE_SCREEN', payload: id });
+  }, []);
+
+  const addFlowLink = useCallback((link: FlowLink) => {
+    pushSnapshot();
+    dispatch({ type: 'ADD_FLOW_LINK', payload: link });
+  }, [pushSnapshot]);
+
+  const deleteFlowLink = useCallback((id: string) => {
+    pushSnapshot();
+    dispatch({ type: 'DELETE_FLOW_LINK', payload: id });
+  }, [pushSnapshot]);
+
   // ── Persistence actions ────────────────────────────────
 
   /** Force an immediate save (bypass debounce). */
@@ -348,6 +418,9 @@ export function useCanvas() {
     snapshot.libraries?.forEach((lib) => {
       dispatch({ type: 'ADD_LIBRARY', payload: lib });
     });
+    // Restore screens & flows
+    if (snapshot.screens) dispatch({ type: 'SET_SCREENS', payload: snapshot.screens });
+    if (snapshot.flowLinks) dispatch({ type: 'SET_FLOW_LINKS', payload: snapshot.flowLinks });
     setLastSaved(snapshot.savedAt);
   }, []);
 
@@ -376,6 +449,13 @@ export function useCanvas() {
     addLibrary,
     removeLibrary,
     toggleLibrary,
+    // Screen & flow
+    addScreen,
+    updateScreen,
+    deleteScreen,
+    setActiveScreen,
+    addFlowLink,
+    deleteFlowLink,
     undo,
     redo,
     canUndo,

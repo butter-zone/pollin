@@ -120,6 +120,31 @@ export type Tool =
   | 'eraser'
   | 'hand';
 
+// ── Screens & Flow ──────────────────────────────────────
+
+/** A screen/frame — a named viewport region on the canvas */
+export interface Screen {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  backgroundColor?: string;
+  sortOrder: number;
+}
+
+/** A navigation link between an interactive element and a target screen */
+export interface FlowLink {
+  id: string;
+  sourceScreenId: string;
+  /** ComponentNode id of the trigger element (button/link/etc.) */
+  sourceNodeId: string;
+  targetScreenId: string;
+  trigger: 'click' | 'hover' | 'swipe';
+  transition: 'push' | 'fade' | 'slide-left' | 'slide-up' | 'none';
+}
+
 // ── App-level canvas state ──────────────────────────────
 export interface CanvasState {
   // Tool & drawing
@@ -146,6 +171,11 @@ export interface CanvasState {
   showGrid: boolean;
   gridSize: number;
   snapToGrid: boolean;
+
+  // Screens & flows
+  screens: Screen[];
+  flowLinks: FlowLink[];
+  activeScreenId?: string;
 
   // Legacy compat
   tool: Tool;
@@ -214,4 +244,13 @@ export type CanvasAction =
   | { type: 'TOGGLE_LIBRARY'; payload: string }
   | { type: 'OPEN_CONVERSION'; payload: ConversionContext }
   | { type: 'CLOSE_CONVERSION' }
-  | { type: 'SET_CONVERSION_PROMPT'; payload: string };
+  | { type: 'SET_CONVERSION_PROMPT'; payload: string }
+  // Screen & flow actions
+  | { type: 'ADD_SCREEN'; payload: Screen }
+  | { type: 'UPDATE_SCREEN'; payload: { id: string; changes: Partial<Screen> } }
+  | { type: 'DELETE_SCREEN'; payload: string }
+  | { type: 'SET_ACTIVE_SCREEN'; payload: string | undefined }
+  | { type: 'ADD_FLOW_LINK'; payload: FlowLink }
+  | { type: 'DELETE_FLOW_LINK'; payload: string }
+  | { type: 'SET_SCREENS'; payload: Screen[] }
+  | { type: 'SET_FLOW_LINKS'; payload: FlowLink[] };

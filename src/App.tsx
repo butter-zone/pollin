@@ -8,6 +8,8 @@ import { ContextMenu } from '@/components/ContextMenu';
 import { LibraryPanel } from '@/components/LibraryPanel';
 import { PromptPanel } from '@/components/PromptPanel';
 import { ComponentEditor } from '@/components/ComponentEditor';
+import { ScreenPanel } from '@/components/ScreenPanel';
+import { PrototypePlayer } from '@/components/PrototypePlayer';
 import type { GenerationEntry, ImageAttachment, ReasoningStep } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
@@ -56,6 +58,13 @@ function App() {
     // Undo coalescing
     beginTransaction,
     endTransaction,
+    // Screen & flow
+    addScreen,
+    updateScreen,
+    deleteScreen,
+    setActiveScreen,
+    addFlowLink: _addFlowLink,
+    deleteFlowLink: _deleteFlowLink,
   } = useCanvas();
 
   // ── Panel mode: prompt (default) vs draw ───────────────
@@ -105,6 +114,30 @@ function App() {
 
   // ── Library panel toggle ──────────────────────────────
   const [showLibPanel, setShowLibPanel] = useState(false);
+
+  // ── Screen panel toggle & prototype mode ──────────────
+  const [showScreenPanel, setShowScreenPanel] = useState(false);
+  const [showPrototype, setShowPrototype] = useState(false);
+
+  /** Pan the canvas so a given screen is visible and centered. */
+  const handleNavigateToScreen = useCallback(
+    (screen: import('@/types/canvas').Screen) => {
+      // Center the screen viewport in the canvas area
+      const canvasEl = document.querySelector('.canvas-surface');
+      const rect = canvasEl?.getBoundingClientRect();
+      const vw = rect?.width ?? window.innerWidth;
+      const vh = rect?.height ?? window.innerHeight;
+      const targetX = vw / 2 - (screen.x + screen.width / 2) * state.zoom;
+      const targetY = vh / 2 - (screen.y + screen.height / 2) * state.zoom;
+      setPan(targetX, targetY);
+    },
+    [state.zoom, setPan],
+  );
+
+  const handleStartPrototype = useCallback(() => {
+    if (state.screens.length === 0) return;
+    setShowPrototype(true);
+  }, [state.screens.length]);
 
   // ── Selected library (single-select, shared between panels) ──
   const [selectedLibraryId, setSelectedLibraryId] = useState<string | undefined>();
@@ -716,6 +749,19 @@ function App() {
         </svg>
       </button>
 
+      {/* Screen panel toggle button */}
+      <button
+        className={`screen-toggle-btn${showScreenPanel ? ' screen-toggle-btn--active' : ''}`}
+        onClick={() => setShowScreenPanel((v) => !v)}
+        title="Screens & Prototyping"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" />
+          <line x1="8" y1="21" x2="16" y2="21" />
+          <line x1="12" y1="17" x2="12" y2="21" />
+        </svg>
+      </button>
+
       {/* Left toolbar rail */}
       <Toolbar
         activeTool={state.activeTool}
@@ -787,6 +833,32 @@ function App() {
           onRemoveLibrary={removeLibrary}
           onClose={() => setShowLibPanel(false)}
           onComponentSelect={handleComponentSelect}
+        />
+      )}
+
+      {/* Screen panel (toggleable right panel) */}
+      {showScreenPanel && (
+        <ScreenPanel
+          screens={state.screens}
+          activeScreenId={state.activeScreenId}
+          onAddScreen={addScreen}
+          onUpdateScreen={updateScreen}
+          onDeleteScreen={deleteScreen}
+          onSetActiveScreen={setActiveScreen}
+          onNavigateToScreen={handleNavigateToScreen}
+          onStartPrototype={handleStartPrototype}
+          onClose={() => setShowScreenPanel(false)}
+        />
+      )}
+
+      {/* Prototype preview overlay */}
+      {showPrototype && state.screens.length > 0 && (
+        <PrototypePlayer
+          screens={state.screens}
+          objects={state.objects}
+          flowLinks={state.flowLinks}
+          startScreenId={state.activeScreenId || state.screens[0].id}
+          onClose={() => setShowPrototype(false)}
         />
       )}
 

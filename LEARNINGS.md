@@ -261,7 +261,7 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 - ~~**Component property editing** — library components land as images; need a property editor to tweak them post-placement~~ ✅ Done (ComponentEditor with tree navigation + code export)
 - ~~**Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping~~ ✅ Built, then deleted (zero imports — premature)
 - ~~**Token export** — export resolved OKLCH tokens as CSS/JSON for handoff~~ ✅ Done (token-export.ts)
-- **Renderer deduplication** — 5 library-specific renderer sets repeat ~65 near-identical functions; extract parameterized templates
+- ~~**Renderer deduplication** — 5 library-specific renderer sets repeat ~65 near-identical functions; extract parameterized templates~~ ✅ Done (7 factory functions: buildSwitch, buildCheckbox, buildBadge, buildAvatar, buildSelect, buildTable, buildAccordion)
 - **Multi-screen flows** — connect multiple generated screens into a clickable prototype flow
 - **Figma export** — export ComponentTree to Figma plugin JSON or .fig format
 
