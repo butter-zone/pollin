@@ -14,6 +14,7 @@ import type { ComponentTree, ComponentNode } from '@/types/component-tree';
 import { classifyPrompt } from '@/services/ui-templates';
 import { getBuiltInEntries } from '@/services/library-registry';
 import { buildAdapterPromptSection, resolveAdapterPack } from '@/services/adapters/resolver';
+import { auditTreeAgainstAdapter } from '@/services/adapters/quality';
 import { applyAdapterPackToTree } from '@/services/adapters/transform';
 
 /* ─── Response types ────────────────────────────────────── */
@@ -141,6 +142,14 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
 
     if (adapterPack) {
       tree = applyAdapterPackToTree(tree, adapterPack);
+      const report = auditTreeAgainstAdapter(tree, adapterPack);
+      tree = {
+        ...tree,
+        metadata: {
+          ...tree.metadata,
+          adapterScore: report.score,
+        },
+      };
     }
 
     // Render ComponentTree → HTML → bitmap
@@ -209,6 +218,14 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
 
     if (adapterPack) {
       tree = applyAdapterPackToTree(tree, adapterPack);
+      const report = auditTreeAgainstAdapter(tree, adapterPack);
+      tree = {
+        ...tree,
+        metadata: {
+          ...tree.metadata,
+          adapterScore: report.score,
+        },
+      };
     }
 
     tree = {
@@ -321,6 +338,14 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
 
     if (adapterPack) {
       tree = applyAdapterPackToTree(tree, adapterPack);
+      const report = auditTreeAgainstAdapter(tree, adapterPack);
+      tree = {
+        ...tree,
+        metadata: {
+          ...tree.metadata,
+          adapterScore: report.score,
+        },
+      };
     }
 
     // Render to bitmap
@@ -673,6 +698,14 @@ export async function generateVariations(
 
       if (adapterPack) {
         tree = applyAdapterPackToTree(tree, adapterPack);
+        const report = auditTreeAgainstAdapter(tree, adapterPack);
+        tree = {
+          ...tree,
+          metadata: {
+            ...tree.metadata,
+            adapterScore: report.score,
+          },
+        };
       }
 
       tree = {

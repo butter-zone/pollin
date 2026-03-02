@@ -53,9 +53,46 @@ function applyRuleDefaults(node: ComponentNode, pack: AdapterPack): ComponentNod
   return { ...node, props: mergedProps, styles: mergedStyles };
 }
 
+function snapToSpacingGrid(value: string, base: number): string {
+  const match = value.match(/^(-?\d+(?:\.\d+)?)(px)$/);
+  if (!match) return value;
+  const n = Number(match[1]);
+  const snapped = Math.max(0, Math.round(n / base) * base);
+  return `${snapped}px`;
+}
+
+function enforceSupportedNodeType(node: ComponentNode, pack: AdapterPack): ComponentNode {
+  if (pack.supportedNodeTypes.includes(node.type)) return node;
+
+  // Strict fallback: preserve content while coercing unknown type to safe primitive
+  if (node.children && node.children.some((c) => typeof c === 'string')) {
+    return {
+      ...node,
+      type: 'text',
+      props: { ...node.props },
+      styles: {
+        ...node.styles,
+        display: node.styles.display ?? 'block',
+      },
+    };
+  }
+
+  return {
+    ...node,
+    type: 'container',
+    props: { ...node.props },
+    styles: {
+      ...node.styles,
+      display: node.styles.display ?? 'flex',
+      flexDirection: node.styles.flexDirection ?? 'column',
+    },
+  };
+}
+
 function adaptNode(node: ComponentNode, pack: AdapterPack): ComponentNode {
   const scale = densityScale(pack.density);
-  let nextNode = applyRuleDefaults(node, pack);
+  let nextNode = enforceSupportedNodeType(node, pack);
+  nextNode = applyRuleDefaults(nextNode, pack);
   nextNode = {
     ...nextNode,
     styles: {
@@ -92,11 +129,25 @@ function adaptNode(node: ComponentNode, pack: AdapterPack): ComponentNode {
   }
 
   const scaled = scaleSpacingLike(nextNode.styles, scale);
+  const normalized = Object.fromEntries(
+    Object.entries(scaled).map(([key, value]) => {
+      if (key.startsWith('padding') || key.startsWith('margin') || key === 'gap') {
+        return [
+          key,
+          value
+            .split(' ')
+            .map((part) => snapToSpacingGrid(part, Math.max(2, pack.tokens.spacingBase)))
+            .join(' '),
+        ];
+      }
+      return [key, value];
+    }),
+  );
   const children = nextNode.children?.map((child) => (typeof child === 'string' ? child : adaptNode(child, pack)));
 
   return {
     ...nextNode,
-    styles: scaled,
+    styles: normalized,
     children,
   };
 }

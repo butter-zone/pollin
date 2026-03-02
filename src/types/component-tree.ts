@@ -110,6 +110,8 @@ export interface ComponentTreeMetadata {
   adapterPack?: string;
   /** Adapter enforcement mode */
   adapterMode?: 'strict' | 'assist';
+  /** Adapter quality alignment score (0-100) */
+  adapterScore?: number;
 }
 
 // ── JSON Schema for LLM structured output ───────────────
@@ -146,6 +148,7 @@ export const COMPONENT_TREE_JSON_SCHEMA = {
         model: { type: 'string' },
         adapterPack: { type: 'string' },
         adapterMode: { type: 'string', enum: ['strict', 'assist'] },
+        adapterScore: { type: 'number' },
       },
     },
   },
