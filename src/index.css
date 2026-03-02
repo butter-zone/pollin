@@ -2095,8 +2095,8 @@ canvas {
 }
 
 .pp-variations-chip--active {
-  background: var(--c-accent-bg);
-  border-color: var(--c-accent-bg);
+  background: var(--c-accent);
+  border-color: var(--c-accent);
   color: var(--c-accent-fg);
 }
 

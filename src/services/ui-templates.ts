@@ -362,6 +362,11 @@ function baseCSS(t: ThemeTokens): string {
       outline: none;
       transition: all 0.15s;
       line-height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
     }
     .btn-primary {
       background: ${t.primary};

@@ -88,6 +88,9 @@ export function useSpeechToText(
   const onTranscriptRef = useRef(onTranscript);
   onTranscriptRef.current = onTranscript;
 
+  // Track whether the user explicitly requested stop (vs browser auto-ending)
+  const userStoppedRef = useRef(false);
+
   const SpeechRecognitionCtor =
     typeof window !== 'undefined'
       ? window.SpeechRecognition ?? window.webkitSpeechRecognition
@@ -218,8 +221,24 @@ export function useSpeechToText(
     };
 
     recognition.onend = () => {
-      // Only reset if we haven't already switched to whisper
-      if (recognitionRef.current === recognition) {
+      // Only act if this is still the active recognition instance
+      if (recognitionRef.current !== recognition) return;
+
+      // If the user explicitly stopped, clean up and exit
+      if (userStoppedRef.current) {
+        userStoppedRef.current = false;
+        setIsListening(false);
+        setInterimTranscript('');
+        setBackend(null);
+        return;
+      }
+
+      // Browser auto-ended (silence timeout, network hiccup, etc.)
+      // Auto-restart so speech keeps streaming until the user clicks stop
+      try {
+        recognition.start();
+      } catch {
+        // If restart fails, clean up gracefully
         setIsListening(false);
         setInterimTranscript('');
         setBackend(null);
@@ -251,9 +270,10 @@ export function useSpeechToText(
     if (backend === 'whisper') {
       stopWhisper();
     } else {
+      // Signal that this is a user-initiated stop so onend doesn't auto-restart
+      userStoppedRef.current = true;
       recognitionRef.current?.stop();
-      setIsListening(false);
-      setBackend(null);
+      // State cleanup happens in the onend handler
     }
   }, [backend, stopWhisper]);
 
