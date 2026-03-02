@@ -279,6 +279,7 @@ const UI_PATTERNS: [RegExp, UIType][] = [
   [/\b(e-?commerce|shop|store|product|cart|checkout)\b/i, 'ecommerce'],
   [/\b(kanban|board|trello|sprint|backlog|columns?\s*view)\b/i, 'kanban'],
   [/\b(todo|to-?do|task\s*list|checklist|tasks?)\b/i, 'todo'],
+  [/\b(app|mobile\s*app|web\s*app|platform|saas|product\s*app|tool)\b/i, 'dashboard'],
 ];
 
 function classifyPrompt(prompt: string): UIType {
