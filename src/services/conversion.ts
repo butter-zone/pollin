@@ -13,6 +13,8 @@ import type { ConversionPayload } from '@/components/ConversionDialog';
 import type { ComponentTree, ComponentNode } from '@/types/component-tree';
 import { classifyPrompt } from '@/services/ui-templates';
 import { getBuiltInEntries } from '@/services/library-registry';
+import { buildAdapterPromptSection, resolveAdapterPack } from '@/services/adapters/resolver';
+import { applyAdapterPackToTree } from '@/services/adapters/transform';
 
 /* ─── Response types ────────────────────────────────────── */
 
@@ -123,14 +125,23 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
 
     const { generateComponentTree } = await import('./llm-client');
     const libraryName = await getLibraryName(payload.libraryId);
+    const adapterPack = resolveAdapterPack(libraryName);
+    const adapterPrompt = adapterPack ? buildAdapterPromptSection(adapterPack) : undefined;
 
     // Generate ComponentTree via LLM
-    const tree = await generateComponentTree(payload.prompt, {
+    let tree = await generateComponentTree(payload.prompt, {
       imageRefs: payload.imageRefs,
       designSystem: libraryName,
       viewport: { width: 420, height: 580 },
+      model: payload.model,
+      adapterPack,
+      adapterPrompt,
       onStep,
     });
+
+    if (adapterPack) {
+      tree = applyAdapterPackToTree(tree, adapterPack);
+    }
 
     // Render ComponentTree → HTML → bitmap
     onStep?.({ id: 'render', label: 'Rendering mockup' });
@@ -179,6 +190,7 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
 
     // Step 3: Selecting design system
     const libraryName = await getLibraryName(payload.libraryId);
+    const adapterPack = resolveAdapterPack(libraryName);
     const dsLabel = libraryName || 'Default';
     onStep?.({ id: 'theme', label: 'Applying design system', detail: dsLabel });
     await new Promise((r) => setTimeout(r, 300));
@@ -194,6 +206,18 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
     if (libraryName) {
       tree = applyThemeColors(tree, libraryName);
     }
+
+    if (adapterPack) {
+      tree = applyAdapterPackToTree(tree, adapterPack);
+    }
+
+    tree = {
+      ...tree,
+      metadata: {
+        ...tree.metadata,
+        model: payload.model,
+      },
+    };
     await new Promise((r) => setTimeout(r, 200));
 
     // Step 5: Render ComponentTree → HTML → bitmap
@@ -282,6 +306,7 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
   try {
     const uiType = classifyPrompt(desc);
     const libraryName = await getLibraryName(payload.libraryId ?? undefined);
+    const adapterPack = resolveAdapterPack(libraryName);
 
     // Build an editable ComponentTree
     const { buildMockComponentTree } = await import('./mock-trees');
@@ -292,6 +317,10 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
     // Apply theme colors when a design system is set
     if (libraryName) {
       tree = applyThemeColors(tree, libraryName);
+    }
+
+    if (adapterPack) {
+      tree = applyAdapterPackToTree(tree, adapterPack);
     }
 
     // Render to bitmap
@@ -634,12 +663,25 @@ export async function generateVariations(
 
   for (const theme of themes) {
     try {
+      const adapterPack = resolveAdapterPack(theme);
       let tree = buildMockComponentTree(payload.prompt, uiType, {
         designSystem: theme,
       });
 
       // Apply theme colors to tree nodes for visual diversity
       tree = applyThemeColors(tree, theme);
+
+      if (adapterPack) {
+        tree = applyAdapterPackToTree(tree, adapterPack);
+      }
+
+      tree = {
+        ...tree,
+        metadata: {
+          ...tree.metadata,
+          model: payload.model,
+        },
+      };
 
       const html = renderTreeToHTML(tree);
       const vp = tree.metadata.viewport;

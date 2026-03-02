@@ -7,6 +7,7 @@
 
 import type { ComponentTree, ComponentNode, ComponentNodeType } from '@/types/component-tree';
 import { COMPONENT_TREE_JSON_SCHEMA } from '@/types/component-tree';
+import type { AdapterPack } from '@/services/adapters/types';
 
 // ── Types ───────────────────────────────────────────────
 
@@ -175,6 +176,19 @@ Return a JSON object with this structure:
     "model": string         // the LLM model used
   }
 }`;
+
+function modelCompatibleWithProvider(provider: LLMProvider, model: string): boolean {
+  const m = model.toLowerCase();
+  if (provider === 'openai') {
+    return m.startsWith('gpt') || m.startsWith('o1') || m.startsWith('o3') || m.includes('openai');
+  }
+  return m.startsWith('claude') || m.includes('anthropic');
+}
+
+function composeSystemPrompt(adapterPrompt?: string): string {
+  if (!adapterPrompt) return SYSTEM_PROMPT;
+  return `${SYSTEM_PROMPT}\n\n## Adapter Pack Constraints\n${adapterPrompt}`;
+}
 
 // ── OpenAI ──────────────────────────────────────────────
 
@@ -362,11 +376,14 @@ export async function generateComponentTree(
   options?: {
     imageRefs?: string[];
     designSystem?: string;
+    model?: string;
+    adapterPack?: AdapterPack | null;
+    adapterPrompt?: string;
     viewport?: { width: number; height: number };
     onStep?: (step: { id: string; label: string; detail?: string }) => void;
   },
 ): Promise<ComponentTree> {
-  const { imageRefs, designSystem, viewport, onStep } = options ?? {};
+  const { imageRefs, designSystem, viewport, onStep, model, adapterPack, adapterPrompt } = options ?? {};
 
   // Step 1 — Init
   onStep?.({ id: 'llm-init', label: 'Connecting to LLM' });
@@ -378,6 +395,16 @@ export async function generateComponentTree(
     );
   }
 
+  const activeModel =
+    model && modelCompatibleWithProvider(config.provider, model)
+      ? model
+      : config.model;
+
+  const effectiveConfig: LLMConfig = {
+    ...config,
+    model: activeModel,
+  };
+
   // Step 2 — Build user message
   let userText = prompt;
   if (designSystem) {
@@ -385,6 +412,9 @@ export async function generateComponentTree(
   }
   if (viewport) {
     userText += `\n\nTarget viewport: ${viewport.width}x${viewport.height}px.`;
+  }
+  if (adapterPack) {
+    userText += `\n\nUse adapter pack: ${adapterPack.name} (${adapterPack.id}) with strict adherence to its token and variant constraints.`;
   }
 
   const userContent: Array<{ type: string; [key: string]: unknown }> = [
@@ -401,19 +431,19 @@ export async function generateComponentTree(
   }
 
   const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: composeSystemPrompt(adapterPrompt) },
     { role: 'user', content: userContent },
   ];
 
   // Step 3 — Call LLM
-  onStep?.({ id: 'llm-generate', label: 'Generating component tree', detail: config.model });
+  onStep?.({ id: 'llm-generate', label: 'Generating component tree', detail: activeModel });
 
   let raw: string;
   try {
     raw =
-      config.provider === 'openai'
-        ? await callOpenAI(config, messages)
-        : await callAnthropic(config, messages);
+      effectiveConfig.provider === 'openai'
+        ? await callOpenAI(effectiveConfig, messages)
+        : await callAnthropic(effectiveConfig, messages);
   } catch (err) {
     // Re-throw known errors as-is
     if (err instanceof Error) throw err;
@@ -444,13 +474,17 @@ export async function generateComponentTree(
 
   // Fill in metadata defaults
   tree.metadata.generatedAt = tree.metadata.generatedAt || new Date().toISOString();
-  tree.metadata.model = tree.metadata.model || config.model;
+  tree.metadata.model = tree.metadata.model || activeModel;
   tree.metadata.prompt = tree.metadata.prompt || prompt;
   if (viewport && !tree.metadata.viewport) {
     tree.metadata.viewport = viewport;
   }
   if (designSystem) {
     tree.metadata.designSystem = designSystem;
+  }
+  if (adapterPack) {
+    tree.metadata.adapterPack = adapterPack.id;
+    tree.metadata.adapterMode = 'strict';
   }
 
   // Step 5 — Done

@@ -106,6 +106,10 @@ export interface ComponentTreeMetadata {
   generatedAt: string;
   /** LLM model used */
   model?: string;
+  /** Adapter pack id used to constrain generation (if any) */
+  adapterPack?: string;
+  /** Adapter enforcement mode */
+  adapterMode?: 'strict' | 'assist';
 }
 
 // ── JSON Schema for LLM structured output ───────────────
@@ -140,6 +144,8 @@ export const COMPONENT_TREE_JSON_SCHEMA = {
         prompt: { type: 'string' },
         generatedAt: { type: 'string' },
         model: { type: 'string' },
+        adapterPack: { type: 'string' },
+        adapterMode: { type: 'string', enum: ['strict', 'assist'] },
       },
     },
   },
