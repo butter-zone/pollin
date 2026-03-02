@@ -370,7 +370,7 @@ function landingTree(_prompt: string): ComponentNode {
       ]),
     ]),
     // Hero
-    n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: '1', padding: '64px 32px', gap: '24px', textAlign: 'center' }, {}, [
+    n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '56px 32px 48px', gap: '24px', textAlign: 'center' }, {}, [
       n('badge', { marginBottom: '8px' }, {}, ['Now in Beta']),
       n('heading', { fontSize: '42px', fontWeight: '800', lineHeight: '1.1', maxWidth: '600px' }, { level: 1 }, ['Build amazing products faster than ever']),
       n('paragraph', { fontSize: '18px', color: '#6b7280', maxWidth: '500px', lineHeight: '1.5' }, {}, [
@@ -379,6 +379,45 @@ function landingTree(_prompt: string): ComponentNode {
       n('container', { display: 'flex', gap: '12px', marginTop: '8px' }, {}, [
         n('button', {}, { variant: 'primary' }, ['Start free trial']),
         n('button', {}, { variant: 'secondary' }, ['Watch demo']),
+      ]),
+    ]),
+    // Social proof
+    n('container', { display: 'flex', justifyContent: 'center', gap: '32px', padding: '16px 32px', flexWrap: 'wrap' }, {}, [
+      n('stat', {}, { label: 'Active Users', value: '50K+' }),
+      n('stat', {}, { label: 'Companies', value: '2,800+' }),
+      n('stat', {}, { label: 'Uptime', value: '99.9%' }),
+    ]),
+    n('divider', { maxWidth: '800px', alignSelf: 'center', width: '100%' }, {}),
+    // Features grid
+    n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 32px', gap: '32px' }, {}, [
+      n('container', { textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '8px' }, {}, [
+        n('heading', { fontSize: '28px', fontWeight: '700' }, { level: 2 }, ['Everything you need']),
+        n('paragraph', { fontSize: '16px', color: '#6b7280', maxWidth: '480px' }, {}, [
+          'Powerful tools that grow with your team, from startup to enterprise.',
+        ]),
+      ]),
+      n('grid', { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', width: '100%', maxWidth: '900px' }, {}, [
+        n('card', { padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+          n('icon', { fontSize: '24px' }, { name: 'bolt' }),
+          n('heading', { fontSize: '16px', fontWeight: '600' }, { level: 3 }, ['Lightning Fast']),
+          n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }, {}, [
+            'Optimized for speed with edge deployment and smart caching.',
+          ]),
+        ]),
+        n('card', { padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+          n('icon', { fontSize: '24px' }, { name: 'shield' }),
+          n('heading', { fontSize: '16px', fontWeight: '600' }, { level: 3 }, ['Secure by Default']),
+          n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }, {}, [
+            'Enterprise-grade security with SOC 2 compliance and encryption.',
+          ]),
+        ]),
+        n('card', { padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+          n('icon', { fontSize: '24px' }, { name: 'chart' }),
+          n('heading', { fontSize: '16px', fontWeight: '600' }, { level: 3 }, ['Rich Analytics']),
+          n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }, {}, [
+            'Actionable insights with real-time dashboards and custom reports.',
+          ]),
+        ]),
       ]),
     ]),
   ]);
@@ -427,9 +466,34 @@ function sidebarTree(_prompt: string): ComponentNode {
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#', icon: 'settings' }, ['Settings']),
     ]),
     n('divider', { alignSelf: 'stretch' }, { orientation: 'vertical' }),
-    n('container', { flex: '1', padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-      n('heading', { fontSize: '22px', fontWeight: '700' }, { level: 1 }, ['Home']),
+    n('container', { flex: '1', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }, {}, [
+      n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
+        n('heading', { fontSize: '22px', fontWeight: '700' }, { level: 1 }, ['Home']),
+        n('button', { padding: '8px 14px' }, { variant: 'primary' }, ['New Item']),
+      ]),
       n('paragraph', { color: '#6b7280', fontSize: '14px' }, {}, ['Welcome back! Here\'s what\'s happening today.']),
+      // Stats row
+      n('grid', { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }, {}, [
+        n('card', { padding: '14px' }, {}, [
+          n('stat', {}, { label: 'Open Items', value: '24' }),
+        ]),
+        n('card', { padding: '14px' }, {}, [
+          n('stat', {}, { label: 'In Progress', value: '8' }),
+        ]),
+        n('card', { padding: '14px' }, {}, [
+          n('stat', {}, { label: 'Completed', value: '142' }),
+        ]),
+      ]),
+      // Recent activity
+      n('card', { padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+        n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Recent Activity']),
+        n('list', {}, {}, [
+          n('listItem', { fontSize: '13px' }, {}, ['Document updated — Marketing Plan']),
+          n('listItem', { fontSize: '13px' }, {}, ['New comment on Project Alpha']),
+          n('listItem', { fontSize: '13px' }, {}, ['Task completed — API Review']),
+          n('listItem', { fontSize: '13px' }, {}, ['Member joined — Engineering']),
+        ]),
+      ]),
     ]),
   ]);
 }

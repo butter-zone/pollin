@@ -1,4 +1,5 @@
 import type { ComponentNode, ComponentTree, ComponentNodeType } from '@/types/component-tree';
+import { icon as renderSvgIcon } from '@/services/ui-icons';
 
 // ── HTML Escaping ───────────────────────────────────────
 
@@ -414,9 +415,10 @@ function renderNode(node: ComponentNode): string {
     case 'image': {
       const src = props.src as string | undefined;
       const alt = escapeHTML(String(props.alt ?? ''));
-      if (src) {
+      const isPlaceholder = !src || src === 'placeholder' || src === 'none';
+      if (!isPlaceholder) {
         const css = stylesToCSS(mergeStyles(defaults, node.styles));
-        return `<img${da} src="${escapeHTML(src)}" alt="${alt}" style="${css}" />`;
+        return `<img${da} src="${escapeHTML(src!)}" alt="${alt}" style="${css}" />`;
       }
       // SVG image placeholder
       const placeholderStyles: Record<string, string> = {
@@ -438,9 +440,17 @@ function renderNode(node: ComponentNode): string {
     }
 
     case 'icon': {
-      const name = String(props.name ?? '•');
+      // Map common aliases to icon names in ui-icons.ts
+      const ICON_ALIASES: Record<string, string> = {
+        bolt: 'zap', lightning: 'zap', chart: 'bar-chart', analytics: 'trending-up',
+        design: 'edit', code: 'file', doc: 'file', document: 'file',
+      };
+      const rawName = String(props.name ?? 'circle');
+      const resolved = ICON_ALIASES[rawName] ?? rawName;
+      const size = parseInt(node.styles?.fontSize ?? '18', 10) || 18;
+      const color = node.styles?.color ?? 'currentColor';
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<span${da} style="${css}">${escapeHTML(name)}</span>`;
+      return `<span${da} style="${css}">${renderSvgIcon(resolved, size, color)}</span>`;
     }
 
     case 'badge': {
