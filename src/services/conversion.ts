@@ -175,7 +175,6 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
     // Step 2: Classifying UI type
     const uiType = classifyPrompt(payload.prompt);
     const uiLabel = uiType.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim();
-    onStep?.({ id: 'classify', label: 'Classifying UI type', detail: uiLabel });
     await new Promise((r) => setTimeout(r, 350));
 
     // Step 3: Selecting design system
@@ -382,6 +381,30 @@ const THEME_COLORS: Record<string, ThemeColors> = {
     danger: '#e5484d', onDanger: '#ffffff', success: '#30a46c',
     accent: '#7c66dc', link: '#7c66dc', cardBg: '#18191b', inputBorder: '#2b2c2f', inputBg: '#111113', isDark: true,
   },
+  'Neo Brutal Editorial': {
+    primary: '#ffd400', onPrimary: '#0f0f10', surface: '#f7f5ef', surfaceAlt: '#ffffff',
+    onSurface: '#101010', border: '#1a1a1a', muted: '#595959', mutedFaint: '#7a7a7a',
+    danger: '#ff3b30', onDanger: '#ffffff', success: '#178b49',
+    accent: '#ff5a36', link: '#0b57d0', cardBg: '#ffffff', inputBorder: '#1a1a1a', inputBg: '#ffffff', isDark: false,
+  },
+  'Aurora Glass Neon': {
+    primary: '#62f2ff', onPrimary: '#08121a', surface: 'rgba(8,18,36,0.92)', surfaceAlt: 'rgba(14,30,56,0.9)',
+    onSurface: '#ebf7ff', border: 'rgba(116,212,255,0.35)', muted: 'rgba(214,236,255,0.72)', mutedFaint: 'rgba(188,215,240,0.5)',
+    danger: '#ff6b8a', onDanger: '#ffffff', success: '#48d3a7',
+    accent: '#9f7cff', link: '#7ee2ff', cardBg: 'rgba(16,32,60,0.72)', inputBorder: 'rgba(126,226,255,0.4)', inputBg: 'rgba(9,23,44,0.72)', isDark: true,
+  },
+  'Mono Minimal Grid': {
+    primary: '#161616', onPrimary: '#ffffff', surface: '#ffffff', surfaceAlt: '#f4f4f4',
+    onSurface: '#111111', border: '#d6d6d6', muted: '#6d6d6d', mutedFaint: '#9a9a9a',
+    danger: '#bb2b2b', onDanger: '#ffffff', success: '#257a44',
+    accent: '#4f46e5', link: '#1d4ed8', cardBg: '#ffffff', inputBorder: '#cccccc', inputBg: '#ffffff', isDark: false,
+  },
+  'Warm Clay Soft UI': {
+    primary: '#c96a4a', onPrimary: '#fff9f5', surface: '#f5ede6', surfaceAlt: '#efe4d9',
+    onSurface: '#3e2a20', border: '#d5bfae', muted: '#7b6356', mutedFaint: '#9c8578',
+    danger: '#c24136', onDanger: '#fff8f7', success: '#4f8a53',
+    accent: '#b17f4a', link: '#8b4e2e', cardBg: '#fbf6f1', inputBorder: '#cfb7a6', inputBg: '#fffaf6', isDark: false,
+  },
 };
 
 /**
@@ -564,6 +587,14 @@ export const VARIATION_THEMES = [
   'Radix UI',
 ];
 
+/** Freeform visual languages (not mapped to supported design libraries) */
+export const FREEFORM_VARIATION_THEMES = [
+  'Neo Brutal Editorial',
+  'Aurora Glass Neon',
+  'Mono Minimal Grid',
+  'Warm Clay Soft UI',
+];
+
 /**
  * Generate multiple themed variations of the same prompt.
  * When no library is selected, all variations use different random libraries
@@ -575,11 +606,13 @@ export async function generateVariations(
   payload: GenerationPayload,
   count: number = 3,
   excludeTheme?: string,
+  themeMode: 'design-system' | 'freeform' = 'design-system',
 ): Promise<ConversionResult[]> {
   const libraryName = await getLibraryName(payload.libraryId);
+  const sourceThemes = themeMode === 'freeform' ? FREEFORM_VARIATION_THEMES : VARIATION_THEMES;
 
   // Shuffle all themes, excluding any already used by the main result
-  const available = VARIATION_THEMES.filter((t) => {
+  const available = sourceThemes.filter((t) => {
     if (excludeTheme && t.toLowerCase() === excludeTheme.toLowerCase()) return false;
     if (libraryName && t.toLowerCase() === libraryName.toLowerCase()) return false;
     return true;

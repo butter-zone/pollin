@@ -13,7 +13,7 @@ import { PrototypePlayer } from '@/components/PrototypePlayer';
 import type { GenerationEntry, ImageAttachment, ReasoningStep } from '@/components/PromptPanel';
 import type { PanelMode } from '@/components/Toolbar';
 import { useCanvas } from '@/hooks/useCanvas';
-import { convertToUI, generateFromPrompt } from '@/services/conversion';
+import { convertToUI, FREEFORM_VARIATION_THEMES, generateFromPrompt } from '@/services/conversion';
 import type { ConversionPayload } from '@/components/ConversionDialog';
 import type { Tool, CanvasObject, ComponentObject, LibraryComponent } from '@/types/canvas';
 import type { ComponentTree } from '@/types/component-tree';
@@ -22,6 +22,15 @@ import { renderHTMLToImage } from '@/services/ui-renderer';
 import { generateComponentPreviewHTML } from '@/services/component-preview';
 import { getTheme } from '@/services/ui-templates';
 import { storeImage } from '@/services/image-store';
+
+function hasPromptStyleHint(prompt: string): boolean {
+  const p = prompt.toLowerCase();
+  return [
+    'material', 'mui', 'shadcn', 'radix', 'ant design', 'fluent', 'apple', 'ios',
+    'glassmorphism', 'neumorphism', 'brutalist', 'minimalist', 'retro', 'cyberpunk',
+    'dark theme', 'light theme', 'in the style of', 'style of',
+  ].some((token) => p.includes(token));
+}
 
 function App() {
   const {
@@ -523,12 +532,15 @@ function App() {
       const lib = selectedLibraryId ? state.libraries.find((l) => l.id === selectedLibraryId) : undefined;
       let resolvedLibraryId = lib?.name ?? selectedLibraryId;
 
-      // When no library is selected + variations ON, pick a random library
-      // for the main result so all 4 outputs are visually distinct
+      const useFreeformVariations = Boolean(
+        variations && !resolvedLibraryId && !hasPromptStyleHint(prompt),
+      );
+
+      // When no library/style is specified + variations ON, use freeform visual languages
+      // (not mapped to supported libraries) so all 4 outputs are stylistically distinct.
       let mainRandomTheme: string | undefined;
-      if (variations && !resolvedLibraryId) {
-        const { VARIATION_THEMES } = await import('@/services/conversion');
-        const shuffled = [...VARIATION_THEMES].sort(() => Math.random() - 0.5);
+      if (useFreeformVariations) {
+        const shuffled = [...FREEFORM_VARIATION_THEMES].sort(() => Math.random() - 0.5);
         mainRandomTheme = shuffled[0];
         resolvedLibraryId = mainRandomTheme;
       }
@@ -666,6 +678,7 @@ function App() {
               { prompt, model, framework: 'react', imageRefs: attachments.map((a) => a.dataUrl), libraryId: undefined },
               3,
               resolvedLibraryId, // exclude the main result's library so all 4 are distinct
+              useFreeformVariations ? 'freeform' : 'design-system',
             );
 
             // Place variations side-by-side, offset from the first result
