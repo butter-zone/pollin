@@ -452,6 +452,13 @@ function App() {
             });
           }
           break;
+        case 'export-figma':
+          if (target && target.kind === 'component' && 'tree' in target) {
+            import('@/services/figma-export').then(({ downloadFigmaJSON }) => {
+              downloadFigmaJSON((target as import('@/types/canvas').ComponentObject).tree);
+            });
+          }
+          break;
       }
     },
     [state.objects, addObject, setObjects, updateObject, deleteObjects, setSelection, toggleGrid, handleResetView],

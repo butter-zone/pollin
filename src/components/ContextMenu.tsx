@@ -50,6 +50,7 @@ function getMenuItems(target: CanvasObject | null): ContextMenuItem[] {
           { id: 'sep-export', label: '', separator: true } as ContextMenuItem,
           { id: 'export-react', label: 'Copy as React', icon: '⟨⟩' } as ContextMenuItem,
           { id: 'export-html', label: 'Copy as HTML', icon: '⟨/⟩' } as ContextMenuItem,
+          { id: 'export-figma', label: 'Export Figma JSON', icon: '◈' } as ContextMenuItem,
         ]
       : []),
     { id: 'sep-1', label: '', separator: true },

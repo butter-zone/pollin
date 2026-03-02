@@ -262,8 +262,8 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 - ~~**Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping~~ ✅ Built, then deleted (zero imports — premature)
 - ~~**Token export** — export resolved OKLCH tokens as CSS/JSON for handoff~~ ✅ Done (token-export.ts)
 - ~~**Renderer deduplication** — 5 library-specific renderer sets repeat ~65 near-identical functions; extract parameterized templates~~ ✅ Done (7 factory functions: buildSwitch, buildCheckbox, buildBadge, buildAvatar, buildSelect, buildTable, buildAccordion)
-- **Multi-screen flows** — connect multiple generated screens into a clickable prototype flow
-- **Figma export** — export ComponentTree to Figma plugin JSON or .fig format
+- ~~**Multi-screen flows** — connect multiple generated screens into a clickable prototype flow~~ ✅ Done (Screen/FlowLink types, ScreenPanel, PrototypePlayer, canvas frame rendering)
+- ~~**Figma export** — export ComponentTree to Figma plugin JSON or .fig format~~ ✅ Done (figma-export.ts: ComponentTree → Figma node JSON, downloadable .figma.json, context menu integration)
 
 ---
 
