@@ -22,7 +22,13 @@ interface DomainIntentProfile {
   cardTitles: string[];
   activityItems: string[];
   inputPlaceholders: string[];
-  keywords: RegExp[];
+  navItems: string[];
+  tabItems: string[];
+  tableHeaders: string[];
+  tableRows: string[][];
+  badgeLabels: string[];
+  selectOptions?: string[];
+  keywords: string[];
 }
 
 const DOMAIN_PROFILES: DomainIntentProfile[] = [
@@ -41,7 +47,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Spending Trend', 'Budget Health', 'Recent Transactions', 'Goals Progress'],
     activityItems: ['Salary +$4,200', 'Rent -$1,450', 'ETF Buy -$600', 'Dividend +$84', 'Transfer to Savings -$300'],
     inputPlaceholders: ['Search transactions', 'Amount', 'Category', 'Merchant'],
-    keywords: [/\b(finance|financial|bank(?:ing)?|wallet|budget(?:ing)?|transaction(?:s)?|portfolio|investment(?:s)?|wealth|cash\s*flow)\b/i],
+    navItems: ['Overview', 'Accounts', 'Transactions', 'Budgets', 'Investments'],
+    tabItems: ['Summary', 'Cash Flow', 'Holdings', 'Goals'],
+    tableHeaders: ['Date', 'Description', 'Category', 'Amount'],
+    tableRows: [
+      ['Mar 02', 'Payroll Deposit', 'Income', '+$4,200'],
+      ['Mar 01', 'City Rent', 'Housing', '-$1,450'],
+      ['Feb 28', 'ETF Purchase', 'Investments', '-$600'],
+    ],
+    badgeLabels: ['On Budget', 'Stable', 'Opportunity'],
+    selectOptions: ['All Accounts', 'Checking', 'Savings', 'Brokerage'],
+    keywords: ['finance', 'financial', 'banking', 'wallet', 'budget', 'transaction', 'portfolio', 'investment', 'wealth', 'cash flow'],
   },
   {
     id: 'weather',
@@ -58,7 +74,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['7-Day Forecast', 'Hourly Conditions', 'Air Quality', 'Severe Alerts'],
     activityItems: ['Cloud cover increasing tonight', 'Light rain expected at 6 PM', 'AQI improved to Moderate', 'UV index peaks at 4 PM'],
     inputPlaceholders: ['Search city', 'ZIP code', 'Saved location name', 'Alert threshold'],
-    keywords: [/\b(weather|forecast|temperature|rain|snow|storm|climate|humidity|wind|aqi|air\s*quality)\b/i],
+    navItems: ['Today', 'Hourly', '10-Day', 'Radar', 'Alerts'],
+    tabItems: ['Now', 'Hourly', 'Daily', 'Air Quality'],
+    tableHeaders: ['Time', 'Temp', 'Condition', 'Precip'],
+    tableRows: [
+      ['09:00', '70°F', 'Partly Cloudy', '10%'],
+      ['12:00', '74°F', 'Sunny', '0%'],
+      ['18:00', '68°F', 'Light Rain', '40%'],
+    ],
+    badgeLabels: ['Moderate AQI', 'Wind Advisory', 'Rain Watch'],
+    selectOptions: ['Current Location', 'San Francisco', 'New York', 'Chicago'],
+    keywords: ['weather', 'forecast', 'temperature', 'rain', 'snow', 'storm', 'climate', 'humidity', 'wind', 'aqi', 'air quality'],
   },
   {
     id: 'cooking',
@@ -75,7 +101,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Today\'s Meals', 'Top Recipes', 'Shopping List', 'Pantry Inventory'],
     activityItems: ['Added chicken tikka recipe', 'Updated grocery list', 'Prep reminder for tomorrow', 'Saved 3 vegetarian ideas'],
     inputPlaceholders: ['Search recipes', 'Ingredient', 'Cuisine', 'Servings'],
-    keywords: [/\b(cook(?:ing)?|recipe(?:s)?|meal\s*plan|kitchen|ingredient(?:s)?|bake|chef|grocery)\b/i],
+    navItems: ['Recipes', 'Meal Plan', 'Pantry', 'Shopping', 'Favorites'],
+    tabItems: ['Breakfast', 'Lunch', 'Dinner', 'Prep'],
+    tableHeaders: ['Dish', 'Prep', 'Calories', 'Servings'],
+    tableRows: [
+      ['Avocado Toast', '10m', '320', '2'],
+      ['Chicken Stir Fry', '25m', '540', '3'],
+      ['Lentil Soup', '35m', '410', '4'],
+    ],
+    badgeLabels: ['High Protein', 'Vegetarian', 'Quick Prep'],
+    selectOptions: ['Any Cuisine', 'Italian', 'Mexican', 'Japanese'],
+    keywords: ['cooking', 'cook', 'recipe', 'meal plan', 'kitchen', 'ingredient', 'bake', 'chef', 'grocery'],
   },
   {
     id: 'automotive',
@@ -92,7 +128,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Featured Cars', 'Price Trends', 'Financing Options', 'Dealer Activity'],
     activityItems: ['New Tesla Model 3 listed', 'Price drop: Toyota Camry', 'Loan pre-approval ready', 'Dealer offer expires in 2 days'],
     inputPlaceholders: ['Make or model', 'Maximum price', 'Mileage', 'Location'],
-    keywords: [/\b(car|cars|auto|automotive|vehicle|vehicles|dealership|dealer|used\s*car|new\s*car|lease|financing)\b/i],
+    navItems: ['Inventory', 'Compare', 'Financing', 'Dealers', 'Saved'],
+    tabItems: ['New', 'Used', 'Certified', 'Electric'],
+    tableHeaders: ['Vehicle', 'Mileage', 'Price', 'Status'],
+    tableRows: [
+      ['2024 Tesla Model 3', '12,400', '$31,990', 'Available'],
+      ['2023 Toyota Camry', '22,180', '$24,800', 'Price Drop'],
+      ['2022 Honda Civic', '18,930', '$22,450', 'Pending'],
+    ],
+    badgeLabels: ['Great Deal', 'Low Mileage', 'Pre-Approved'],
+    selectOptions: ['Any Body Type', 'Sedan', 'SUV', 'Truck'],
+    keywords: ['car', 'cars', 'auto', 'automotive', 'vehicle', 'dealership', 'dealer', 'used car', 'new car', 'lease', 'financing'],
   },
   {
     id: 'travel',
@@ -109,7 +155,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Upcoming Itinerary', 'Flight Deals', 'Hotels', 'Travel Alerts'],
     activityItems: ['Price drop to Tokyo', 'Hotel booking confirmed', 'Gate update for JFK flight', 'Passport reminder in 30 days'],
     inputPlaceholders: ['Destination', 'Departure date', 'Budget', 'Travelers'],
-    keywords: [/\b(travel|trip|itinerary|flight|hotel|booking|vacation|destination|airbnb)\b/i],
+    navItems: ['Trips', 'Flights', 'Hotels', 'Itineraries', 'Alerts'],
+    tabItems: ['Upcoming', 'Planned', 'Booked', 'Saved'],
+    tableHeaders: ['Leg', 'Date', 'Carrier', 'Status'],
+    tableRows: [
+      ['SFO → JFK', 'Mar 18', 'Delta 407', 'On Time'],
+      ['JFK → LIS', 'Mar 19', 'TAP 202', 'Boarding 09:20'],
+      ['Hotel Check-in', 'Mar 19', 'Lisbon Central', 'Confirmed'],
+    ],
+    badgeLabels: ['Price Drop', 'Confirmed', 'Check-in Soon'],
+    selectOptions: ['Any Destination', 'Tokyo', 'Lisbon', 'Mexico City'],
+    keywords: ['travel', 'trip', 'itinerary', 'flight', 'hotel', 'booking', 'vacation', 'destination', 'airbnb'],
   },
   {
     id: 'fitness',
@@ -126,7 +182,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Workout Split', 'Progress Trend', 'Recovery', 'Nutrition'],
     activityItems: ['Completed upper body session', 'Hit weekly cardio goal', 'Recovery score improved', 'Hydration target met'],
     inputPlaceholders: ['Search workout', 'Exercise', 'Duration', 'Target muscle'],
-    keywords: [/\b(fitness|workout|gym|exercise|training|calories|steps|cardio|strength)\b/i],
+    navItems: ['Dashboard', 'Workouts', 'Nutrition', 'Recovery', 'Coach'],
+    tabItems: ['Today', 'Plan', 'History', 'Insights'],
+    tableHeaders: ['Exercise', 'Sets', 'Reps', 'Load'],
+    tableRows: [
+      ['Bench Press', '4', '8', '155 lb'],
+      ['Squat', '5', '5', '225 lb'],
+      ['Row', '4', '10', '95 lb'],
+    ],
+    badgeLabels: ['PR Week', 'On Track', 'Recovered'],
+    selectOptions: ['All Programs', 'Strength', 'Hypertrophy', 'Conditioning'],
+    keywords: ['fitness', 'workout', 'gym', 'exercise', 'training', 'calories', 'steps', 'cardio', 'strength'],
   },
   {
     id: 'healthcare',
@@ -143,7 +209,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Care Timeline', 'Vitals', 'Medications', 'Lab Results'],
     activityItems: ['Lab report uploaded', 'Prescription refill reminder', 'Telehealth slot available', 'Care plan updated'],
     inputPlaceholders: ['Search provider', 'Symptoms', 'Medication', 'Insurance ID'],
-    keywords: [/\b(health|healthcare|medical|doctor|clinic|patient|appointment|medication|hospital)\b/i],
+    navItems: ['Overview', 'Appointments', 'Vitals', 'Medications', 'Records'],
+    tabItems: ['Today', 'Care Plan', 'History', 'Messages'],
+    tableHeaders: ['Date', 'Provider', 'Visit', 'Outcome'],
+    tableRows: [
+      ['Mar 01', 'Dr. Patel', 'Annual Checkup', 'Completed'],
+      ['Mar 14', 'Dr. Lin', 'Follow-up', 'Scheduled'],
+      ['Mar 20', 'Lab Center', 'Blood Panel', 'Pending'],
+    ],
+    badgeLabels: ['Stable', 'Refill Due', 'Follow-Up'],
+    selectOptions: ['All Providers', 'Primary Care', 'Cardiology', 'Dermatology'],
+    keywords: ['health', 'healthcare', 'medical', 'doctor', 'clinic', 'patient', 'appointment', 'medication', 'hospital'],
   },
   {
     id: 'education',
@@ -160,7 +236,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Course Progress', 'Upcoming Lessons', 'Assignments', 'Achievements'],
     activityItems: ['Module 4 completed', 'Quiz due tomorrow', 'New lesson unlocked', 'Certificate milestone reached'],
     inputPlaceholders: ['Search courses', 'Topic', 'Instructor', 'Difficulty'],
-    keywords: [/\b(learn|education|course|lesson|class|student|teacher|quiz|assignment|school)\b/i],
+    navItems: ['Home', 'Courses', 'Assignments', 'Grades', 'Certificates'],
+    tabItems: ['Current', 'Upcoming', 'Completed', 'Recommended'],
+    tableHeaders: ['Course', 'Instructor', 'Progress', 'Due'],
+    tableRows: [
+      ['Intro to UX', 'M. Keller', '72%', 'Quiz Mar 05'],
+      ['Data Foundations', 'A. Singh', '64%', 'Lab Mar 07'],
+      ['Product Strategy', 'L. Chen', '88%', 'Project Mar 11'],
+    ],
+    badgeLabels: ['On Pace', 'Quiz Due', 'Certificate Ready'],
+    selectOptions: ['All Subjects', 'Design', 'Engineering', 'Business'],
+    keywords: ['learn', 'learning', 'education', 'course', 'lesson', 'class', 'student', 'teacher', 'quiz', 'assignment', 'school'],
   },
   {
     id: 'productivity',
@@ -177,7 +263,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Priority Queue', 'Team Timeline', 'Calendar', 'Recent Updates'],
     activityItems: ['Roadmap draft reviewed', 'Design handoff complete', 'Sprint tasks reprioritized', 'Meeting moved to 3 PM'],
     inputPlaceholders: ['Search tasks', 'Project name', 'Assignee', 'Due date'],
-    keywords: [/\b(productivity|task|todo|project|workflow|kanban|schedule|roadmap|team\s*app)\b/i],
+    navItems: ['Inbox', 'Projects', 'Calendar', 'Team', 'Reports'],
+    tabItems: ['My Work', 'Team', 'Upcoming', 'Done'],
+    tableHeaders: ['Task', 'Owner', 'Priority', 'Due'],
+    tableRows: [
+      ['Finalize Q2 roadmap', 'Carlo', 'High', 'Mar 04'],
+      ['Prep design review', 'Ari', 'Medium', 'Mar 06'],
+      ['Ship onboarding fix', 'Nina', 'High', 'Mar 03'],
+    ],
+    badgeLabels: ['High Priority', 'Blocked', 'Ready'],
+    selectOptions: ['All Projects', 'Core App', 'Growth', 'Infra'],
+    keywords: ['productivity', 'task', 'todo', 'project', 'workflow', 'kanban', 'schedule', 'roadmap', 'team app'],
   },
   {
     id: 'commerce',
@@ -194,7 +290,17 @@ const DOMAIN_PROFILES: DomainIntentProfile[] = [
     cardTitles: ['Sales Trend', 'Top Products', 'Order Pipeline', 'Inventory Health'],
     activityItems: ['Order #3821 fulfilled', 'Low stock: Wireless Mouse', 'New review on Product A', 'Campaign CTR improved to 5.4%'],
     inputPlaceholders: ['Search products', 'SKU', 'Category', 'Order ID'],
-    keywords: [/\b(shop|store|e-?commerce|checkout|cart|order|inventory|retail|marketplace)\b/i],
+    navItems: ['Overview', 'Orders', 'Products', 'Customers', 'Inventory'],
+    tabItems: ['Today', 'Week', 'Month', 'Campaigns'],
+    tableHeaders: ['Order', 'Customer', 'Total', 'Status'],
+    tableRows: [
+      ['#3821', 'Mia Chen', '$128.50', 'Fulfilled'],
+      ['#3822', 'Noah Smith', '$74.10', 'Packed'],
+      ['#3823', 'Ravi Patel', '$219.90', 'Payment Review'],
+    ],
+    badgeLabels: ['Top Seller', 'Low Stock', 'High Conversion'],
+    selectOptions: ['All Categories', 'Accessories', 'Electronics', 'Home'],
+    keywords: ['shop', 'store', 'ecommerce', 'checkout', 'cart', 'order', 'inventory', 'retail', 'marketplace'],
   },
 ];
 
@@ -208,13 +314,23 @@ function domainById(id: DomainIntentId): DomainIntentProfile {
 }
 
 export function detectDomainIntent(prompt: string): DomainIntentMatch | null {
-  const text = prompt.trim();
+  const text = prompt.trim().toLowerCase();
   if (!text) return null;
 
   let best: { id: DomainIntentId; score: number } | null = null;
 
   for (const profile of DOMAIN_PROFILES) {
-    const score = profile.keywords.reduce((sum, regex) => sum + (regex.test(text) ? 1 : 0), 0);
+    const score = profile.keywords.reduce((sum, keyword) => {
+      if (!keyword) return sum;
+      if (keyword.includes(' ')) {
+        return text.includes(keyword.toLowerCase()) ? sum + 2 : sum;
+      }
+
+      const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+      return regex.test(text) ? sum + 1 : sum;
+    }, 0);
+
     if (score <= 0) continue;
     if (!best || score > best.score) {
       best = { id: profile.id, score };
@@ -222,7 +338,7 @@ export function detectDomainIntent(prompt: string): DomainIntentMatch | null {
   }
 
   if (!best) return null;
-  const confidence = Math.min(1, 0.4 + best.score * 0.22);
+  const confidence = Math.min(0.98, 0.35 + best.score * 0.09);
   return { id: best.id, confidence };
 }
 
@@ -233,6 +349,8 @@ export function buildDomainPromptSection(match: DomainIntentMatch): string {
     `Primary Context: ${profile.title}`,
     `Primary CTA: ${profile.primaryAction}`,
     `Secondary CTA: ${profile.secondaryAction}`,
+    `Navigation labels should reflect this domain: ${profile.navItems.join(', ')}.`,
+    `Use table columns relevant to this domain: ${profile.tableHeaders.join(', ')}.`,
     `Use domain-specific information architecture with these modules: ${profile.cardTitles.join(', ')}.`,
     `Use realistic domain copy and metrics that fit ${profile.id}.`,
   ].join('\n');
@@ -253,6 +371,7 @@ function replaceFirstText(children: (ComponentNode | string)[] | undefined, valu
 
 export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntentMatch): ComponentTree {
   const profile = domainById(match.id);
+  const narrative = [profile.subtitle, ...profile.activityItems, ...profile.cardTitles];
 
   const index = {
     heading: 0,
@@ -263,6 +382,17 @@ export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntent
     listItem: 0,
     input: 0,
     text: 0,
+    link: 0,
+    badge: 0,
+    narrative: 0,
+    table: 0,
+    tabs: 0,
+  };
+
+  const nextNarrative = () => {
+    const value = narrative[index.narrative % narrative.length] ?? profile.subtitle;
+    index.narrative += 1;
+    return value;
   };
 
   const mapNode = (node: ComponentNode): ComponentNode => {
@@ -274,24 +404,20 @@ export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntent
       case 'heading': {
         if (index.heading === 0) {
           children = replaceFirstText(children, profile.title);
-        } else if (index.heading === 1) {
-          const cardTitle = profile.cardTitles[0] ?? 'Overview';
+        } else {
+          const cardTitle = profile.cardTitles[(index.heading - 1) % profile.cardTitles.length] ?? 'Overview';
           children = replaceFirstText(children, cardTitle);
         }
         index.heading += 1;
         break;
       }
       case 'paragraph': {
-        if (index.paragraph === 0) {
-          children = replaceFirstText(children, profile.subtitle);
-        }
+        children = replaceFirstText(children, nextNarrative());
         index.paragraph += 1;
         break;
       }
       case 'text': {
-        if (index.text === 0 && index.heading > 0) {
-          children = replaceFirstText(children, profile.subtitle);
-        }
+        children = replaceFirstText(children, nextNarrative());
         index.text += 1;
         break;
       }
@@ -301,7 +427,7 @@ export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntent
             ? profile.primaryAction
             : index.button === 1
               ? profile.secondaryAction
-              : profile.activityItems[index.button % profile.activityItems.length];
+              : profile.navItems[index.button % profile.navItems.length] ?? profile.secondaryAction;
         children = replaceFirstText(children, label);
         index.button += 1;
         break;
@@ -315,9 +441,7 @@ export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntent
         break;
       }
       case 'card': {
-        if (typeof props.title === 'string') {
-          props.title = profile.cardTitles[index.card % profile.cardTitles.length] ?? props.title;
-        }
+        props.title = profile.cardTitles[index.card % profile.cardTitles.length] ?? props.title;
         index.card += 1;
         break;
       }
@@ -327,10 +451,47 @@ export function applyDomainIntentToTree(tree: ComponentTree, match: DomainIntent
         index.listItem += 1;
         break;
       }
+      case 'badge': {
+        children = replaceFirstText(children, profile.badgeLabels[index.badge % profile.badgeLabels.length] ?? profile.badgeLabels[0]);
+        index.badge += 1;
+        break;
+      }
+      case 'link':
+      case 'menu': {
+        children = replaceFirstText(children, profile.navItems[index.link % profile.navItems.length] ?? profile.primaryAction);
+        index.link += 1;
+        break;
+      }
+      case 'tabs': {
+        props.items = profile.tabItems;
+        if (children && children.length > 0) {
+          let tabIndex = 0;
+          children = children.map((child) => {
+            if (typeof child === 'string') {
+              const value = profile.tabItems[tabIndex % profile.tabItems.length] ?? child;
+              tabIndex += 1;
+              return value;
+            }
+            return child;
+          });
+        }
+        index.tabs += 1;
+        break;
+      }
+      case 'table': {
+        props.headers = profile.tableHeaders;
+        props.columns = profile.tableHeaders;
+        props.rows = profile.tableRows;
+        index.table += 1;
+        break;
+      }
       case 'input':
       case 'textarea':
       case 'select': {
         props.placeholder = profile.inputPlaceholders[index.input % profile.inputPlaceholders.length] ?? props.placeholder;
+        if (node.type === 'select') {
+          props.options = profile.selectOptions ?? profile.navItems;
+        }
         index.input += 1;
         break;
       }
