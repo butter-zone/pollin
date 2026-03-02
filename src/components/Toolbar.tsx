@@ -80,23 +80,22 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
 
   // Original circle positions for the pollin logo
   const originalPositions = useRef([
-    { cx: 4, cy: 32.4707, r: 4 },
-    { cx: 33.1836, cy: 4, r: 4 },
-    { cx: 6.58984, cy: 7, r: 3 },
-    { cx: 47.4219, cy: 53.4414, r: 3 },
-    { cx: 35.1836, cy: 45.9883, r: 4 },
-    { cx: 50.4219, cy: 24.4707, r: 8 },
-    { cx: 15.9453, cy: 53.4414, r: 8 },
-    { cx: 26.2109, cy: 26.7207, r: 12 },
+    { cx: 4, cy: 30.4707, r: 4 },
+    { cx: 32.1836, cy: 4, r: 4 },
+    { cx: 6.58984, cy: 4, r: 3 },
+    { cx: 26.1836, cy: 39.9883, r: 4 },
+    { cx: 42.4219, cy: 19.4707, r: 8 },
+    { cx: 10.9453, cy: 50.4414, r: 8 },
+    { cx: 20.2109, cy: 19.7207, r: 12 },
   ]);
 
   const handleLogoEnter = useCallback(() => {
     if (!logoRef.current) return;
     const circles = logoRef.current.querySelectorAll('circle');
-    const centerX = 29.5;
-    const centerY = 31;
-    const vbW = 59;
-    const vbH = 62;
+    const centerX = 25.5;
+    const centerY = 29.5;
+    const vbW = 51;
+    const vbH = 59;
     circles.forEach((circle, i) => {
       const orig = originalPositions.current[i];
       // Scatter outward from center like pollen dispersing
@@ -136,15 +135,14 @@ export const Toolbar: FC<ToolbarProps> = ({ activeTool, panelMode, onToolChange,
         onMouseEnter={handleLogoEnter}
         onMouseLeave={handleLogoLeave}
       >
-        <svg ref={logoRef} width="24" height="24" viewBox="0 0 59 62" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="4" cy="32.4707" r="4" fill="currentColor"/>
-          <circle cx="33.1836" cy="4" r="4" fill="currentColor"/>
-          <circle cx="6.58984" cy="7" r="3" fill="currentColor"/>
-          <circle cx="47.4219" cy="53.4414" r="3" fill="currentColor"/>
-          <circle cx="35.1836" cy="45.9883" r="4" fill="currentColor"/>
-          <circle cx="50.4219" cy="24.4707" r="8" fill="currentColor"/>
-          <circle cx="15.9453" cy="53.4414" r="8" fill="currentColor"/>
-          <circle cx="26.2109" cy="26.7207" r="12" fill="currentColor"/>
+        <svg ref={logoRef} width="24" height="28" viewBox="0 0 51 59" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="4" cy="30.4707" r="4" fill="currentColor"/>
+          <circle cx="32.1836" cy="4" r="4" fill="currentColor"/>
+          <circle cx="6.58984" cy="4" r="3" fill="currentColor"/>
+          <circle cx="26.1836" cy="39.9883" r="4" fill="currentColor"/>
+          <circle cx="42.4219" cy="19.4707" r="8" fill="currentColor"/>
+          <circle cx="10.9453" cy="50.4414" r="8" fill="currentColor"/>
+          <circle cx="20.2109" cy="19.7207" r="12" fill="currentColor"/>
         </svg>
       </div>
 
