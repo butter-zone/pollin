@@ -79,37 +79,81 @@ function signupTree(_prompt: string): ComponentNode {
 
 function dashboardTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%' }, {}, [
-    // Top navbar
+    // Top navbar with nav links + actions
     n('navbar', { padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, {}, [
-      n('heading', { fontSize: '18px', fontWeight: '700' }, { level: 2 }, ['Dashboard']),
+      n('container', { display: 'flex', alignItems: 'center', gap: '20px' }, {}, [
+        n('heading', { fontSize: '18px', fontWeight: '700' }, { level: 2 }, ['Dashboard']),
+        n('container', { display: 'flex', gap: '16px', alignItems: 'center' }, {}, [
+          n('link', { fontSize: '13px', fontWeight: '500' }, { href: '#', active: true }, ['Overview']),
+          n('link', { fontSize: '13px', color: '#6b7280' }, { href: '#' }, ['Analytics']),
+          n('link', { fontSize: '13px', color: '#6b7280' }, { href: '#' }, ['Reports']),
+          n('link', { fontSize: '13px', color: '#6b7280' }, { href: '#' }, ['Settings']),
+        ]),
+      ]),
       n('container', { display: 'flex', gap: '12px', alignItems: 'center' }, {}, [
         n('input', { width: '200px' }, { placeholder: 'Search…' }),
+        n('button', { padding: '8px 14px' }, { variant: 'primary' }, ['New']),
         n('avatar', { width: '32px', height: '32px' }, { initials: 'JD' }),
       ]),
     ]),
     n('divider', {}, {}),
-    // Stats row
-    n('container', { display: 'flex', flexDirection: 'column', padding: '24px', gap: '24px', flex: '1' }, {}, [
+    // Main content
+    n('container', { display: 'flex', flexDirection: 'column', padding: '24px', gap: '20px', flex: '1' }, {}, [
+      // Tabs
+      n('tabs', {}, { items: ['Summary', 'Performance', 'Usage', 'Logs'], activeIndex: 0 }),
+      // Stats row
       n('grid', { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }, {}, [
-        n('stat', {}, { label: 'Total Users', value: '12,847', change: '+12%' }),
-        n('stat', {}, { label: 'Revenue', value: '$48.2K', change: '+8.3%' }),
-        n('stat', {}, { label: 'Active Now', value: '573', change: '+4%' }),
-        n('stat', {}, { label: 'Conversion', value: '3.24%', change: '-0.2%' }),
-      ]),
-      // Chart area
-      n('container', { display: 'flex', gap: '16px', flex: '1' }, {}, [
-        n('card', { flex: '2', padding: '20px' }, { title: 'Revenue Over Time' }, [
-          n('chart', { width: '100%', height: '200px' }, { chartType: 'area', data: [30, 45, 28, 55, 43, 62, 48, 70, 58, 75, 65, 80] }),
+        n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
+          n('stat', {}, { label: 'Total Users', value: '12,847', change: '+12%' }),
         ]),
-        n('card', { flex: '1', padding: '20px' }, { title: 'Recent Activity' }, [
+        n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
+          n('stat', {}, { label: 'Revenue', value: '$48.2K', change: '+8.3%' }),
+        ]),
+        n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
+          n('stat', {}, { label: 'Active Now', value: '573', change: '+4%' }),
+        ]),
+        n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
+          n('stat', {}, { label: 'Conversion', value: '3.24%', change: '-0.2%' }),
+        ]),
+      ]),
+      // Chart + activity row
+      n('container', { display: 'flex', gap: '16px' }, {}, [
+        n('card', { flex: '2', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }, { title: 'Revenue Over Time' }, [
+          n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
+            n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Revenue Over Time']),
+            n('select', { width: '130px', padding: '4px 8px', fontSize: '12px' }, { options: ['Last 7 days', 'Last 30 days', '3 months', '12 months'] }),
+          ]),
+          n('chart', { width: '100%', height: '180px' }, { chartType: 'area', data: [30, 45, 28, 55, 43, 62, 48, 70, 58, 75, 65, 80] }),
+        ]),
+        n('card', { flex: '1', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }, { title: 'Recent Activity' }, [
+          n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Recent Activity']),
           n('list', {}, {}, [
-            n('listItem', {}, {}, ['New user registered']),
-            n('listItem', {}, {}, ['Payment received — $250']),
-            n('listItem', {}, {}, ['Report generated']),
-            n('listItem', {}, {}, ['Settings updated']),
-            n('listItem', {}, {}, ['User feedback submitted']),
+            n('listItem', { fontSize: '13px' }, {}, ['New user registered']),
+            n('listItem', { fontSize: '13px' }, {}, ['Payment received — $250']),
+            n('listItem', { fontSize: '13px' }, {}, ['Report generated']),
+            n('listItem', { fontSize: '13px' }, {}, ['Settings updated']),
+            n('listItem', { fontSize: '13px' }, {}, ['User feedback submitted']),
           ]),
         ]),
+      ]),
+      // Table section
+      n('card', { padding: '0', overflow: 'hidden' }, {}, [
+        n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }, {}, [
+          n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Recent Entries']),
+          n('container', { display: 'flex', gap: '8px', alignItems: 'center' }, {}, [
+            n('badge', {}, { variant: 'primary' }, ['5 new']),
+            n('button', { padding: '6px 12px', fontSize: '12px' }, { variant: 'secondary' }, ['Export']),
+          ]),
+        ]),
+        n('table', { width: '100%' }, {
+          columns: ['Name', 'Status', 'Amount', 'Date'],
+          rows: [
+            ['Alice Johnson', 'Completed', '$520.00', 'Mar 02'],
+            ['Bob Smith', 'Pending', '$184.50', 'Mar 01'],
+            ['Carol White', 'In Review', '$312.00', 'Feb 28'],
+            ['Dave Brown', 'Completed', '$96.75', 'Feb 27'],
+          ],
+        }),
       ]),
     ]),
   ]);
@@ -889,20 +933,64 @@ function todoTree(_prompt: string): ComponentNode {
 }
 
 function genericTree(prompt: string): ComponentNode {
-  const title = titleFrom(prompt, 'Component');
-  return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%', padding: '32px', gap: '24px' }, {}, [
-    n('heading', { fontSize: '24px', fontWeight: '700' }, { level: 1 }, [title]),
-    n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.6' }, {}, [
-      'Customize this layout by selecting and editing individual components in the panel.',
-    ]),
-    n('card', { padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-      n('container', { display: 'flex', flexDirection: 'column', gap: '6px' }, {}, [
-        n('text', { fontSize: '14px', fontWeight: '500' }, {}, ['Input field']),
-        n('input', {}, { placeholder: 'Type something…' }),
+  const title = titleFrom(prompt, 'Dashboard');
+  return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%' }, {}, [
+    // Navbar
+    n('navbar', { padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, {}, [
+      n('container', { display: 'flex', alignItems: 'center', gap: '16px' }, {}, [
+        n('heading', { fontSize: '18px', fontWeight: '700' }, { level: 2 }, [title]),
+        n('container', { display: 'flex', gap: '14px', alignItems: 'center' }, {}, [
+          n('link', { fontSize: '13px', fontWeight: '500' }, { href: '#', active: true }, ['Home']),
+          n('link', { fontSize: '13px', color: '#6b7280' }, { href: '#' }, ['Activity']),
+          n('link', { fontSize: '13px', color: '#6b7280' }, { href: '#' }, ['Settings']),
+        ]),
       ]),
-      n('container', { display: 'flex', gap: '12px' }, {}, [
-        n('button', {}, { variant: 'primary' }, ['Submit']),
-        n('button', {}, { variant: 'secondary' }, ['Cancel']),
+      n('container', { display: 'flex', gap: '10px', alignItems: 'center' }, {}, [
+        n('input', { width: '180px' }, { placeholder: 'Search…' }),
+        n('avatar', { width: '32px', height: '32px' }, { initials: 'U' }),
+      ]),
+    ]),
+    n('divider', {}, {}),
+    // Content
+    n('container', { display: 'flex', flexDirection: 'column', padding: '24px', gap: '20px', flex: '1' }, {}, [
+      // Welcome row
+      n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }, {}, [
+        n('container', { display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
+          n('heading', { fontSize: '22px', fontWeight: '700' }, { level: 1 }, [title]),
+          n('paragraph', { fontSize: '14px', color: '#6b7280' }, {}, ['Here\'s an overview of your activity']),
+        ]),
+        n('container', { display: 'flex', gap: '8px' }, {}, [
+          n('button', { padding: '8px 14px' }, { variant: 'secondary' }, ['Export']),
+          n('button', { padding: '8px 14px' }, { variant: 'primary' }, ['Create New']),
+        ]),
+      ]),
+      // Stats
+      n('grid', { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }, {}, [
+        n('card', { padding: '16px' }, {}, [
+          n('stat', {}, { label: 'Total Items', value: '2,847', change: '+6%' }),
+        ]),
+        n('card', { padding: '16px' }, {}, [
+          n('stat', {}, { label: 'Active', value: '184', change: '+12' }),
+        ]),
+        n('card', { padding: '16px' }, {}, [
+          n('stat', {}, { label: 'Completion', value: '76%', change: '+3%' }),
+        ]),
+      ]),
+      // Cards row
+      n('container', { display: 'flex', gap: '16px' }, {}, [
+        n('card', { flex: '2', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+          n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Trend']),
+          n('chart', { width: '100%', height: '160px' }, { chartType: 'area' }),
+        ]),
+        n('card', { flex: '1', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
+          n('heading', { fontSize: '15px', fontWeight: '600' }, { level: 3 }, ['Recent']),
+          n('list', {}, {}, [
+            n('listItem', { fontSize: '13px' }, {}, ['Item updated']),
+            n('listItem', { fontSize: '13px' }, {}, ['Report ready']),
+            n('listItem', { fontSize: '13px' }, {}, ['New entry added']),
+            n('listItem', { fontSize: '13px' }, {}, ['Feedback received']),
+          ]),
+        ]),
       ]),
     ]),
   ]);
@@ -964,8 +1052,8 @@ export function buildMockComponentTree(
   const root = builder(prompt);
 
   // Determine viewport dimensions
-  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
-  const isFull = ['finance', 'dashboard', 'kanban'].includes(uiType);
+  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban', 'generic'].includes(uiType);
+  const isFull = ['finance', 'dashboard', 'kanban', 'generic'].includes(uiType);
   const width = options.width ?? (isFull ? 900 : isWide ? 780 : 420);
   const height = options.height ?? (isFull ? 620 : isWide ? 580 : 580);
 

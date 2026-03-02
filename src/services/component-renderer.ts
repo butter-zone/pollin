@@ -686,6 +686,7 @@ function renderNode(node: ComponentNode): string {
 
     case 'progress': {
       const value = Math.min(100, Math.max(0, Number(props.value ?? 60)));
+      const label = props.label as string | undefined;
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
       const barCSS = stylesToCSS({
         width: `${value}%`,
@@ -694,7 +695,10 @@ function renderNode(node: ComponentNode): string {
         borderRadius: '4px',
         transition: 'width 0.3s',
       });
-      return `<div${da} style="${css}"><div style="${barCSS}"></div></div>`;
+      const labelHTML = label
+        ? `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:13px;">${escapeHTML(label)}</span><span style="font-size:12px;color:#6b7280;">${value}%</span></div>`
+        : '';
+      return `<div${da}>${labelHTML}<div style="${css}"><div style="${barCSS}"></div></div></div>`;
     }
 
     case 'spinner': {
@@ -769,7 +773,16 @@ function renderNode(node: ComponentNode): string {
 
     case 'card': {
       const css = stylesToCSS(mergeStyles(defaults, node.styles));
-      return `<div${da} style="${css}">${renderChildren(children)}</div>`;
+      // Render props.title as a visible heading if set and no children already provide one
+      let titleHTML = '';
+      const title = props.title as string | undefined;
+      if (title) {
+        const hasHeadingChild = children?.some((c) => typeof c !== 'string' && /^h[1-6]$|^heading$/.test(c.type));
+        if (!hasHeadingChild) {
+          titleHTML = `<div style="font-size:15px;font-weight:600;margin-bottom:12px;letter-spacing:-0.01em;">${escapeHTML(title)}</div>`;
+        }
+      }
+      return `<div${da} style="${css}">${titleHTML}${renderChildren(children)}</div>`;
     }
 
     case 'list': {

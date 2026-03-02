@@ -2010,8 +2010,8 @@ export function generateUIHTML(
   const css = baseCSS(finalTheme);
 
   // Determine dimensions
-  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
-  const isFull = ['finance', 'dashboard', 'kanban'].includes(uiType);
+  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban', 'generic'].includes(uiType);
+  const isFull = ['finance', 'dashboard', 'kanban', 'generic'].includes(uiType);
   const width = isFull ? 900 : isWide ? 780 : 420;
   const height = isFull ? 620 : isWide ? 580 : 580;
 
