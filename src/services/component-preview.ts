@@ -92,6 +92,167 @@ ${bodyContent}
 
 type Renderer = (t: ThemeTokens) => string;
 
+/* ─── Factory functions ──────────────────────────────────── */
+
+
+/* ─── Shared constants ──────────────────────────────────── */
+
+const GLASS_CSS = 'backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);';
+const SF_FONT = `-apple-system,'SF Pro Display','Helvetica Neue',sans-serif`;
+
+/* ─── Parameterised component factories ─────────────────── */
+
+/** Reusable switch / toggle renderer */
+function buildSwitch(t: ThemeTokens, font: string, text: string,
+  items: { label: string; on: boolean }[],
+  tw: number, th: number, ts: number, pad: number,
+  onBg: string, offBg: string,
+  o: { tOnBg?: string; tOffBg?: string; tShadow?: string;
+    bOn?: string; bOff?: string; xOn?: string; xOff?: string;
+    fs?: number; gap?: number; igap?: number } = {}
+): string {
+  const fs = o.fs ?? 14, gap = o.gap ?? 14, igap = o.igap ?? 10;
+  const els = items.map(i => {
+    const left = i.on ? `${tw - ts - pad}px` : `${pad}px`;
+    const tbg = i.on ? (o.tOnBg ?? '#fff') : (o.tOffBg ?? '#fff');
+    const bd = i.on ? (o.bOn ?? '') : (o.bOff ?? '');
+    const ex = i.on ? (o.xOn ?? '') : (o.xOff ?? '');
+    return `
+    <label style="display:flex;align-items:center;gap:${igap}px;font-size:${fs}px;color:${text};cursor:pointer;font-family:${font};">
+      <span style="width:${tw}px;height:${th}px;border-radius:${Math.ceil(th / 2)}px;background:${i.on ? onBg : offBg};position:relative;display:inline-block;${bd ? `border:${bd};` : ''}${ex}">
+        <span style="position:absolute;top:${pad}px;left:${left};width:${ts}px;height:${ts}px;border-radius:50%;background:${tbg};transition:left .2s;${o.tShadow ? `box-shadow:${o.tShadow};` : ''}"></span>
+      </span>
+      ${escapeHTML(i.label)}
+    </label>`;
+  }).join('');
+  return wrap(t, `<div style="display:flex;flex-direction:column;gap:${gap}px;">${els}</div>`);
+}
+
+/** Reusable checkbox renderer */
+function buildCheckbox(t: ThemeTokens, font: string, text: string,
+  items: { label: string; checked: boolean }[],
+  sz: number, rad: string, cBg: string, cFg: string, cSz: string, uBd: string,
+  o: { uBg?: string; bold?: boolean; gap?: number; igap?: number; fs?: number; xBox?: string } = {}
+): string {
+  const gap = o.gap ?? 10, igap = o.igap ?? 8, fs = o.fs ?? 14;
+  const els = items.map(i => `
+    <label style="display:flex;align-items:center;gap:${igap}px;font-size:${fs}px;color:${text};cursor:pointer;font-family:${font};">
+      <span style="width:${sz}px;height:${sz}px;border-radius:${rad};border:${i.checked ? 'none' : uBd};background:${i.checked ? cBg : (o.uBg ?? 'transparent')};display:flex;align-items:center;justify-content:center;flex-shrink:0;${o.xBox ?? ''}">
+        ${i.checked ? `<span style="color:${cFg};font-size:${cSz};${o.bold ? 'font-weight:bold;' : ''}">&#10003;</span>` : ''}
+      </span>
+      ${escapeHTML(i.label)}
+    </label>`).join('');
+  return wrap(t, `<div style="display:flex;flex-direction:column;gap:${gap}px;">${els}</div>`);
+}
+
+/** Reusable badge / chip renderer */
+function buildBadge(t: ThemeTokens, font: string,
+  badges: { label: string; bg: string; color: string; border?: string; xCSS?: string }[],
+  o: { gap?: number; fs?: number; fw?: number; rad?: string; pad?: string; h?: string } = {}
+): string {
+  const gap = o.gap ?? 6, fs = o.fs ?? 12, fw = o.fw ?? 600, rad = o.rad ?? '9999px', pad = o.pad ?? '2px 10px';
+  const els = badges.map(b => {
+    const hCSS = o.h ? `height:${o.h};display:inline-flex;align-items:center;` : '';
+    return `<span style="padding:${pad};font-size:${fs}px;font-weight:${fw};background:${b.bg};color:${b.color};border-radius:${rad};${b.border ? `border:${b.border};` : ''}${hCSS}${b.xCSS ?? ''}">${escapeHTML(b.label)}</span>`;
+  }).join('');
+  return wrap(t, `<div style="display:flex;gap:${gap}px;flex-wrap:wrap;font-family:${font};">${els}</div>`);
+}
+
+/** Reusable avatar renderer */
+function buildAvatar(t: ThemeTokens, font: string,
+  avatars: { initials: string; bg: string; color: string; sz?: number; rad?: string; border?: string; xCSS?: string;
+    dot?: { color: string; borderColor?: string } }[],
+  o: { gap?: number; defSz?: number } = {}
+): string {
+  const gap = o.gap ?? 10, defSz = o.defSz ?? 40;
+  const els = avatars.map(a => {
+    const sz = a.sz ?? defSz, rad = a.rad ?? '50%', fSz = Math.round(sz * 0.4);
+    const circle = `<div style="width:${sz}px;height:${sz}px;border-radius:${rad};background:${a.bg};display:flex;align-items:center;justify-content:center;font-size:${fSz}px;font-weight:600;color:${a.color};${a.border ? `border:${a.border};` : ''}${a.xCSS ?? ''}">${escapeHTML(a.initials)}</div>`;
+    if (a.dot) return `<div style="position:relative;">${circle}<span style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:${a.dot.color};border:2px solid ${a.dot.borderColor ?? '#ffffff'};"></span></div>`;
+    return circle;
+  }).join('');
+  return wrap(t, `<div style="display:flex;align-items:center;gap:${gap}px;font-family:${font};">${els}</div>`);
+}
+
+/** Reusable select / dropdown renderer (supports floating-label variant) */
+function buildSelect(t: ThemeTokens, font: string,
+  label: string, value: string, text: string, muted: string,
+  iBg: string, bdr: string, rad: string,
+  o: { h?: number; pad?: string; fs?: number; lfs?: number; lfw?: number; arrowCol?: string;
+    float?: boolean; floatBg?: string; xInput?: string } = {}
+): string {
+  const h = o.h ?? 36, fs = o.fs ?? 14, lfs = o.lfs ?? 14, lfw = o.lfw ?? 500;
+  const arrowCol = o.arrowCol ?? muted;
+  if (o.float) {
+    return wrap(t, `
+    <div style="width:240px;font-family:${font};">
+      <div style="position:relative;border:1px solid ${bdr};border-radius:${rad};padding:16px 16px 8px;">
+        <label style="position:absolute;top:-8px;left:12px;font-size:12px;color:${text};background:${o.floatBg ?? '#fafafa'};padding:0 4px;">${escapeHTML(label)}</label>
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:${fs + 2}px;color:${text};">
+          <span>${escapeHTML(value)}</span>
+          <span style="font-size:10px;color:${arrowCol};">&#9660;</span>
+        </div>
+      </div>
+    </div>`);
+  }
+  const pad = o.pad ?? '0 12px';
+  const valColor = value.includes('\u2026') || value.includes('...') ? muted : text;
+  return wrap(t, `
+    <div style="width:240px;font-family:${font};">
+      <label style="display:block;font-size:${lfs}px;font-weight:${lfw};margin-bottom:6px;color:${text};">${escapeHTML(label)}</label>
+      <div style="height:${h}px;padding:${pad};background:${iBg};border:1px solid ${bdr};border-radius:${rad};display:flex;align-items:center;justify-content:space-between;color:${valColor};font-size:${fs}px;${o.xInput ?? ''}">
+        <span>${escapeHTML(value)}</span>
+        <span style="font-size:10px;color:${arrowCol};">&#9660;</span>
+      </div>
+    </div>`);
+}
+
+/** Reusable accordion renderer */
+function buildAccordion(t: ThemeTokens, font: string,
+  items: { title: string; content: string; open: boolean }[],
+  text: string, muted: string, border: string,
+  o: { fs?: number; fw?: number; w?: number; xContainer?: string; xItem?: string; padding?: string } = {}
+): string {
+  const fs = o.fs ?? 14, fw = o.fw ?? 500, w = o.w ?? 280, pad = o.padding ?? '14px 0';
+  const els = items.map(i => `
+    <div style="border-bottom:1px solid ${border};${o.xItem ?? ''}">
+      <div style="padding:${pad};font-size:${fs}px;font-weight:${fw};display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:${text};">
+        ${escapeHTML(i.title)}
+        <span style="font-size:10px;color:${muted};transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
+      </div>
+      ${i.open ? `<div style="padding-bottom:14px;font-size:${fs - 1}px;color:${muted};">${escapeHTML(i.content)}</div>` : ''}
+    </div>
+  `).join('');
+  return wrap(t, `<div style="width:${w}px;font-family:${font};${o.xContainer ?? ''}">${els}</div>`);
+}
+
+/** Reusable data-table renderer */
+function buildTable(t: ThemeTokens, font: string,
+  rows: { name: string; statusHTML: string; role: string }[],
+  thCol: string, tdCol: string, hBdr: string, rBdr: string, rad: string,
+  o: { cBorder?: string; shadow?: string; bg?: string; thFw?: number; tdFs?: number; thPad?: string; tdPad?: string; xCSS?: string } = {}
+): string {
+  const thFw = o.thFw ?? 500, tdFs = o.tdFs ?? 13;
+  const thPad = o.thPad ?? '8px 12px', tdPad = o.tdPad ?? '8px 12px';
+  const thS = `padding:${thPad};font-size:12px;font-weight:${thFw};text-align:left;color:${thCol};border-bottom:1px solid ${hBdr};`;
+  const rws = rows.map((r, i) => {
+    const last = i === rows.length - 1;
+    const tdS = `padding:${tdPad};font-size:${tdFs}px;color:${tdCol};border-bottom:${last ? 'none' : `1px solid ${rBdr}`};`;
+    return `<tr><td style="${tdS}">${escapeHTML(r.name)}</td><td style="${tdS}">${r.statusHTML}</td><td style="${tdS}">${escapeHTML(r.role)}</td></tr>`;
+  }).join('');
+  const cBd = o.cBorder ?? `1px solid ${hBdr}`;
+  const bg = o.bg ? `background:${o.bg};` : '';
+  const sh = o.shadow ? `box-shadow:${o.shadow};` : '';
+  return wrap(t, `
+    <div style="width:288px;border:${cBd};border-radius:${rad};overflow:hidden;font-family:${font};${bg}${sh}${o.xCSS ?? ''}">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr><th style="${thS}">Name</th><th style="${thS}">Status</th><th style="${thS}">Role</th></tr></thead>
+        <tbody>${rws}</tbody>
+      </table>
+    </div>`);
+}
+
+
 /* ─── shadcn/ui ─────────────────────────────────────────── */
 
 function shadcnButton(t: ThemeTokens): string {
@@ -141,61 +302,6 @@ function shadcnCard(t: ThemeTokens): string {
   `);
 }
 
-function shadcnSwitch(t: ThemeTokens): string {
-  const on = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:#fafafa;cursor:pointer;font-family:'Inter',-apple-system,sans-serif;">
-      <span style="width:44px;height:24px;border-radius:12px;background:${checked ? '#fafafa' : '#27272a'};position:relative;display:inline-block;">
-        <span style="position:absolute;top:2px;left:${checked ? '22px' : '2px'};width:20px;height:20px;border-radius:50%;background:${checked ? '#09090b' : '#a1a1aa'};transition:left .2s;"></span>
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `
-    <div style="display:flex;flex-direction:column;gap:14px;">
-      ${on('Airplane Mode', true)}
-      ${on('Bluetooth', false)}
-    </div>
-  `);
-}
-
-function shadcnBadge(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;gap:6px;flex-wrap:wrap;font-family:'Inter',-apple-system,sans-serif;">
-      <span style="padding:2px 10px;font-size:12px;font-weight:600;background:#fafafa;color:#09090b;border-radius:9999px;">Default</span>
-      <span style="padding:2px 10px;font-size:12px;font-weight:600;background:#27272a;color:#fafafa;border-radius:9999px;">Secondary</span>
-      <span style="padding:2px 10px;font-size:12px;font-weight:600;background:#ef4444;color:#fafafa;border-radius:9999px;">Destructive</span>
-      <span style="padding:2px 10px;font-size:12px;font-weight:600;background:transparent;color:#fafafa;border:1px solid #27272a;border-radius:9999px;">Outline</span>
-    </div>
-  `);
-}
-
-function shadcnCheckbox(t: ThemeTokens): string {
-  const item = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#fafafa;cursor:pointer;font-family:'Inter',-apple-system,sans-serif;">
-      <span style="width:16px;height:16px;border-radius:4px;border:${checked ? 'none' : '1px solid #27272a'};background:${checked ? '#fafafa' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        ${checked ? '<span style="color:#09090b;font-size:11px;">&#10003;</span>' : ''}
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      ${item('Accept terms and conditions', true)}
-      ${item('Send notifications', false)}
-    </div>
-  `);
-}
-
-function shadcnSelect(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="width:240px;font-family:'Inter',-apple-system,sans-serif;">
-      <label style="display:block;font-size:14px;font-weight:500;margin-bottom:6px;color:#fafafa;">Framework</label>
-      <div style="height:36px;padding:0 12px;background:#09090b;border:1px solid #27272a;border-radius:6px;display:flex;align-items:center;justify-content:space-between;color:#a1a1aa;font-size:14px;">
-        <span>Select framework…</span>
-        <span style="font-size:10px;">&#9660;</span>
-      </div>
-    </div>
-  `);
-}
-
 function shadcnTabs(t: ThemeTokens): string {
   return wrap(t, `
     <div style="width:280px;font-family:'Inter',-apple-system,sans-serif;">
@@ -207,23 +313,6 @@ function shadcnTabs(t: ThemeTokens): string {
         <div style="font-size:14px;font-weight:600;color:#fafafa;margin-bottom:4px;">Account</div>
         <div style="font-size:13px;color:#a1a1aa;">Make changes to your account here.</div>
       </div>
-    </div>
-  `);
-}
-
-function shadcnTable(t: ThemeTokens): string {
-  const th = `padding:8px 12px;font-size:12px;font-weight:500;text-align:left;color:#a1a1aa;border-bottom:1px solid #27272a;`;
-  const td = `padding:8px 12px;font-size:13px;color:#fafafa;border-bottom:1px solid #27272a;`;
-  return wrap(t, `
-    <div style="width:288px;border:1px solid #27272a;border-radius:8px;overflow:hidden;font-family:'Inter',-apple-system,sans-serif;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr><th style="${th}">Name</th><th style="${th}">Status</th><th style="${th}">Role</th></tr></thead>
-        <tbody>
-          <tr><td style="${td}">Alice</td><td style="${td}"><span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Active</span></td><td style="${td}">Admin</td></tr>
-          <tr><td style="${td}">Bob</td><td style="${td}"><span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Inactive</span></td><td style="${td}">Editor</td></tr>
-          <tr><td style="${td};border-bottom:none;">Carol</td><td style="${td};border-bottom:none;"><span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Active</span></td><td style="${td};border-bottom:none;">Viewer</td></tr>
-        </tbody>
-      </table>
     </div>
   `);
 }
@@ -256,34 +345,6 @@ function shadcnAlert(t: ThemeTokens): string {
       </div>
     </div>
   `);
-}
-
-function shadcnAvatar(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;align-items:center;gap:12px;font-family:'Inter',-apple-system,sans-serif;">
-      <div style="width:40px;height:40px;border-radius:9999px;background:#27272a;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fafafa;">CN</div>
-      <div style="width:40px;height:40px;border-radius:9999px;background:#3f3f46;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fafafa;">JD</div>
-      <div style="width:40px;height:40px;border-radius:9999px;background:#fafafa;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#09090b;">AB</div>
-    </div>
-  `);
-}
-
-function shadcnAccordion(t: ThemeTokens): string {
-  const items = [
-    { title: 'Is it accessible?', content: 'Yes. It adheres to the WAI-ARIA design pattern.', open: true },
-    { title: 'Is it styled?', content: '', open: false },
-    { title: 'Is it animated?', content: '', open: false },
-  ];
-  const els = items.map(i => `
-    <div style="border-bottom:1px solid #27272a;">
-      <div style="padding:14px 0;font-size:14px;font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:#fafafa;">
-        ${escapeHTML(i.title)}
-        <span style="font-size:10px;color:#a1a1aa;transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
-      </div>
-      ${i.open ? `<div style="padding-bottom:14px;font-size:13px;color:#a1a1aa;">${escapeHTML(i.content)}</div>` : ''}
-    </div>
-  `).join('');
-  return wrap(t, `<div style="width:280px;font-family:'Inter',-apple-system,sans-serif;">${els}</div>`);
 }
 
 /* ─── Material UI 3 ─────────────────────────────────────── */
@@ -336,39 +397,6 @@ function materialCard(t: ThemeTokens): string {
   `);
 }
 
-function materialSwitch(t: ThemeTokens): string {
-  const sw = (label: string, on: boolean) => `
-    <label style="display:flex;align-items:center;gap:12px;font-size:14px;color:#212121;cursor:pointer;font-family:'Roboto',sans-serif;">
-      <span style="width:52px;height:32px;border-radius:16px;background:${on ? '#1976d2' : '#e0e0e0'};position:relative;display:inline-block;">
-        <span style="position:absolute;top:4px;left:${on ? '24px' : '4px'};width:24px;height:24px;border-radius:50%;background:#ffffff;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:left .2s;"></span>
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:16px;">${sw('Wi-Fi', true)}${sw('Bluetooth', false)}</div>`);
-}
-
-function materialBadge(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;gap:10px;flex-wrap:wrap;font-family:'Roboto',sans-serif;">
-      <span style="height:32px;padding:0 12px;font-size:13px;font-weight:500;background:#e8def8;color:#1d192b;border-radius:8px;display:inline-flex;align-items:center;">Assist</span>
-      <span style="height:32px;padding:0 12px;font-size:13px;font-weight:500;background:transparent;color:#212121;border:1px solid #bdbdbd;border-radius:8px;display:inline-flex;align-items:center;">Filter</span>
-      <span style="height:32px;padding:0 12px;font-size:13px;font-weight:500;background:#1976d2;color:#ffffff;border-radius:8px;display:inline-flex;align-items:center;">Selected ✕</span>
-      <span style="height:32px;padding:0 12px;font-size:13px;font-weight:500;background:#e8def8;color:#1d192b;border-radius:8px;display:inline-flex;align-items:center;">Suggestion</span>
-    </div>
-  `);
-}
-
-function materialCheckbox(t: ThemeTokens): string {
-  const item = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:12px;font-size:14px;color:#212121;cursor:pointer;font-family:'Roboto',sans-serif;">
-      <span style="width:18px;height:18px;border-radius:2px;border:${checked ? 'none' : '2px solid #757575'};background:${checked ? '#1976d2' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        ${checked ? '<span style="color:#ffffff;font-size:13px;font-weight:bold;">&#10003;</span>' : ''}
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:14px;">${item('Label', true)}${item('Label', false)}${item('Label', false)}</div>`);
-}
-
 function materialDialog(t: ThemeTokens): string {
   return wrap(t, `
     <div style="position:relative;width:300px;">
@@ -398,23 +426,6 @@ function materialTabs(t: ThemeTokens): string {
   `);
 }
 
-function materialTable(t: ThemeTokens): string {
-  const th = `padding:12px 16px;font-size:12px;font-weight:500;text-align:left;color:#757575;border-bottom:1px solid #e0e0e0;`;
-  const td = `padding:12px 16px;font-size:14px;color:#212121;border-bottom:1px solid #f5f5f5;`;
-  return wrap(t, `
-    <div style="width:288px;background:#ffffff;border-radius:4px;box-shadow:0 2px 1px -1px rgba(0,0,0,0.2),0 1px 1px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.12);overflow:hidden;font-family:'Roboto',sans-serif;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr><th style="${th}">Name</th><th style="${th}">Status</th><th style="${th}">Role</th></tr></thead>
-        <tbody>
-          <tr><td style="${td}">Alice</td><td style="${td}">Active</td><td style="${td}">Admin</td></tr>
-          <tr><td style="${td}">Bob</td><td style="${td}">Inactive</td><td style="${td}">Editor</td></tr>
-          <tr><td style="${td};border-bottom:none;">Carol</td><td style="${td};border-bottom:none;">Active</td><td style="${td};border-bottom:none;">Viewer</td></tr>
-        </tbody>
-      </table>
-    </div>
-  `);
-}
-
 function materialAlert(t: ThemeTokens): string {
   return wrap(t, `
     <div style="width:280px;display:flex;flex-direction:column;gap:8px;font-family:'Roboto',sans-serif;">
@@ -423,48 +434,6 @@ function materialAlert(t: ThemeTokens): string {
       </div>
       <div style="padding:12px 16px;background:#fce4ec;color:#b71c1c;border-radius:4px;font-size:14px;display:flex;align-items:center;gap:10px;">
         <span style="font-size:20px;">&#9888;</span> This is an error alert.
-      </div>
-    </div>
-  `);
-}
-
-function materialAvatar(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;align-items:center;gap:10px;font-family:'Roboto',sans-serif;">
-      <div style="width:40px;height:40px;border-radius:50%;background:#1976d2;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#ffffff;">A</div>
-      <div style="width:40px;height:40px;border-radius:50%;background:#9c27b0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#ffffff;">B</div>
-      <div style="width:40px;height:40px;border-radius:50%;background:#e0e0e0;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;color:#757575;">C</div>
-    </div>
-  `);
-}
-
-function materialAccordion(t: ThemeTokens): string {
-  const items = [
-    { title: 'General settings', content: 'Configure your general preferences here.', open: true },
-    { title: 'Privacy', content: '', open: false },
-    { title: 'Notifications', content: '', open: false },
-  ];
-  const els = items.map(i => `
-    <div style="background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.1);${i.open ? '' : 'margin-top:-1px;'}">
-      <div style="padding:14px 16px;font-size:14px;font-weight:400;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:#212121;">
-        ${escapeHTML(i.title)}
-        <span style="font-size:10px;color:#757575;transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
-      </div>
-      ${i.open ? `<div style="padding:0 16px 14px;font-size:14px;color:#757575;">${escapeHTML(i.content)}</div>` : ''}
-    </div>
-  `).join('');
-  return wrap(t, `<div style="width:280px;border-radius:4px;overflow:hidden;font-family:'Roboto',sans-serif;">${els}</div>`);
-}
-
-function materialSelect(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="width:240px;font-family:'Roboto',sans-serif;">
-      <div style="position:relative;border:1px solid #bdbdbd;border-radius:4px;padding:16px 16px 8px;">
-        <label style="position:absolute;top:-8px;left:12px;font-size:12px;color:#1976d2;background:#fafafa;padding:0 4px;">Framework</label>
-        <div style="display:flex;align-items:center;justify-content:space-between;font-size:16px;color:#212121;">
-          <span>React</span>
-          <span style="font-size:10px;color:#757575;">&#9660;</span>
-        </div>
       </div>
     </div>
   `);
@@ -512,39 +481,6 @@ function radixCard(t: ThemeTokens): string {
   `);
 }
 
-function radixSwitch(t: ThemeTokens): string {
-  const sw = (label: string, on: boolean) => `
-    <label style="display:flex;align-items:center;gap:10px;font-size:14px;color:#eeeef0;cursor:pointer;font-family:'Inter',sans-serif;">
-      <span style="width:42px;height:24px;border-radius:12px;background:${on ? '#3e63dd' : '#2b2c2f'};position:relative;display:inline-block;">
-        <span style="position:absolute;top:2px;left:${on ? '20px' : '2px'};width:20px;height:20px;border-radius:50%;background:#ffffff;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,0.3);"></span>
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:14px;">${sw('Dark mode', true)}${sw('Notifications', false)}</div>`);
-}
-
-function radixBadge(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;gap:6px;flex-wrap:wrap;font-family:'Inter',sans-serif;">
-      <span style="padding:2px 8px;font-size:12px;font-weight:500;background:#3e63dd;color:#ffffff;border-radius:9999px;">Default</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:500;background:#1b2677;color:#bec5f9;border-radius:9999px;">Soft</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:500;background:transparent;color:#8da4ef;border:1px solid #2b3a8e;border-radius:9999px;">Outline</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:500;background:#e5484d;color:#ffffff;border-radius:9999px;">Error</span>
-    </div>
-  `);
-}
-
-function radixCheckbox(t: ThemeTokens): string {
-  const item = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#eeeef0;cursor:pointer;font-family:'Inter',sans-serif;">
-      <span style="width:16px;height:16px;border-radius:4px;border:${checked ? 'none' : '1px solid #2b2c2f'};background:${checked ? '#3e63dd' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        ${checked ? '<span style="color:#ffffff;font-size:11px;">&#10003;</span>' : ''}
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:10px;">${item('Accept terms', true)}${item('Marketing emails', false)}</div>`);
-}
-
 function radixDialog(t: ThemeTokens): string {
   return wrap(t, `
     <div style="position:relative;width:300px;">
@@ -579,23 +515,6 @@ function radixTabs(t: ThemeTokens): string {
   `);
 }
 
-function radixTable(t: ThemeTokens): string {
-  const th = `padding:8px 12px;font-size:12px;font-weight:500;text-align:left;color:#9b9ba7;border-bottom:1px solid #2b2c2f;`;
-  const td = `padding:8px 12px;font-size:13px;color:#eeeef0;border-bottom:1px solid #2b2c2f;`;
-  return wrap(t, `
-    <div style="width:288px;border:1px solid #2b2c2f;border-radius:10px;overflow:hidden;font-family:'Inter',sans-serif;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr><th style="${th}">Name</th><th style="${th}">Status</th><th style="${th}">Role</th></tr></thead>
-        <tbody>
-          <tr><td style="${td}">Alice</td><td style="${td}"><span style="color:#30a46c;">Active</span></td><td style="${td}">Admin</td></tr>
-          <tr><td style="${td}">Bob</td><td style="${td}"><span style="color:#9b9ba7;">Inactive</span></td><td style="${td}">Editor</td></tr>
-          <tr><td style="${td};border-bottom:none;">Carol</td><td style="${td};border-bottom:none;"><span style="color:#30a46c;">Active</span></td><td style="${td};border-bottom:none;">Viewer</td></tr>
-        </tbody>
-      </table>
-    </div>
-  `);
-}
-
 function radixAlert(t: ThemeTokens): string {
   return wrap(t, `
     <div style="width:280px;background:#18191b;border:1px solid #2b2c2f;border-radius:10px;padding:16px;font-family:'Inter',sans-serif;">
@@ -605,46 +524,6 @@ function radixAlert(t: ThemeTokens): string {
           <div style="font-size:14px;font-weight:600;color:#eeeef0;margin-bottom:2px;">Information</div>
           <div style="font-size:13px;color:#9b9ba7;">You can customize components using the theme panel.</div>
         </div>
-      </div>
-    </div>
-  `);
-}
-
-function radixAvatar(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;">
-      <div style="width:40px;height:40px;border-radius:9999px;background:#3e63dd;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#ffffff;">AB</div>
-      <div style="width:40px;height:40px;border-radius:9999px;background:#7c66dc;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#ffffff;">CD</div>
-      <div style="width:40px;height:40px;border-radius:9999px;background:#2b2c2f;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#9b9ba7;">EF</div>
-    </div>
-  `);
-}
-
-function radixAccordion(t: ThemeTokens): string {
-  const items = [
-    { title: 'Accessible', content: 'Full keyboard navigation and screen reader support.', open: true },
-    { title: 'Unstyled', content: '', open: false },
-    { title: 'Composable', content: '', open: false },
-  ];
-  const els = items.map(i => `
-    <div style="border-bottom:1px solid #2b2c2f;">
-      <div style="padding:14px 0;font-size:14px;font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:#eeeef0;">
-        ${escapeHTML(i.title)}
-        <span style="font-size:10px;color:#9b9ba7;transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
-      </div>
-      ${i.open ? `<div style="padding-bottom:14px;font-size:13px;color:#9b9ba7;">${escapeHTML(i.content)}</div>` : ''}
-    </div>
-  `).join('');
-  return wrap(t, `<div style="width:280px;font-family:'Inter',sans-serif;">${els}</div>`);
-}
-
-function radixSelect(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="width:240px;font-family:'Inter',sans-serif;">
-      <label style="display:block;font-size:14px;font-weight:500;margin-bottom:6px;color:#eeeef0;">Theme</label>
-      <div style="height:36px;padding:0 12px;background:#111113;border:1px solid #2b2c2f;border-radius:6px;display:flex;align-items:center;justify-content:space-between;color:#eeeef0;font-size:14px;">
-        <span>Dark</span>
-        <span style="font-size:10px;color:#9b9ba7;">&#9660;</span>
       </div>
     </div>
   `);
@@ -706,40 +585,6 @@ function fluentCard(t: ThemeTokens): string {
   `);
 }
 
-function fluentSwitch(t: ThemeTokens): string {
-  const sw = (label: string, on: boolean) => `
-    <label style="display:flex;align-items:center;gap:12px;font-size:14px;color:#242424;cursor:pointer;font-family:'Segoe UI',sans-serif;">
-      <span style="width:40px;height:20px;border-radius:10px;background:${on ? '#0078d4' : '#8a8886'};position:relative;display:inline-block;border:1px solid ${on ? '#0078d4' : '#8a8886'};">
-        <span style="position:absolute;top:1px;left:${on ? '21px' : '1px'};width:16px;height:16px;border-radius:50%;background:#ffffff;transition:left .15s;"></span>
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:14px;">${sw('Enable feature', true)}${sw('Dark mode', false)}</div>`);
-}
-
-function fluentBadge(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:'Segoe UI',sans-serif;">
-      <span style="padding:2px 8px;font-size:12px;font-weight:600;background:#0078d4;color:#ffffff;border-radius:9999px;">Brand</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:600;background:#d13438;color:#ffffff;border-radius:9999px;">Danger</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:600;background:#107c10;color:#ffffff;border-radius:9999px;">Success</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:600;background:#ffb900;color:#242424;border-radius:9999px;">Warning</span>
-      <span style="padding:2px 8px;font-size:12px;font-weight:600;background:#f5f5f5;color:#242424;border-radius:9999px;">Subtle</span>
-    </div>
-  `);
-}
-
-function fluentCheckbox(t: ThemeTokens): string {
-  const item = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#242424;cursor:pointer;font-family:'Segoe UI',sans-serif;">
-      <span style="width:16px;height:16px;border-radius:2px;border:${checked ? 'none' : '1px solid #8a8886'};background:${checked ? '#0078d4' : '#ffffff'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        ${checked ? '<span style="color:#ffffff;font-size:11px;font-weight:bold;">&#10003;</span>' : ''}
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:12px;">${item('Option A', true)}${item('Option B', false)}${item('Option C', false)}</div>`);
-}
-
 function fluentDialog(t: ThemeTokens): string {
   return wrap(t, `
     <div style="position:relative;width:300px;">
@@ -769,23 +614,6 @@ function fluentTabs(t: ThemeTokens): string {
   `);
 }
 
-function fluentTable(t: ThemeTokens): string {
-  const th = `padding:8px 12px;font-size:12px;font-weight:600;text-align:left;color:#707070;border-bottom:1px solid #e0e0e0;`;
-  const td = `padding:8px 12px;font-size:14px;color:#242424;border-bottom:1px solid #f5f5f5;`;
-  return wrap(t, `
-    <div style="width:288px;background:#ffffff;border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.14),0 0 2px rgba(0,0,0,0.12);overflow:hidden;font-family:'Segoe UI',sans-serif;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr><th style="${th}">Name</th><th style="${th}">Status</th><th style="${th}">Role</th></tr></thead>
-        <tbody>
-          <tr style="background:#ffffff;"><td style="${td}">Alice</td><td style="${td}"><span style="color:#107c10;">●</span> Active</td><td style="${td}">Admin</td></tr>
-          <tr style="background:#fafafa;"><td style="${td}">Bob</td><td style="${td}"><span style="color:#8a8886;">●</span> Away</td><td style="${td}">Editor</td></tr>
-          <tr style="background:#ffffff;"><td style="${td};border-bottom:none;">Carol</td><td style="${td};border-bottom:none;"><span style="color:#107c10;">●</span> Active</td><td style="${td};border-bottom:none;">Viewer</td></tr>
-        </tbody>
-      </table>
-    </div>
-  `);
-}
-
 function fluentAlert(t: ThemeTokens): string {
   return wrap(t, `
     <div style="width:280px;display:flex;flex-direction:column;gap:8px;font-family:'Segoe UI',sans-serif;">
@@ -799,59 +627,10 @@ function fluentAlert(t: ThemeTokens): string {
   `);
 }
 
-function fluentAvatar(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;align-items:center;gap:10px;font-family:'Segoe UI',sans-serif;">
-      <div style="position:relative;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#0078d4;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#ffffff;">KM</div>
-        <span style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#107c10;border:2px solid #ffffff;"></span>
-      </div>
-      <div style="position:relative;">
-        <div style="width:40px;height:40px;border-radius:50%;background:#8764b8;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#ffffff;">TP</div>
-        <span style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-radius:50%;background:#ffb900;border:2px solid #ffffff;"></span>
-      </div>
-      <div style="width:40px;height:40px;border-radius:50%;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#707070;">JD</div>
-    </div>
-  `);
-}
-
-function fluentAccordion(t: ThemeTokens): string {
-  const items = [
-    { title: 'Accordion Header 1', content: 'Accordion panel content.', open: true },
-    { title: 'Accordion Header 2', content: '', open: false },
-    { title: 'Accordion Header 3', content: '', open: false },
-  ];
-  const els = items.map(i => `
-    <div style="border-bottom:1px solid #e0e0e0;">
-      <div style="padding:12px 0;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:#242424;">
-        ${escapeHTML(i.title)}
-        <span style="font-size:10px;color:#707070;transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
-      </div>
-      ${i.open ? `<div style="padding-bottom:12px;font-size:14px;color:#707070;">${escapeHTML(i.content)}</div>` : ''}
-    </div>
-  `).join('');
-  return wrap(t, `<div style="width:280px;font-family:'Segoe UI',sans-serif;">${els}</div>`);
-}
-
-function fluentSelect(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="width:240px;font-family:'Segoe UI',sans-serif;">
-      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:4px;color:#242424;">Color</label>
-      <div style="height:32px;padding:0 10px;background:#ffffff;border:1px solid #d1d1d1;border-radius:4px;border-bottom:2px solid transparent;display:flex;align-items:center;justify-content:space-between;color:#242424;font-size:14px;">
-        <span>Blue</span>
-        <span style="font-size:10px;color:#707070;">&#9660;</span>
-      </div>
-    </div>
-  `);
-}
-
 /* ─── Apple Liquid Glass ─────────────────────────────────── */
 
-const GLASS = 'backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);';
-const SF = `-apple-system,'SF Pro Display','Helvetica Neue',sans-serif`;
-
 function glassButton(t: ThemeTokens): string {
-  const base = `display:inline-flex;align-items:center;justify-content:center;font-family:${SF};font-size:15px;font-weight:500;cursor:pointer;line-height:1;white-space:nowrap;${GLASS}`;
+  const base = `display:inline-flex;align-items:center;justify-content:center;font-family:${SF_FONT};font-size:15px;font-weight:500;cursor:pointer;line-height:1;white-space:nowrap;${GLASS_CSS}`;
   return wrap(t, `
     <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;">
       <div style="display:flex;gap:10px;align-items:center;">
@@ -868,9 +647,9 @@ function glassButton(t: ThemeTokens): string {
 
 function glassInput(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:260px;display:flex;flex-direction:column;gap:8px;font-family:${SF};">
+    <div style="width:260px;display:flex;flex-direction:column;gap:8px;font-family:${SF_FONT};">
       <label style="font-size:13px;font-weight:500;color:rgba(255,255,255,0.85);">Search</label>
-      <div style="height:44px;padding:0 14px;font-size:15px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;gap:8px;${GLASS}">
+      <div style="height:44px;padding:0 14px;font-size:15px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.45);border:1px solid rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;gap:8px;${GLASS_CSS}">
         <span style="font-size:14px;color:rgba(255,255,255,0.4);">&#128269;</span>
         Search…
       </div>
@@ -881,75 +660,30 @@ function glassInput(t: ThemeTokens): string {
 
 function glassCard(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:280px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:22px;overflow:hidden;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 8px 32px rgba(0,0,0,0.15);">
+    <div style="width:280px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:22px;overflow:hidden;font-family:${SF_FONT};${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 8px 32px rgba(0,0,0,0.15);">
       <div style="padding:22px;">
         <div style="font-size:17px;font-weight:600;color:#ffffff;letter-spacing:-0.02em;margin-bottom:6px;">Control Center</div>
         <div style="font-size:14px;color:rgba(255,255,255,0.6);line-height:1.45;margin-bottom:18px;">Customize your quick actions and widgets.</div>
         <div style="display:flex;gap:10px;">
-          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:14px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">Customize</button>
-          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(0,122,255,0.55);color:#ffffff;border:none;font-size:14px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">Done</button>
+          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(255,255,255,0.22);color:#ffffff;border:1px solid rgba(255,255,255,0.2);font-size:14px;font-weight:500;cursor:pointer;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">Customize</button>
+          <button style="height:36px;padding:0 18px;border-radius:18px;background:rgba(0,122,255,0.55);color:#ffffff;border:none;font-size:14px;font-weight:500;cursor:pointer;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);">Done</button>
         </div>
       </div>
     </div>
   `);
-}
-
-function glassSwitch(t: ThemeTokens): string {
-  const sw = (label: string, on: boolean) => `
-    <label style="display:flex;align-items:center;gap:12px;font-size:15px;color:#ffffff;cursor:pointer;font-family:${SF};">
-      <span style="width:51px;height:31px;border-radius:16px;background:${on ? 'rgba(52,199,89,0.85)' : 'rgba(255,255,255,0.15)'};position:relative;display:inline-block;${GLASS}border:1px solid ${on ? 'rgba(52,199,89,0.35)' : 'rgba(255,255,255,0.12)'};box-shadow:inset 0 1px 0 ${on ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.06)'};">
-        <span style="position:absolute;top:2px;left:${on ? '22px' : '2px'};width:27px;height:27px;border-radius:14px;background:rgba(255,255,255,0.97);box-shadow:0 2px 8px rgba(0,0,0,0.22),inset 0 -1px 2px rgba(0,0,0,0.06);transition:left .2s;"></span>
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:16px;">${sw('Wi-Fi', true)}${sw('Airplane Mode', false)}</div>`);
-}
-
-function glassBadge(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;gap:8px;flex-wrap:wrap;font-family:${SF};">
-      <span style="padding:4px 12px;font-size:13px;font-weight:500;background:rgba(0,122,255,0.5);color:#ffffff;border-radius:14px;${GLASS}border:1px solid rgba(0,122,255,0.3);">Active</span>
-      <span style="padding:4px 12px;font-size:13px;font-weight:500;background:rgba(52,199,89,0.5);color:#ffffff;border-radius:14px;${GLASS}border:1px solid rgba(52,199,89,0.3);">Connected</span>
-      <span style="padding:4px 12px;font-size:13px;font-weight:500;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);border-radius:14px;${GLASS}border:1px solid rgba(255,255,255,0.12);">Paused</span>
-      <span style="padding:4px 12px;font-size:13px;font-weight:500;background:rgba(255,69,58,0.5);color:#ffffff;border-radius:14px;${GLASS}border:1px solid rgba(255,69,58,0.3);">Error</span>
-    </div>
-  `);
-}
-
-function glassCheckbox(t: ThemeTokens): string {
-  const item = (label: string, checked: boolean) => `
-    <label style="display:flex;align-items:center;gap:10px;font-size:15px;color:#ffffff;cursor:pointer;font-family:${SF};">
-      <span style="width:22px;height:22px;border-radius:6px;border:${checked ? 'none' : '1.5px solid rgba(255,255,255,0.3)'};background:${checked ? 'rgba(0,122,255,0.7)' : 'rgba(255,255,255,0.1)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;${GLASS}">
-        ${checked ? '<span style="color:#ffffff;font-size:14px;font-weight:bold;">&#10003;</span>' : ''}
-      </span>
-      ${escapeHTML(label)}
-    </label>`;
-  return wrap(t, `<div style="display:flex;flex-direction:column;gap:14px;">${item('Enable notifications', true)}${item('Allow Siri suggestions', false)}</div>`);
 }
 
 function glassDialog(t: ThemeTokens): string {
   return wrap(t, `
     <div style="position:relative;width:300px;">
       <div style="position:absolute;inset:-16px;background:rgba(0,0,0,0.45);border-radius:30px;"></div>
-      <div style="position:relative;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.2);border-radius:26px;padding:28px 24px 24px;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 12px 40px rgba(0,0,0,0.2);">
+      <div style="position:relative;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.2);border-radius:26px;padding:28px 24px 24px;font-family:${SF_FONT};${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 12px 40px rgba(0,0,0,0.2);">
         <div style="font-size:17px;font-weight:600;color:#ffffff;letter-spacing:-0.02em;margin-bottom:6px;text-align:center;">Remove Widget?</div>
         <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-bottom:22px;text-align:center;line-height:1.4;">This widget will be removed from your Control Center.</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,59,48,0.6);color:#ffffff;border:none;font-size:17px;font-weight:600;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Remove</button>
-          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-size:17px;font-weight:500;cursor:pointer;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Cancel</button>
+          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,59,48,0.6);color:#ffffff;border:none;font-size:17px;font-weight:600;cursor:pointer;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Remove</button>
+          <button style="height:50px;padding:0 20px;border-radius:14px;background:rgba(255,255,255,0.18);color:#ffffff;border:1px solid rgba(255,255,255,0.15);font-size:17px;font-weight:500;cursor:pointer;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">Cancel</button>
         </div>
-      </div>
-    </div>
-  `);
-}
-
-function glassSelect(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="width:240px;font-family:${SF};">
-      <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:rgba(255,255,255,0.85);">Focus Mode</label>
-      <div style="height:44px;padding:0 14px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:space-between;color:#ffffff;font-size:15px;${GLASS}">
-        <span>Do Not Disturb</span>
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);">&#9660;</span>
       </div>
     </div>
   `);
@@ -957,12 +691,12 @@ function glassSelect(t: ThemeTokens): string {
 
 function glassTabs(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:280px;font-family:${SF};">
-      <div style="display:inline-flex;background:rgba(255,255,255,0.12);border-radius:22px;padding:3px;gap:2px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+    <div style="width:280px;font-family:${SF_FONT};">
+      <div style="display:inline-flex;background:rgba(255,255,255,0.12);border-radius:22px;padding:3px;gap:2px;margin-bottom:14px;border:1px solid rgba(255,255,255,0.1);${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
         <span style="padding:8px 18px;font-size:14px;font-weight:600;background:rgba(255,255,255,0.22);color:#ffffff;border-radius:20px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">Controls</span>
         <span style="padding:8px 18px;font-size:14px;font-weight:400;color:rgba(255,255,255,0.55);border-radius:20px;">Widgets</span>
       </div>
-      <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
+      <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:18px;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);">
         <div style="font-size:15px;font-weight:500;color:#ffffff;letter-spacing:-0.01em;margin-bottom:4px;">Quick Controls</div>
         <div style="font-size:13px;color:rgba(255,255,255,0.55);line-height:1.45;">Manage your frequently used controls.</div>
       </div>
@@ -970,28 +704,11 @@ function glassTabs(t: ThemeTokens): string {
   `);
 }
 
-function glassTable(t: ThemeTokens): string {
-  const th = `padding:14px 16px;font-size:12px;font-weight:500;text-align:left;color:rgba(255,255,255,0.5);border-bottom:1px solid rgba(255,255,255,0.1);letter-spacing:0.02em;`;
-  const td = `padding:14px 16px;font-size:15px;color:#ffffff;border-bottom:1px solid rgba(255,255,255,0.06);`;
-  return wrap(t, `
-    <div style="width:288px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:18px;overflow:hidden;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead><tr><th style="${th}">Device</th><th style="${th}">Status</th><th style="${th}">Battery</th></tr></thead>
-        <tbody>
-          <tr><td style="${td}">iPhone</td><td style="${td}"><span style="color:#34C759;">&#9679;</span> Active</td><td style="${td}">87%</td></tr>
-          <tr><td style="${td}">iPad</td><td style="${td}"><span style="color:#FFD60A;">&#9679;</span> Idle</td><td style="${td}">62%</td></tr>
-          <tr><td style="${td};border-bottom:none;">Mac</td><td style="${td};border-bottom:none;"><span style="color:#34C759;">&#9679;</span> Active</td><td style="${td};border-bottom:none;">100%</td></tr>
-        </tbody>
-      </table>
-    </div>
-  `);
-}
-
 function glassAlert(t: ThemeTokens): string {
   return wrap(t, `
-    <div style="width:280px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:18px;padding:18px;font-family:${SF};${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 8px 32px rgba(0,0,0,0.12);">
+    <div style="width:280px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:18px;padding:18px;font-family:${SF_FONT};${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.1),0 8px 32px rgba(0,0,0,0.12);">
       <div style="display:flex;gap:12px;align-items:flex-start;">
-        <span style="width:30px;height:30px;border-radius:10px;background:rgba(0,122,255,0.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;color:#ffffff;${GLASS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">&#9432;</span>
+        <span style="width:30px;height:30px;border-radius:10px;background:rgba(0,122,255,0.5);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px;color:#ffffff;${GLASS_CSS}box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);">&#9432;</span>
         <div style="padding-top:2px;">
           <div style="font-size:15px;font-weight:600;color:#ffffff;letter-spacing:-0.01em;margin-bottom:3px;">Software Update</div>
           <div style="font-size:13px;color:rgba(255,255,255,0.6);line-height:1.45;">iOS 26.1 is now available for your device.</div>
@@ -999,34 +716,6 @@ function glassAlert(t: ThemeTokens): string {
       </div>
     </div>
   `);
-}
-
-function glassAvatar(t: ThemeTokens): string {
-  return wrap(t, `
-    <div style="display:flex;align-items:center;gap:10px;font-family:${SF};">
-      <div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,rgba(0,122,255,0.6),rgba(175,82,222,0.6));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#ffffff;border:1px solid rgba(255,255,255,0.2);${GLASS}">JD</div>
-      <div style="width:44px;height:44px;border-radius:22px;background:linear-gradient(135deg,rgba(255,149,0,0.6),rgba(255,69,58,0.6));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#ffffff;border:1px solid rgba(255,255,255,0.2);${GLASS}">AK</div>
-      <div style="width:44px;height:44px;border-radius:22px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.12);${GLASS}">SM</div>
-    </div>
-  `);
-}
-
-function glassAccordion(t: ThemeTokens): string {
-  const items = [
-    { title: 'Connectivity', content: 'Wi-Fi, Bluetooth, AirDrop, Cellular.', open: true },
-    { title: 'Display & Brightness', content: '', open: false },
-    { title: 'Sound & Haptics', content: '', open: false },
-  ];
-  const els = items.map(i => `
-    <div style="border-bottom:1px solid rgba(255,255,255,0.08);">
-      <div style="padding:14px 0;font-size:15px;font-weight:500;display:flex;justify-content:space-between;align-items:center;cursor:pointer;color:#ffffff;">
-        ${escapeHTML(i.title)}
-        <span style="font-size:10px;color:rgba(255,255,255,0.4);transform:rotate(${i.open ? '180' : '0'}deg);">&#9660;</span>
-      </div>
-      ${i.open ? `<div style="padding-bottom:14px;font-size:14px;color:rgba(255,255,255,0.55);">${escapeHTML(i.content)}</div>` : ''}
-    </div>
-  `).join('');
-  return wrap(t, `<div style="width:280px;font-family:${SF};">${els}</div>`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1750,75 +1439,270 @@ function renderGeneric(t: ThemeTokens, componentName: string, category: string |
    Library override registry
    ═══════════════════════════════════════════════════════════ */
 
+/* ═══════════════════════════════════════════════════════════
+   Library override registry
+   ═══════════════════════════════════════════════════════════ */
+
 type ComponentRenderers = Partial<Record<string, Renderer>>;
+
+/* ─── Factory-based renderers (from DNA configs) ────────── */
+
+const _shadcnSwitch: Renderer = (t) => buildSwitch(t, "'Inter',-apple-system,sans-serif", '#fafafa',
+  [{label:'Airplane Mode',on:true},{label:'Bluetooth',on:false}], 44, 24, 20, 2, '#fafafa', '#27272a',
+  { tOnBg:'#09090b', tOffBg:'#a1a1aa', gap:14, igap:10 });
+
+const _shadcnCheckbox: Renderer = (t) => buildCheckbox(t, "'Inter',-apple-system,sans-serif", '#fafafa',
+  [{label:'Accept terms and conditions',checked:true},{label:'Send notifications',checked:false}],
+  16, '4px', '#fafafa', '#09090b', '11px', '1px solid #27272a');
+
+const _shadcnBadge: Renderer = (t) => buildBadge(t, "'Inter',-apple-system,sans-serif",
+  [{label:'Default',bg:'#fafafa',color:'#09090b'},{label:'Secondary',bg:'#27272a',color:'#fafafa'},
+   {label:'Destructive',bg:'#ef4444',color:'#fafafa'},{label:'Outline',bg:'transparent',color:'#fafafa',border:'1px solid #27272a'}]);
+
+const _shadcnAvatar: Renderer = (t) => buildAvatar(t, "'Inter',-apple-system,sans-serif",
+  [{initials:'CN',bg:'#27272a',color:'#fafafa'},{initials:'JD',bg:'#3f3f46',color:'#fafafa'},
+   {initials:'AB',bg:'#fafafa',color:'#09090b'}], {gap:12});
+
+const _shadcnSelect: Renderer = (t) => buildSelect(t, "'Inter',-apple-system,sans-serif",
+  'Framework', 'Select framework\u2026', '#fafafa', '#a1a1aa', '#09090b', '#27272a', '6px');
+
+const _shadcnTable: Renderer = (t) => buildTable(t, "'Inter',-apple-system,sans-serif",
+  [{name:'Alice',statusHTML:'<span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Active</span>',role:'Admin'},
+   {name:'Bob',statusHTML:'<span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Inactive</span>',role:'Editor'},
+   {name:'Carol',statusHTML:'<span style="padding:2px 8px;background:#27272a;border-radius:9999px;font-size:11px;">Active</span>',role:'Viewer'}],
+  '#a1a1aa', '#fafafa', '#27272a', '#27272a', '8px');
+
+const _shadcnAccordion: Renderer = (t) => buildAccordion(t, "'Inter',-apple-system,sans-serif",
+  [{title:'Is it accessible?',content:'Yes. It adheres to the WAI-ARIA design pattern.',open:true},
+   {title:'Is it styled?',content:'',open:false},{title:'Is it animated?',content:'',open:false}],
+  '#fafafa', '#a1a1aa', '#27272a');
+
+const _materialSwitch: Renderer = (t) => buildSwitch(t, "'Roboto',sans-serif", '#212121',
+  [{label:'Wi-Fi',on:true},{label:'Bluetooth',on:false}], 52, 32, 24, 4, '#1976d2', '#e0e0e0',
+  { tShadow:'0 1px 3px rgba(0,0,0,0.3)', gap:16, igap:12 });
+
+const _materialCheckbox: Renderer = (t) => buildCheckbox(t, "'Roboto',sans-serif", '#212121',
+  [{label:'Label',checked:true},{label:'Label',checked:false},{label:'Label',checked:false}],
+  18, '2px', '#1976d2', '#ffffff', '13px', '2px solid #757575', { bold:true, gap:14, igap:12 });
+
+const _materialBadge: Renderer = (t) => buildBadge(t, "'Roboto',sans-serif",
+  [{label:'Assist',bg:'#e8def8',color:'#1d192b'},{label:'Filter',bg:'transparent',color:'#212121',border:'1px solid #bdbdbd'},
+   {label:'Selected \u2715',bg:'#1976d2',color:'#ffffff'},{label:'Suggestion',bg:'#e8def8',color:'#1d192b'}],
+  { gap:10, fs:13, fw:500, rad:'8px', pad:'0 12px', h:'32px' });
+
+const _materialAvatar: Renderer = (t) => buildAvatar(t, "'Roboto',sans-serif",
+  [{initials:'A',bg:'#1976d2',color:'#ffffff'},{initials:'B',bg:'#9c27b0',color:'#ffffff'},
+   {initials:'C',bg:'#e0e0e0',color:'#757575'}]);
+
+const _materialSelect: Renderer = (t) => buildSelect(t, "'Roboto',sans-serif",
+  'Framework', 'React', '#212121', '#757575', 'transparent', '#bdbdbd', '4px',
+  { float:true, floatBg:'#fafafa', arrowCol:'#757575' });
+
+const _materialTable: Renderer = (t) => buildTable(t, "'Roboto',sans-serif",
+  [{name:'Alice',statusHTML:'Active',role:'Admin'},{name:'Bob',statusHTML:'Inactive',role:'Editor'},
+   {name:'Carol',statusHTML:'Active',role:'Viewer'}],
+  '#757575', '#212121', '#e0e0e0', '#f5f5f5', '4px',
+  { bg:'#ffffff', shadow:'0 2px 1px -1px rgba(0,0,0,0.2),0 1px 1px rgba(0,0,0,0.14),0 1px 3px rgba(0,0,0,0.12)',
+    cBorder:'none', tdFs:14, thPad:'12px 16px', tdPad:'12px 16px' });
+
+const _materialAccordion: Renderer = (t) => buildAccordion(t, "'Roboto',sans-serif",
+  [{title:'General settings',content:'Configure your general preferences here.',open:true},
+   {title:'Privacy',content:'',open:false},{title:'Notifications',content:'',open:false}],
+  '#212121', '#757575', 'transparent',
+  { fw:400, padding:'14px 16px', xItem:'background:#ffffff;box-shadow:0 1px 2px rgba(0,0,0,0.1);' });
+
+const _radixSwitch: Renderer = (t) => buildSwitch(t, "'Inter',sans-serif", '#eeeef0',
+  [{label:'Dark mode',on:true},{label:'Notifications',on:false}], 42, 24, 20, 2, '#3e63dd', '#2b2c2f',
+  { tShadow:'0 1px 2px rgba(0,0,0,0.3)', gap:14, igap:10 });
+
+const _radixCheckbox: Renderer = (t) => buildCheckbox(t, "'Inter',sans-serif", '#eeeef0',
+  [{label:'Accept terms',checked:true},{label:'Marketing emails',checked:false}],
+  16, '4px', '#3e63dd', '#ffffff', '11px', '1px solid #2b2c2f');
+
+const _radixBadge: Renderer = (t) => buildBadge(t, "'Inter',sans-serif",
+  [{label:'Default',bg:'#3e63dd',color:'#ffffff'},{label:'Soft',bg:'#1b2677',color:'#bec5f9'},
+   {label:'Outline',bg:'transparent',color:'#8da4ef',border:'1px solid #2b3a8e'},{label:'Error',bg:'#e5484d',color:'#ffffff'}],
+  { pad:'2px 8px', fw:500 });
+
+const _radixAvatar: Renderer = (t) => buildAvatar(t, "'Inter',sans-serif",
+  [{initials:'AB',bg:'#3e63dd',color:'#ffffff',rad:'9999px'},{initials:'CD',bg:'#7c66dc',color:'#ffffff',rad:'9999px'},
+   {initials:'EF',bg:'#2b2c2f',color:'#9b9ba7',rad:'9999px'}]);
+
+const _radixSelect: Renderer = (t) => buildSelect(t, "'Inter',sans-serif",
+  'Theme', 'Dark', '#eeeef0', '#9b9ba7', '#111113', '#2b2c2f', '6px');
+
+const _radixTable: Renderer = (t) => buildTable(t, "'Inter',sans-serif",
+  [{name:'Alice',statusHTML:'<span style="color:#30a46c;">Active</span>',role:'Admin'},
+   {name:'Bob',statusHTML:'<span style="color:#9b9ba7;">Inactive</span>',role:'Editor'},
+   {name:'Carol',statusHTML:'<span style="color:#30a46c;">Active</span>',role:'Viewer'}],
+  '#9b9ba7', '#eeeef0', '#2b2c2f', '#2b2c2f', '10px');
+
+const _radixAccordion: Renderer = (t) => buildAccordion(t, "'Inter',sans-serif",
+  [{title:'Accessible',content:'Full keyboard navigation and screen reader support.',open:true},
+   {title:'Unstyled',content:'',open:false},{title:'Composable',content:'',open:false}],
+  '#eeeef0', '#9b9ba7', '#2b2c2f');
+
+const _fluentSwitch: Renderer = (t) => buildSwitch(t, "'Segoe UI',sans-serif", '#242424',
+  [{label:'Enable feature',on:true},{label:'Dark mode',on:false}], 40, 20, 16, 1, '#0078d4', '#8a8886',
+  { bOn:'1px solid #0078d4', bOff:'1px solid #8a8886', gap:14, igap:12 });
+
+const _fluentCheckbox: Renderer = (t) => buildCheckbox(t, "'Segoe UI',sans-serif", '#242424',
+  [{label:'Option A',checked:true},{label:'Option B',checked:false},{label:'Option C',checked:false}],
+  16, '2px', '#0078d4', '#ffffff', '11px', '1px solid #8a8886', { uBg:'#ffffff', bold:true, gap:12 });
+
+const _fluentBadge: Renderer = (t) => buildBadge(t, "'Segoe UI',sans-serif",
+  [{label:'Brand',bg:'#0078d4',color:'#ffffff'},{label:'Danger',bg:'#d13438',color:'#ffffff'},
+   {label:'Success',bg:'#107c10',color:'#ffffff'},{label:'Warning',bg:'#ffb900',color:'#242424'},
+   {label:'Subtle',bg:'#f5f5f5',color:'#242424'}], { gap:8 });
+
+const _fluentAvatar: Renderer = (t) => buildAvatar(t, "'Segoe UI',sans-serif",
+  [{initials:'KM',bg:'#0078d4',color:'#ffffff',dot:{color:'#107c10'}},
+   {initials:'TP',bg:'#8764b8',color:'#ffffff',dot:{color:'#ffb900'}},
+   {initials:'JD',bg:'#f5f5f5',color:'#707070'}]);
+
+const _fluentSelect: Renderer = (t) => buildSelect(t, "'Segoe UI',sans-serif",
+  'Color', 'Blue', '#242424', '#707070', '#ffffff', '#d1d1d1', '4px',
+  { h:32, pad:'0 10px', lfw:600, xInput:'border-bottom:2px solid transparent;' });
+
+const _fluentTable: Renderer = (t) => buildTable(t, "'Segoe UI',sans-serif",
+  [{name:'Alice',statusHTML:'<span style="color:#107c10;">\u25CF</span> Active',role:'Admin'},
+   {name:'Bob',statusHTML:'<span style="color:#8a8886;">\u25CF</span> Away',role:'Editor'},
+   {name:'Carol',statusHTML:'<span style="color:#107c10;">\u25CF</span> Active',role:'Viewer'}],
+  '#707070', '#242424', '#e0e0e0', '#f5f5f5', '4px',
+  { bg:'#ffffff', shadow:'0 2px 4px rgba(0,0,0,0.14),0 0 2px rgba(0,0,0,0.12)',
+    cBorder:'none', thFw:600, tdFs:14 });
+
+const _fluentAccordion: Renderer = (t) => buildAccordion(t, "'Segoe UI',sans-serif",
+  [{title:'Accordion Header 1',content:'Accordion panel content.',open:true},
+   {title:'Accordion Header 2',content:'',open:false},{title:'Accordion Header 3',content:'',open:false}],
+  '#242424', '#707070', '#e0e0e0', { fw:600, padding:'12px 0' });
+
+const _glassSwitch: Renderer = (t) => buildSwitch(t, SF_FONT, '#ffffff',
+  [{label:'Wi-Fi',on:true},{label:'Airplane Mode',on:false}], 51, 31, 27, 2,
+  'rgba(52,199,89,0.85)', 'rgba(255,255,255,0.15)',
+  { tShadow:'0 2px 8px rgba(0,0,0,0.22),inset 0 -1px 2px rgba(0,0,0,0.06)', fs:15, gap:16, igap:12,
+    bOn:'1px solid rgba(52,199,89,0.35)', bOff:'1px solid rgba(255,255,255,0.12)',
+    xOn:GLASS_CSS+'box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);',
+    xOff:GLASS_CSS+'box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);' });
+
+const _glassCheckbox: Renderer = (t) => buildCheckbox(t, SF_FONT, '#ffffff',
+  [{label:'Enable notifications',checked:true},{label:'Allow Siri suggestions',checked:false}],
+  22, '6px', 'rgba(0,122,255,0.7)', '#ffffff', '14px', '1.5px solid rgba(255,255,255,0.3)',
+  { uBg:'rgba(255,255,255,0.1)', bold:true, gap:14, igap:10, fs:15, xBox:GLASS_CSS });
+
+const _glassBadge: Renderer = (t) => buildBadge(t, SF_FONT,
+  [{label:'Active',bg:'rgba(0,122,255,0.5)',color:'#ffffff',border:'1px solid rgba(0,122,255,0.3)',xCSS:GLASS_CSS},
+   {label:'Connected',bg:'rgba(52,199,89,0.5)',color:'#ffffff',border:'1px solid rgba(52,199,89,0.3)',xCSS:GLASS_CSS},
+   {label:'Paused',bg:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.85)',border:'1px solid rgba(255,255,255,0.12)',xCSS:GLASS_CSS},
+   {label:'Error',bg:'rgba(255,69,58,0.5)',color:'#ffffff',border:'1px solid rgba(255,69,58,0.3)',xCSS:GLASS_CSS}],
+  { gap:8, fs:13, fw:500, rad:'14px', pad:'4px 12px' });
+
+const _glassAvatar: Renderer = (t) => buildAvatar(t, SF_FONT,
+  [{initials:'JD',bg:'linear-gradient(135deg,rgba(0,122,255,0.6),rgba(175,82,222,0.6))',color:'#ffffff',
+    sz:44,rad:'22px',border:'1px solid rgba(255,255,255,0.2)',xCSS:GLASS_CSS},
+   {initials:'AK',bg:'linear-gradient(135deg,rgba(255,149,0,0.6),rgba(255,69,58,0.6))',color:'#ffffff',
+    sz:44,rad:'22px',border:'1px solid rgba(255,255,255,0.2)',xCSS:GLASS_CSS},
+   {initials:'SM',bg:'rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',
+    sz:44,rad:'22px',border:'1px solid rgba(255,255,255,0.12)',xCSS:GLASS_CSS}]);
+
+const _glassSelect: Renderer = (t) => buildSelect(t, SF_FONT,
+  'Focus Mode', 'Do Not Disturb', 'rgba(255,255,255,0.85)', 'rgba(255,255,255,0.45)',
+  'rgba(255,255,255,0.12)', 'rgba(255,255,255,0.15)', '12px',
+  { h:44, pad:'0 14px', lfs:13, fs:15, xInput:GLASS_CSS });
+
+const _glassTable: Renderer = (t) => buildTable(t, SF_FONT,
+  [{name:'iPhone',statusHTML:'<span style="color:#34C759;">&#9679;</span> Active',role:'87%'},
+   {name:'iPad',statusHTML:'<span style="color:#FFD60A;">&#9679;</span> Idle',role:'62%'},
+   {name:'Mac',statusHTML:'<span style="color:#34C759;">&#9679;</span> Active',role:'100%'}],
+  'rgba(255,255,255,0.5)', '#ffffff', 'rgba(255,255,255,0.1)', 'rgba(255,255,255,0.06)', '18px',
+  { bg:'rgba(255,255,255,0.12)', cBorder:'1px solid rgba(255,255,255,0.15)', tdFs:15,
+    thPad:'14px 16px', tdPad:'14px 16px', xCSS:GLASS_CSS+'box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);' });
+
+const _glassAccordion: Renderer = (t) => buildAccordion(t, SF_FONT,
+  [{title:'Connectivity',content:'Wi-Fi, Bluetooth, AirDrop, Cellular.',open:true},
+   {title:'Display & Brightness',content:'',open:false},{title:'Sound & Haptics',content:'',open:false}],
+  '#ffffff', 'rgba(255,255,255,0.4)', 'rgba(255,255,255,0.08)', { fs:15 });
+
+/* ─── Alias helper ──────────────────────────────────────── */
+function aliasAll(r: Renderer, keys: string[]): Record<string, Renderer> {
+  const m: Record<string, Renderer> = {};
+  for (const k of keys) m[k] = r;
+  return m;
+}
 
 const LIBRARY_OVERRIDES: Record<string, ComponentRenderers> = {
   'shadcn/ui': {
     button: shadcnButton, input: shadcnInput, 'text input': shadcnInput, 'text field': shadcnInput,
     card: shadcnCard, tile: shadcnCard,
     dialog: shadcnDialog, modal: shadcnDialog, popup: shadcnDialog, 'modal window': shadcnDialog,
-    switch: shadcnSwitch, toggle: shadcnSwitch, lightswitch: shadcnSwitch, 'toggle button': shadcnSwitch,
-    badge: shadcnBadge, tag: shadcnBadge, chip: shadcnBadge, label: shadcnBadge,
-    checkbox: shadcnCheckbox,
-    select: shadcnSelect, dropdown: shadcnSelect, 'dropdown menu': shadcnSelect, 'select input': shadcnSelect, 'select menu': shadcnSelect,
+    ...aliasAll(_shadcnSwitch, ['switch','toggle','lightswitch','toggle button']),
+    ...aliasAll(_shadcnBadge, ['badge','tag','chip','label']),
+    checkbox: _shadcnCheckbox,
+    ...aliasAll(_shadcnSelect, ['select','dropdown','dropdown menu','select input','select menu']),
     tabs: shadcnTabs, 'tabbed interface': shadcnTabs,
-    table: shadcnTable, 'data table': shadcnTable, 'data grid': shadcnTable,
-    alert: shadcnAlert, notification: shadcnAlert, toast: shadcnAlert, snackbar: shadcnAlert, banner: shadcnAlert, callout: shadcnAlert, feedback: shadcnAlert, message: shadcnAlert,
-    avatar: shadcnAvatar, accordion: shadcnAccordion, collapse: shadcnAccordion, collapsible: shadcnAccordion, disclosure: shadcnAccordion, expandable: shadcnAccordion, expander: shadcnAccordion, details: shadcnAccordion,
+    ...aliasAll(_shadcnTable, ['table','data table','data grid']),
+    ...aliasAll(shadcnAlert, ['alert','notification','toast','snackbar','banner','callout','feedback','message']),
+    avatar: _shadcnAvatar,
+    ...aliasAll(_shadcnAccordion, ['accordion','collapse','collapsible','disclosure','expandable','expander','details']),
   },
   'material ui 3': {
     button: materialButton, input: materialInput, 'text input': materialInput, 'text field': materialInput,
     card: materialCard, tile: materialCard,
     dialog: materialDialog, modal: materialDialog, popup: materialDialog, 'modal window': materialDialog,
-    switch: materialSwitch, toggle: materialSwitch, lightswitch: materialSwitch, 'toggle button': materialSwitch,
-    badge: materialBadge, tag: materialBadge, chip: materialBadge,
-    checkbox: materialCheckbox,
-    select: materialSelect, dropdown: materialSelect, 'dropdown menu': materialSelect, 'select input': materialSelect, 'select menu': materialSelect,
+    ...aliasAll(_materialSwitch, ['switch','toggle','lightswitch','toggle button']),
+    ...aliasAll(_materialBadge, ['badge','tag','chip']),
+    checkbox: _materialCheckbox,
+    ...aliasAll(_materialSelect, ['select','dropdown','dropdown menu','select input','select menu']),
     tabs: materialTabs, 'tabbed interface': materialTabs,
-    table: materialTable, 'data table': materialTable, 'data grid': materialTable,
-    alert: materialAlert, notification: materialAlert, toast: materialAlert, snackbar: materialAlert, banner: materialAlert, callout: materialAlert, feedback: materialAlert, message: materialAlert,
-    avatar: materialAvatar, accordion: materialAccordion, collapse: materialAccordion, collapsible: materialAccordion, disclosure: materialAccordion, expandable: materialAccordion, expander: materialAccordion, details: materialAccordion,
+    ...aliasAll(_materialTable, ['table','data table','data grid']),
+    ...aliasAll(materialAlert, ['alert','notification','toast','snackbar','banner','callout','feedback','message']),
+    avatar: _materialAvatar,
+    ...aliasAll(_materialAccordion, ['accordion','collapse','collapsible','disclosure','expandable','expander','details']),
   },
   'radix ui': {
     button: radixButton, input: radixInput, 'text input': radixInput, 'text field': radixInput,
     card: radixCard, tile: radixCard,
     dialog: radixDialog, modal: radixDialog, popup: radixDialog, 'modal window': radixDialog,
-    switch: radixSwitch, toggle: radixSwitch, lightswitch: radixSwitch, 'toggle button': radixSwitch,
-    badge: radixBadge, tag: radixBadge, chip: radixBadge,
-    checkbox: radixCheckbox,
-    select: radixSelect, dropdown: radixSelect, 'dropdown menu': radixSelect, 'select input': radixSelect, 'select menu': radixSelect,
+    ...aliasAll(_radixSwitch, ['switch','toggle','lightswitch','toggle button']),
+    ...aliasAll(_radixBadge, ['badge','tag','chip']),
+    checkbox: _radixCheckbox,
+    ...aliasAll(_radixSelect, ['select','dropdown','dropdown menu','select input','select menu']),
     tabs: radixTabs, 'tabbed interface': radixTabs,
-    table: radixTable, 'data table': radixTable, 'data grid': radixTable,
-    alert: radixAlert, notification: radixAlert, toast: radixAlert, snackbar: radixAlert, banner: radixAlert, callout: radixAlert, feedback: radixAlert, message: radixAlert,
-    avatar: radixAvatar, accordion: radixAccordion, collapse: radixAccordion, collapsible: radixAccordion, disclosure: radixAccordion, expandable: radixAccordion, expander: radixAccordion, details: radixAccordion,
+    ...aliasAll(_radixTable, ['table','data table','data grid']),
+    ...aliasAll(radixAlert, ['alert','notification','toast','snackbar','banner','callout','feedback','message']),
+    avatar: _radixAvatar,
+    ...aliasAll(_radixAccordion, ['accordion','collapse','collapsible','disclosure','expandable','expander','details']),
   },
   'fluent ui': {
     button: fluentButton, input: fluentInput, 'text input': fluentInput, 'text field': fluentInput,
     card: fluentCard, tile: fluentCard,
     dialog: fluentDialog, modal: fluentDialog, popup: fluentDialog, 'modal window': fluentDialog,
-    switch: fluentSwitch, toggle: fluentSwitch, lightswitch: fluentSwitch, 'toggle button': fluentSwitch,
-    badge: fluentBadge, tag: fluentBadge, chip: fluentBadge,
-    checkbox: fluentCheckbox,
-    select: fluentSelect, dropdown: fluentSelect, 'dropdown menu': fluentSelect, 'select input': fluentSelect, 'select menu': fluentSelect,
+    ...aliasAll(_fluentSwitch, ['switch','toggle','lightswitch','toggle button']),
+    ...aliasAll(_fluentBadge, ['badge','tag','chip']),
+    checkbox: _fluentCheckbox,
+    ...aliasAll(_fluentSelect, ['select','dropdown','dropdown menu','select input','select menu']),
     tabs: fluentTabs, 'tabbed interface': fluentTabs,
-    table: fluentTable, 'data table': fluentTable, 'data grid': fluentTable,
-    alert: fluentAlert, notification: fluentAlert, toast: fluentAlert, snackbar: fluentAlert, banner: fluentAlert, callout: fluentAlert, feedback: fluentAlert, 'message bar': fluentAlert,
-    avatar: fluentAvatar, accordion: fluentAccordion, collapse: fluentAccordion, collapsible: fluentAccordion, disclosure: fluentAccordion, expandable: fluentAccordion, expander: fluentAccordion, details: fluentAccordion,
+    ...aliasAll(_fluentTable, ['table','data table','data grid']),
+    ...aliasAll(fluentAlert, ['alert','notification','toast','snackbar','banner','callout','feedback','message','message bar']),
+    avatar: _fluentAvatar,
+    ...aliasAll(_fluentAccordion, ['accordion','collapse','collapsible','disclosure','expandable','expander','details']),
   },
   'apple liquid glass': {
     button: glassButton, input: glassInput, 'text input': glassInput, 'text field': glassInput,
     card: glassCard, tile: glassCard,
     dialog: glassDialog, modal: glassDialog, popup: glassDialog, 'modal window': glassDialog, sheet: glassDialog,
-    switch: glassSwitch, toggle: glassSwitch, lightswitch: glassSwitch, 'toggle button': glassSwitch,
-    badge: glassBadge, tag: glassBadge, chip: glassBadge,
-    checkbox: glassCheckbox,
-    select: glassSelect, dropdown: glassSelect, 'dropdown menu': glassSelect, 'select input': glassSelect, 'select menu': glassSelect, picker: glassSelect,
+    ...aliasAll(_glassSwitch, ['switch','toggle','lightswitch','toggle button']),
+    ...aliasAll(_glassBadge, ['badge','tag','chip']),
+    checkbox: _glassCheckbox,
+    ...aliasAll(_glassSelect, ['select','dropdown','dropdown menu','select input','select menu','picker']),
     tabs: glassTabs, 'tabbed interface': glassTabs, 'segmented control': glassTabs, 'toggle button group': glassTabs,
-    table: glassTable, 'data table': glassTable, 'data grid': glassTable,
-    alert: glassAlert, notification: glassAlert, toast: glassAlert, snackbar: glassAlert, banner: glassAlert, callout: glassAlert, feedback: glassAlert,
-    avatar: glassAvatar, accordion: glassAccordion, collapse: glassAccordion, collapsible: glassAccordion, disclosure: glassAccordion, expandable: glassAccordion, expander: glassAccordion, details: glassAccordion,
+    ...aliasAll(_glassTable, ['table','data table','data grid']),
+    ...aliasAll(glassAlert, ['alert','notification','toast','snackbar','banner','callout','feedback']),
+    avatar: _glassAvatar,
+    ...aliasAll(_glassAccordion, ['accordion','collapse','collapsible','disclosure','expandable','expander','details']),
   },
 };
+
 
 /* ─── Library name normalization ────────────────────────── */
 
