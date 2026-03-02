@@ -252,12 +252,12 @@ The pattern: subagents handle *leaf* files with well-defined interfaces. The orc
 
 ## Things to revisit
 
-- **Undo coalescing** — debounce or transaction boundaries for drag mutations
+- ~~**Undo coalescing** — debounce or transaction boundaries for drag mutations~~ ✅ Done (beginTransaction/endTransaction in useCanvas)
 - ~~**Hit testing** — O(n) reverse scan works now, needs a spatial index (quadtree) for larger scenes~~ ✅ Done (QuadTree)
 - ~~**Image storage** — base64 data URIs in state will bloat undo snapshots; move to object URLs or IndexedDB~~ ✅ Done (IndexedDB content-addressed)
-- **Stroke smoothing** — simple `lineTo` looks jagged at low pointer event rates; Catmull-Rom or quadratic Bézier would help
-- **Canvas resize** — `ResizeObserver` on the container instead of `window.resize` to catch panel collapses
-- **Persistence** — no save/load yet; canvas state is lost on refresh
+- ~~**Stroke smoothing** — simple `lineTo` looks jagged at low pointer event rates; Catmull-Rom or quadratic Bézier would help~~ ✅ Done (Catmull-Rom spline in drawSmoothStroke)
+- ~~**Canvas resize** — `ResizeObserver` on the container instead of `window.resize` to catch panel collapses~~ ✅ Done (ResizeObserver on canvas parent)
+- ~~**Persistence** — no save/load yet; canvas state is lost on refresh~~ ✅ Done (localStorage auto-save + .pollin.json export/import)
 - ~~**Component property editing** — library components land as images; need a property editor to tweak them post-placement~~ ✅ Done (ComponentEditor with tree navigation + code export)
 - ~~**Layout composition templates** — predefined layout shells (sidebar+main, card grid) for rapid prototyping~~ ✅ Built, then deleted (zero imports — premature)
 - ~~**Token export** — export resolved OKLCH tokens as CSS/JSON for handoff~~ ✅ Done (token-export.ts)
