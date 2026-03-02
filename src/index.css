@@ -1858,11 +1858,40 @@ canvas {
 }
 
 .pp-gen {
+  position: relative;
   padding: 8px 10px;
   background: var(--c-surface-3);
   border-radius: var(--radius-sm);
   margin-bottom: 6px;
   border-left: 3px solid var(--c-border);
+}
+
+.pp-gen-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--c-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.pp-gen:hover .pp-gen-dismiss {
+  opacity: 1;
+}
+
+.pp-gen-dismiss:hover {
+  background: var(--c-surface-4);
+  color: var(--c-text);
 }
 
 .pp-gen--generating {

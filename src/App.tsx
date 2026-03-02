@@ -143,6 +143,20 @@ function App() {
     [state.zoom, setPan],
   );
 
+  /** Pan the canvas so a rectangular region (x,y,w,h) is centered in the viewport. */
+  const panToRect = useCallback(
+    (x: number, y: number, w: number, h: number) => {
+      const canvasEl = document.querySelector('.canvas-surface');
+      const rect = canvasEl?.getBoundingClientRect();
+      const vw = rect?.width ?? window.innerWidth;
+      const vh = rect?.height ?? window.innerHeight;
+      const targetX = vw / 2 - (x + w / 2) * state.zoom;
+      const targetY = vh / 2 - (y + h / 2) * state.zoom;
+      setPan(targetX, targetY);
+    },
+    [state.zoom, setPan],
+  );
+
   const handleStartPrototype = useCallback(() => {
     if (state.screens.length === 0) return;
     setShowPrototype(true);
@@ -641,6 +655,7 @@ function App() {
               height: result.imageHeight ?? 580,
             };
             addObject(compObj);
+            if (!variations) panToRect(compObj.x, compObj.y, compObj.width, compObj.height as number);
           } else {
             // API path: flat image
             const imgObj: CanvasObject = {
@@ -659,6 +674,7 @@ function App() {
               height: result.imageHeight ?? 580,
             };
             addObject(imgObj);
+            if (!variations) panToRect(imgObj.x, imgObj.y, imgObj.width, imgObj.height);
           }
 
           // ── Variations (ideation mode) ──────────────
@@ -716,6 +732,13 @@ function App() {
                 return { ...g, reasoningSteps: updatedSteps };
               }),
             );
+
+            // Center the viewport on the full set of variations
+            const totalW = (baseW + gap) * (varResults.length + 1) - gap;
+            const totalH = result.imageHeight ?? 580;
+            panToRect(state.panX + 120, state.panY + 80, totalW, totalH);
+          } else {
+            // Single generation was already centered above
           }
 
           // Ensure the select tool is active so the user can interact with the result
@@ -729,7 +752,7 @@ function App() {
         setIsGenerating(false);
       }
     },
-    [addObject, setTool, state.panX, state.panY, state.libraries, selectedLibraryId],
+    [addObject, setTool, state.panX, state.panY, state.zoom, state.libraries, selectedLibraryId, setPan, panToRect],
   );
 
   // ── Add image attachment to canvas ────────────────────
@@ -754,6 +777,14 @@ function App() {
       addObject(imgObj);
     },
     [addObject, state.panX, state.panY],
+  );
+
+  // ── Dismiss generation entry from history ─────────────
+  const handleDismissGeneration = useCallback(
+    (id: string) => {
+      setGenerations((prev) => prev.filter((g) => g.id !== id));
+    },
+    [],
   );
 
   return (
@@ -796,6 +827,7 @@ function App() {
           <PromptPanel
             onGenerate={handleGenerate}
             onImageToCanvas={handleImageToCanvas}
+            onDismissGeneration={handleDismissGeneration}
             isGenerating={isGenerating}
             generations={generations}
             selectedObjectCount={state.selectedIds.length}

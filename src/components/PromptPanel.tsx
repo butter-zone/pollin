@@ -73,6 +73,7 @@ export interface GenerationEntry {
 interface PromptPanelProps {
   onGenerate: (prompt: string, model: string, attachments: ImageAttachment[], variations?: boolean) => void;
   onImageToCanvas: (attachment: ImageAttachment) => void;
+  onDismissGeneration?: (id: string) => void;
   isGenerating: boolean;
   generations: GenerationEntry[];
   selectedObjectCount?: number;
@@ -81,6 +82,7 @@ interface PromptPanelProps {
 export const PromptPanel: FC<PromptPanelProps> = ({
   onGenerate,
   onImageToCanvas,
+  onDismissGeneration,
   isGenerating,
   generations,
   selectedObjectCount = 0,
@@ -284,6 +286,18 @@ export const PromptPanel: FC<PromptPanelProps> = ({
           <div className="pp-history-label">History</div>
           {generations.map((gen) => (
             <div key={gen.id} className={`pp-gen pp-gen--${gen.status}`}>
+              {onDismissGeneration && (
+                <button
+                  className="pp-gen-dismiss"
+                  onClick={() => onDismissGeneration(gen.id)}
+                  title="Dismiss"
+                  aria-label="Dismiss generation"
+                >
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                    <path d="M2 2l6 6M8 2l-6 6" />
+                  </svg>
+                </button>
+              )}
               <div className="pp-gen-prompt">
                 {gen.attachments.length > 0 && <span className="pp-gen-badge">⊞ {gen.attachments.length}</span>}
                 {gen.prompt || '(image reference)'}
