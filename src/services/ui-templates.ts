@@ -316,7 +316,12 @@ function baseCSS(t: ThemeTokens): string {
       color: ${t.text};
       ${bgVal}
       -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
       min-height: 100%;
+      line-height: 1.5;
+      font-size: 14px;
     }
     .container {
       width: 420px;
@@ -343,10 +348,12 @@ function baseCSS(t: ThemeTokens): string {
       color: ${t.text};
       outline: none;
       width: 100%;
-      transition: border-color 0.15s;
+      line-height: 20px;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
     input:focus, textarea:focus {
       border-color: ${t.primary};
+      box-shadow: 0 0 0 2px ${t.primary}18;
     }
     button {
       font-family: inherit;
@@ -354,6 +361,7 @@ function baseCSS(t: ThemeTokens): string {
       border: none;
       outline: none;
       transition: all 0.15s;
+      line-height: 20px;
     }
     .btn-primary {
       background: ${t.primary};
@@ -363,6 +371,7 @@ function baseCSS(t: ThemeTokens): string {
       font-size: 14px;
       font-weight: 500;
       width: 100%;
+      letter-spacing: -0.006em;
     }
     .btn-secondary {
       background: ${t.surface};
@@ -373,12 +382,14 @@ function baseCSS(t: ThemeTokens): string {
       font-weight: 500;
       border: 1px solid ${t.border};
       width: 100%;
+      letter-spacing: -0.006em;
     }
     .text-muted { color: ${t.textMuted}; }
-    .text-sm { font-size: 13px; }
-    .text-xs { font-size: 11px; }
-    .text-lg { font-size: 18px; font-weight: 600; }
-    .text-xl { font-size: 24px; font-weight: 700; }
+    .text-sm { font-size: 13px; line-height: 18px; }
+    .text-xs { font-size: 11px; line-height: 16px; letter-spacing: 0.01em; }
+    .text-lg { font-size: 18px; font-weight: 600; line-height: 24px; letter-spacing: -0.01em; }
+    .text-xl { font-size: 24px; font-weight: 700; line-height: 30px; letter-spacing: -0.025em; }
+    .text-2xl { font-size: 30px; font-weight: 700; line-height: 36px; letter-spacing: -0.03em; }
     .flex { display: flex; }
     .flex-col { flex-direction: column; }
     .items-center { align-items: center; }
@@ -1847,6 +1858,15 @@ const TEMPLATE_MAP: Record<UIType, (t: ThemeTokens, prompt: string, glass: boole
 
 /* ─── Public API ────────────────────────────────────────── */
 
+/* ─── Google Fonts for each theme ───────────────────────── */
+
+const THEME_FONT_URLS: Record<string, string> = {
+  'shadcn/ui': 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  'material ui 3': 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
+  'radix ui': 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  'ant design': 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+};
+
 export interface GeneratedUI {
   html: string;
   width: number;
@@ -1895,11 +1915,17 @@ export function generateUIHTML(
   const width = isFull ? 900 : isWide ? 780 : 420;
   const height = isFull ? 620 : isWide ? 580 : 580;
 
+  const fontUrl = THEME_FONT_URLS[libraryName?.toLowerCase() ?? ''] ?? '';
+  const fontLink = fontUrl
+    ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="${fontUrl}" rel="stylesheet">`
+    : '';
+
   const fullHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${fontLink}
   <style>${css}</style>
 </head>
 <body>

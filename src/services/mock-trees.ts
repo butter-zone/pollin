@@ -37,7 +37,7 @@ function titleFrom(prompt: string, fallback: string, max = 40): string {
 function loginTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '48px 32px', gap: '24px' }, {}, [
     n('heading', { fontSize: '28px', fontWeight: '700', textAlign: 'center' }, { level: 1 }, ['Welcome back']),
-    n('paragraph', { textAlign: 'center', opacity: '0.6', fontSize: '14px' }, {}, ['Sign in to your account to continue']),
+    n('paragraph', { textAlign: 'center', color: '#6b7280', fontSize: '14px' }, {}, ['Sign in to your account to continue']),
     n('container', { display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '340px' }, {}, [
       n('input', { width: '100%' }, { placeholder: 'Email address', type: 'email' }),
       n('input', { width: '100%' }, { placeholder: 'Password', type: 'password' }),
@@ -48,7 +48,7 @@ function loginTree(_prompt: string): ComponentNode {
       n('button', { width: '100%' }, { variant: 'primary' }, ['Sign in']),
     ]),
     n('divider', { width: '100%', maxWidth: '340px' }, {}),
-    n('paragraph', { fontSize: '13px', opacity: '0.5', textAlign: 'center' }, {}, [
+    n('paragraph', { fontSize: '13px', color: '#6b7280', textAlign: 'center' }, {}, [
       'Don\'t have an account? ',
       n('link', {}, { href: '#' }, ['Sign up']),
     ]),
@@ -58,7 +58,7 @@ function loginTree(_prompt: string): ComponentNode {
 function signupTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '48px 32px', gap: '24px' }, {}, [
     n('heading', { fontSize: '28px', fontWeight: '700', textAlign: 'center' }, { level: 1 }, ['Create account']),
-    n('paragraph', { textAlign: 'center', opacity: '0.6', fontSize: '14px' }, {}, ['Get started with your free account']),
+    n('paragraph', { textAlign: 'center', color: '#6b7280', fontSize: '14px' }, {}, ['Get started with your free account']),
     n('container', { display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxWidth: '340px' }, {}, [
       n('container', { display: 'flex', gap: '12px' }, {}, [
         n('input', { flex: '1' }, { placeholder: 'First name' }),
@@ -70,7 +70,7 @@ function signupTree(_prompt: string): ComponentNode {
       n('checkbox', {}, { label: 'I agree to the Terms of Service and Privacy Policy' }),
       n('button', { width: '100%' }, { variant: 'primary' }, ['Create account']),
     ]),
-    n('paragraph', { fontSize: '13px', opacity: '0.5', textAlign: 'center' }, {}, [
+    n('paragraph', { fontSize: '13px', color: '#6b7280', textAlign: 'center' }, {}, [
       'Already have an account? ',
       n('link', {}, { href: '#' }, ['Sign in']),
     ]),
@@ -148,14 +148,14 @@ function settingsTree(_prompt: string): ComponentNode {
         n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
           n('container', { display: 'flex', flexDirection: 'column', gap: '2px' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '500' }, {}, ['Dark mode']),
-            n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Use dark theme across the app']),
+            n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Use dark theme across the app']),
           ]),
           n('toggle', {}, { checked: false }),
         ]),
         n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
           n('container', { display: 'flex', flexDirection: 'column', gap: '2px' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '500' }, {}, ['Email notifications']),
-            n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Receive email for important updates']),
+            n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Receive email for important updates']),
           ]),
           n('toggle', {}, { checked: true }),
         ]),
@@ -173,8 +173,8 @@ function profileTree(_prompt: string): ComponentNode {
     n('avatar', { width: '96px', height: '96px' }, { initials: 'JD', size: 'lg' }),
     n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }, {}, [
       n('heading', { fontSize: '24px', fontWeight: '700' }, { level: 1 }, ['John Doe']),
-      n('text', { fontSize: '14px', opacity: '0.6' }, {}, ['Senior Product Designer']),
-      n('text', { fontSize: '13px', opacity: '0.4' }, {}, ['San Francisco, CA']),
+      n('text', { fontSize: '14px', color: '#6b7280' }, {}, ['Senior Product Designer']),
+      n('text', { fontSize: '13px', color: '#9ca3af' }, {}, ['San Francisco, CA']),
     ]),
     n('container', { display: 'flex', gap: '32px' }, {}, [
       n('stat', {}, { label: 'Projects', value: '142' }),
@@ -188,7 +188,7 @@ function profileTree(_prompt: string): ComponentNode {
     n('divider', { width: '100%', maxWidth: '500px' }, {}),
     n('container', { display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '500px' }, {}, [
       n('heading', { fontSize: '16px', fontWeight: '600' }, { level: 3 }, ['About']),
-      n('paragraph', { fontSize: '14px', lineHeight: '1.6', opacity: '0.7' }, {}, [
+      n('paragraph', { fontSize: '14px', lineHeight: '1.6', color: '#4b5563' }, {}, [
         'Passionate designer with 8+ years of experience creating beautiful and functional user interfaces. Currently focused on design systems and accessibility.',
       ]),
     ]),
@@ -199,15 +199,15 @@ function pricingTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 24px', gap: '40px', minHeight: '100%' }, {}, [
     n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }, {}, [
       n('heading', { fontSize: '32px', fontWeight: '700', textAlign: 'center' }, { level: 1 }, ['Simple, transparent pricing']),
-      n('paragraph', { fontSize: '16px', opacity: '0.6', textAlign: 'center' }, {}, ['Choose the plan that works for you']),
+      n('paragraph', { fontSize: '16px', color: '#6b7280', textAlign: 'center' }, {}, ['Choose the plan that works for you']),
     ]),
     n('grid', { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', width: '100%', maxWidth: '900px' }, {}, [
       // Free
       n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, ['Free']),
+        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280' }, {}, ['Free']),
         n('container', { display: 'flex', alignItems: 'baseline', gap: '4px' }, {}, [
           n('heading', { fontSize: '36px', fontWeight: '700' }, { level: 2 }, ['$0']),
-          n('text', { fontSize: '14px', opacity: '0.5' }, {}, ['/month']),
+          n('text', { fontSize: '14px', color: '#6b7280' }, {}, ['/month']),
         ]),
         n('divider', {}, {}),
         n('list', { display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
@@ -225,7 +225,7 @@ function pricingTree(_prompt: string): ComponentNode {
         ]),
         n('container', { display: 'flex', alignItems: 'baseline', gap: '4px' }, {}, [
           n('heading', { fontSize: '36px', fontWeight: '700' }, { level: 2 }, ['$19']),
-          n('text', { fontSize: '14px', opacity: '0.5' }, {}, ['/month']),
+          n('text', { fontSize: '14px', color: '#6b7280' }, {}, ['/month']),
         ]),
         n('divider', {}, {}),
         n('list', { display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
@@ -238,10 +238,10 @@ function pricingTree(_prompt: string): ComponentNode {
       ]),
       // Enterprise
       n('card', { padding: '28px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
-        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, ['Enterprise']),
+        n('text', { fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280' }, {}, ['Enterprise']),
         n('container', { display: 'flex', alignItems: 'baseline', gap: '4px' }, {}, [
           n('heading', { fontSize: '36px', fontWeight: '700' }, { level: 2 }, ['$99']),
-          n('text', { fontSize: '14px', opacity: '0.5' }, {}, ['/month']),
+          n('text', { fontSize: '14px', color: '#6b7280' }, {}, ['/month']),
         ]),
         n('divider', {}, {}),
         n('list', { display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
@@ -273,7 +273,7 @@ function landingTree(_prompt: string): ComponentNode {
     n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: '1', padding: '64px 32px', gap: '24px', textAlign: 'center' }, {}, [
       n('badge', { marginBottom: '8px' }, {}, ['Now in Beta']),
       n('heading', { fontSize: '42px', fontWeight: '800', lineHeight: '1.1', maxWidth: '600px' }, { level: 1 }, ['Build amazing products faster than ever']),
-      n('paragraph', { fontSize: '18px', opacity: '0.6', maxWidth: '500px', lineHeight: '1.5' }, {}, [
+      n('paragraph', { fontSize: '18px', color: '#6b7280', maxWidth: '500px', lineHeight: '1.5' }, {}, [
         'The all-in-one platform that helps teams design, develop, and ship beautiful software.',
       ]),
       n('container', { display: 'flex', gap: '12px', marginTop: '8px' }, {}, [
@@ -301,7 +301,7 @@ function navbarTree(_prompt: string): ComponentNode {
     ]),
     n('divider', {}, {}),
     n('container', { padding: '32px 24px', textAlign: 'center' }, {}, [
-      n('text', { fontSize: '14px', opacity: '0.4' }, {}, ['Your page content will appear here']),
+      n('text', { fontSize: '14px', color: '#9ca3af' }, {}, ['Your page content will appear here']),
     ]),
   ]);
 }
@@ -313,12 +313,12 @@ function sidebarTree(_prompt: string): ComponentNode {
         n('avatar', { width: '28px', height: '28px' }, { initials: 'A' }),
         n('heading', { fontSize: '16px', fontWeight: '700' }, { level: 1 }, ['Workspace']),
       ]),
-      n('text', { fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.4', padding: '8px', marginTop: '8px' }, {}, ['Menu']),
+      n('text', { fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', padding: '8px', marginTop: '8px' }, {}, ['Menu']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#', active: true, icon: 'home' }, ['Home']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#', icon: 'inbox' }, ['Inbox']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#', icon: 'file' }, ['Documents']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#', icon: 'chart' }, ['Analytics']),
-      n('text', { fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.4', padding: '8px', marginTop: '12px' }, {}, ['Teams']),
+      n('text', { fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9ca3af', padding: '8px', marginTop: '12px' }, {}, ['Teams']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#' }, ['Engineering']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#' }, ['Design']),
       n('link', { padding: '8px 12px', borderRadius: '6px' }, { href: '#' }, ['Marketing']),
@@ -329,7 +329,7 @@ function sidebarTree(_prompt: string): ComponentNode {
     n('divider', { alignSelf: 'stretch' }, { orientation: 'vertical' }),
     n('container', { flex: '1', padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
       n('heading', { fontSize: '22px', fontWeight: '700' }, { level: 1 }, ['Home']),
-      n('paragraph', { opacity: '0.5', fontSize: '14px' }, {}, ['Welcome back! Here\'s what\'s happening today.']),
+      n('paragraph', { color: '#6b7280', fontSize: '14px' }, {}, ['Welcome back! Here\'s what\'s happening today.']),
     ]),
   ]);
 }
@@ -341,15 +341,15 @@ function cardTree(_prompt: string): ComponentNode {
       n('container', { padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }, {}, [
         n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
           n('badge', {}, { variant: 'primary' }, ['Featured']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['3 min read']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['3 min read']),
         ]),
         n('heading', { fontSize: '18px', fontWeight: '600' }, { level: 3 }, ['Getting Started with Design Systems']),
-        n('paragraph', { fontSize: '14px', opacity: '0.6', lineHeight: '1.5' }, {}, [
+        n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.5' }, {}, [
           'Learn how to build consistent, scalable user interfaces with a well-structured design system.',
         ]),
         n('container', { display: 'flex', alignItems: 'center', gap: '10px', marginTop: '4px' }, {}, [
           n('avatar', { width: '28px', height: '28px' }, { initials: 'JD' }),
-          n('text', { fontSize: '13px', opacity: '0.6' }, {}, ['Jane Doe']),
+          n('text', { fontSize: '13px', color: '#6b7280' }, {}, ['Jane Doe']),
         ]),
       ]),
     ]),
@@ -360,7 +360,7 @@ function formTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100%', padding: '48px 32px', gap: '32px' }, {}, [
     n('container', { display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'center' }, {}, [
       n('heading', { fontSize: '24px', fontWeight: '700' }, { level: 1 }, ['Contact Us']),
-      n('paragraph', { fontSize: '14px', opacity: '0.6' }, {}, ['We\'d love to hear from you. Fill out the form below.']),
+      n('paragraph', { fontSize: '14px', color: '#6b7280' }, {}, ['We\'d love to hear from you. Fill out the form below.']),
     ]),
     n('container', { display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '420px' }, {}, [
       n('container', { display: 'flex', gap: '12px' }, {}, [
@@ -410,7 +410,7 @@ function tableTree(_prompt: string): ComponentNode {
       ],
     }),
     n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }, {}, [
-      n('text', { opacity: '0.6' }, {}, ['Showing 1-5 of 48 users']),
+      n('text', { color: '#6b7280' }, {}, ['Showing 1-5 of 48 users']),
       n('container', { display: 'flex', gap: '8px' }, {}, [
         n('button', {}, { variant: 'secondary', disabled: true }, ['Previous']),
         n('button', {}, { variant: 'secondary' }, ['Next']),
@@ -426,7 +426,7 @@ function chatTree(_prompt: string): ComponentNode {
       n('avatar', { width: '36px', height: '36px' }, { initials: 'AK' }),
       n('container', { display: 'flex', flexDirection: 'column', gap: '0' }, {}, [
         n('text', { fontSize: '15px', fontWeight: '600' }, {}, ['Anna Kim']),
-        n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Online']),
+        n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Online']),
       ]),
     ]),
     n('divider', {}, {}),
@@ -468,7 +468,7 @@ function modalTree(_prompt: string): ComponentNode {
       n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }, {}, [
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px' }, {}, [
           n('heading', { fontSize: '18px', fontWeight: '600' }, { level: 2 }, ['Delete project?']),
-          n('paragraph', { fontSize: '14px', opacity: '0.6' }, {}, [
+          n('paragraph', { fontSize: '14px', color: '#6b7280' }, {}, [
             'This action cannot be undone. All data associated with this project will be permanently removed.',
           ]),
         ]),
@@ -497,7 +497,7 @@ function notificationTree(_prompt: string): ComponentNode {
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'SK' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
           n('text', { fontSize: '14px' }, {}, ['Sarah Kim commented on your design']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['2 minutes ago']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['2 minutes ago']),
         ]),
         n('badge', { flexShrink: '0' }, { variant: 'primary' }, ['New']),
       ]),
@@ -505,22 +505,22 @@ function notificationTree(_prompt: string): ComponentNode {
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'MJ' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
           n('text', { fontSize: '14px' }, {}, ['Mike Johnson invited you to a project']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['1 hour ago']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['1 hour ago']),
         ]),
         n('badge', { flexShrink: '0' }, { variant: 'primary' }, ['New']),
       ]),
       n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }, {}, [
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'LS' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
-          n('text', { fontSize: '14px', opacity: '0.7' }, {}, ['Lisa Smith completed the review']),
-          n('text', { fontSize: '12px', opacity: '0.4' }, {}, ['3 hours ago']),
+          n('text', { fontSize: '14px', color: '#4b5563' }, {}, ['Lisa Smith completed the review']),
+          n('text', { fontSize: '12px', color: '#9ca3af' }, {}, ['3 hours ago']),
         ]),
       ]),
       n('card', { padding: '14px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start' }, {}, [
         n('avatar', { width: '36px', height: '36px', flexShrink: '0' }, { initials: 'TC' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '4px', flex: '1' }, {}, [
-          n('text', { fontSize: '14px', opacity: '0.7' }, {}, ['Tom Chen shared a file with you']),
-          n('text', { fontSize: '12px', opacity: '0.4' }, {}, ['Yesterday']),
+          n('text', { fontSize: '14px', color: '#4b5563' }, {}, ['Tom Chen shared a file with you']),
+          n('text', { fontSize: '12px', color: '#9ca3af' }, {}, ['Yesterday']),
         ]),
       ]),
     ]),
@@ -532,7 +532,7 @@ function onboardingTree(_prompt: string): ComponentNode {
     n('progress', { width: '200px' }, { value: 40, max: 100 }),
     n('container', { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', textAlign: 'center' }, {}, [
       n('heading', { fontSize: '28px', fontWeight: '700' }, { level: 1 }, ['What brings you here?']),
-      n('paragraph', { fontSize: '16px', opacity: '0.6', maxWidth: '400px' }, {}, [
+      n('paragraph', { fontSize: '16px', color: '#6b7280', maxWidth: '400px' }, {}, [
         'Help us customize your experience by choosing what best describes you.',
       ]),
     ]),
@@ -574,22 +574,22 @@ function searchTree(_prompt: string): ComponentNode {
       n('badge', { cursor: 'pointer' }, {}, ['Documents']),
       n('badge', { cursor: 'pointer' }, {}, ['People']),
     ]),
-    n('text', { fontSize: '13px', opacity: '0.5' }, {}, ['Showing 24 results for "design system"']),
+    n('text', { fontSize: '13px', color: '#6b7280' }, {}, ['Showing 24 results for "design system"']),
     n('container', { display: 'flex', flexDirection: 'column', gap: '12px' }, {}, [
       n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }, {}, [
         n('link', { fontSize: '16px', fontWeight: '500' }, { href: '#' }, ['Introduction to Design Systems']),
-        n('text', { fontSize: '13px', opacity: '0.6' }, {}, ['docs.example.com/design-systems']),
-        n('paragraph', { fontSize: '14px', opacity: '0.7' }, {}, ['A comprehensive guide to building and maintaining design systems for modern applications…']),
+        n('text', { fontSize: '13px', color: '#6b7280' }, {}, ['docs.example.com/design-systems']),
+        n('paragraph', { fontSize: '14px', color: '#4b5563' }, {}, ['A comprehensive guide to building and maintaining design systems for modern applications…']),
       ]),
       n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }, {}, [
         n('link', { fontSize: '16px', fontWeight: '500' }, { href: '#' }, ['Design System Components Library']),
-        n('text', { fontSize: '13px', opacity: '0.6' }, {}, ['components.example.com']),
-        n('paragraph', { fontSize: '14px', opacity: '0.7' }, {}, ['Browse our collection of reusable UI components built with accessibility in mind…']),
+        n('text', { fontSize: '13px', color: '#6b7280' }, {}, ['components.example.com']),
+        n('paragraph', { fontSize: '14px', color: '#4b5563' }, {}, ['Browse our collection of reusable UI components built with accessibility in mind…']),
       ]),
       n('card', { padding: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }, {}, [
         n('link', { fontSize: '16px', fontWeight: '500' }, { href: '#' }, ['Best Practices for Design Tokens']),
-        n('text', { fontSize: '13px', opacity: '0.6' }, {}, ['blog.example.com/tokens']),
-        n('paragraph', { fontSize: '14px', opacity: '0.7' }, {}, ['Learn how design tokens bridge the gap between design and development teams…']),
+        n('text', { fontSize: '13px', color: '#6b7280' }, {}, ['blog.example.com/tokens']),
+        n('paragraph', { fontSize: '14px', color: '#4b5563' }, {}, ['Learn how design tokens bridge the gap between design and development teams…']),
       ]),
     ]),
   ]);
@@ -602,12 +602,12 @@ function mediaPlayerTree(_prompt: string): ComponentNode {
       n('container', { padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [
         n('container', { display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'center' }, {}, [
           n('heading', { fontSize: '18px', fontWeight: '600' }, { level: 3 }, ['Midnight Dreams']),
-          n('text', { fontSize: '14px', opacity: '0.6' }, {}, ['The Wanderers']),
+          n('text', { fontSize: '14px', color: '#6b7280' }, {}, ['The Wanderers']),
         ]),
         n('progress', {}, { value: 65, max: 100 }),
         n('container', { display: 'flex', justifyContent: 'space-between', fontSize: '12px' }, {}, [
-          n('text', { opacity: '0.5' }, {}, ['2:34']),
-          n('text', { opacity: '0.5' }, {}, ['3:52']),
+          n('text', { color: '#6b7280' }, {}, ['2:34']),
+          n('text', { color: '#6b7280' }, {}, ['3:52']),
         ]),
         n('container', { display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '20px' }, {}, [
           n('button', {}, { variant: 'ghost', icon: 'skip-back' }, ['⏮']),
@@ -632,7 +632,7 @@ function calendarTree(_prompt: string): ComponentNode {
     ]),
     n('grid', { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }, {}, [
       ...['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d =>
-        n('text', { padding: '8px', fontSize: '12px', fontWeight: '600', opacity: '0.6' }, {}, [d])
+        n('text', { padding: '8px', fontSize: '12px', fontWeight: '600', color: '#6b7280' }, {}, [d])
       ),
       ...[29, 30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 1].map((d, i) => {
         const isOutside = i < 3 || i > 33;
@@ -664,26 +664,26 @@ function emailTree(_prompt: string): ComponentNode {
         n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderLeftWidth: '3px', borderLeftStyle: 'solid', borderRadius: '0' }, { highlighted: true }, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '600' }, {}, ['Alex Rivera']),
-            n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['10:32 AM']),
+            n('text', { fontSize: '11px', color: '#6b7280' }, {}, ['10:32 AM']),
           ]),
           n('text', { fontSize: '13px', fontWeight: '500' }, {}, ['Design Review Notes']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['Here are my notes from the design review meeting…']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Here are my notes from the design review meeting…']),
         ]),
         n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0' }, {}, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px', fontWeight: '600' }, {}, ['Team Updates']),
-            n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['9:15 AM']),
+            n('text', { fontSize: '11px', color: '#6b7280' }, {}, ['9:15 AM']),
           ]),
           n('text', { fontSize: '13px' }, {}, ['Weekly Sync Summary']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['This week\'s highlights and action items…']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['This week\'s highlights and action items…']),
         ]),
         n('card', { padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '4px', borderRadius: '0' }, {}, [
           n('container', { display: 'flex', justifyContent: 'space-between' }, {}, [
             n('text', { fontSize: '14px' }, {}, ['Sarah Chen']),
-            n('text', { fontSize: '11px', opacity: '0.5' }, {}, ['Yesterday']),
+            n('text', { fontSize: '11px', color: '#6b7280' }, {}, ['Yesterday']),
           ]),
           n('text', { fontSize: '13px' }, {}, ['Project Proposal']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['I\'ve attached the updated project proposal…']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['I\'ve attached the updated project proposal…']),
         ]),
       ]),
     ]),
@@ -695,7 +695,7 @@ function emailTree(_prompt: string): ComponentNode {
         n('avatar', { width: '36px', height: '36px' }, { initials: 'AR' }),
         n('container', { display: 'flex', flexDirection: 'column', gap: '0' }, {}, [
           n('text', { fontSize: '14px', fontWeight: '500' }, {}, ['Alex Rivera']),
-          n('text', { fontSize: '12px', opacity: '0.5' }, {}, ['alex@example.com · 10:32 AM']),
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['alex@example.com · 10:32 AM']),
         ]),
       ]),
       n('divider', {}, {}),
@@ -744,7 +744,7 @@ function ecommerceTree(_prompt: string): ComponentNode {
             n('text', { fontSize: '14px', fontWeight: '500' }, {}, ['Smart Watch Pro']),
             n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
               n('text', { fontSize: '16px', fontWeight: '700' }, {}, ['$299.00']),
-              n('text', { fontSize: '12px', opacity: '0.5', textDecoration: 'line-through' }, {}, ['$349.00']),
+              n('text', { fontSize: '12px', color: '#6b7280', textDecoration: 'line-through' }, {}, ['$349.00']),
             ]),
           ]),
         ]),
@@ -766,7 +766,7 @@ function kanbanTree(_prompt: string): ComponentNode {
   const col = (title: string, items: string[]) =>
     n('container', { flex: '1', minWidth: '220px', display: 'flex', flexDirection: 'column', gap: '10px' }, {}, [
       n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }, {}, [
-        n('text', { fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', opacity: '0.6' }, {}, [title]),
+        n('text', { fontSize: '13px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280' }, {}, [title]),
         n('badge', { fontSize: '11px' }, {}, [String(items.length)]),
       ]),
       ...items.map((item, idx) =>
@@ -774,7 +774,7 @@ function kanbanTree(_prompt: string): ComponentNode {
           n('text', { fontSize: '14px', fontWeight: '500' }, {}, [item]),
           n('container', { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }, {}, [
             n('avatar', { width: '22px', height: '22px' }, { initials: item[0] }),
-            n('text', { fontSize: '11px', opacity: '0.4' }, {}, [['Jan 8', 'Jan 12', 'Jan 15', 'Dec 28', 'Jan 3'][idx % 5]]),
+            n('text', { fontSize: '11px', color: '#9ca3af' }, {}, [['Jan 8', 'Jan 12', 'Jan 15', 'Dec 28', 'Jan 3'][idx % 5]]),
           ]),
         ])
       ),
@@ -809,11 +809,11 @@ function todoTree(_prompt: string): ComponentNode {
     n('container', { display: 'flex', flexDirection: 'column', gap: '4px', width: '100%', maxWidth: '500px' }, {}, [
       n('container', { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }, {}, [
         n('checkbox', {}, { checked: true }),
-        n('text', { fontSize: '14px', textDecoration: 'line-through', opacity: '0.5' }, {}, ['Set up project repository']),
+        n('text', { fontSize: '14px', textDecoration: 'line-through', color: '#6b7280' }, {}, ['Set up project repository']),
       ]),
       n('container', { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }, {}, [
         n('checkbox', {}, { checked: true }),
-        n('text', { fontSize: '14px', textDecoration: 'line-through', opacity: '0.5' }, {}, ['Design database schema']),
+        n('text', { fontSize: '14px', textDecoration: 'line-through', color: '#6b7280' }, {}, ['Design database schema']),
       ]),
       n('container', { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px' }, {}, [
         n('checkbox', {}, {}),
@@ -828,7 +828,7 @@ function todoTree(_prompt: string): ComponentNode {
         n('text', { fontSize: '14px' }, {}, ['Write unit tests']),
       ]),
     ]),
-    n('text', { fontSize: '13px', opacity: '0.4' }, {}, ['3 of 5 remaining']),
+    n('text', { fontSize: '13px', color: '#9ca3af' }, {}, ['3 of 5 remaining']),
   ]);
 }
 
@@ -836,7 +836,7 @@ function genericTree(prompt: string): ComponentNode {
   const title = titleFrom(prompt, 'Component');
   return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%', padding: '32px', gap: '24px' }, {}, [
     n('heading', { fontSize: '24px', fontWeight: '700' }, { level: 1 }, [title]),
-    n('paragraph', { fontSize: '14px', opacity: '0.6', lineHeight: '1.6' }, {}, [
+    n('paragraph', { fontSize: '14px', color: '#6b7280', lineHeight: '1.6' }, {}, [
       'Customize this layout by selecting and editing individual components in the panel.',
     ]),
     n('card', { padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }, {}, [

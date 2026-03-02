@@ -43,10 +43,12 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   badge: {
     display: 'inline-flex',
     alignItems: 'center',
-    padding: '2px 8px',
+    padding: '3px 10px',
     borderRadius: '9999px',
     fontSize: '12px',
     fontWeight: '500',
+    lineHeight: '16px',
+    letterSpacing: '0.01em',
     background: '#eff6ff',
     color: '#2563eb',
   },
@@ -58,8 +60,11 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: '600',
+    fontSize: '15px',
+    lineHeight: '1',
     background: '#6366f1',
     color: 'white',
+    letterSpacing: '0.02em',
   },
   code: {
     fontFamily: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace",
@@ -76,52 +81,58 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   button: {
     cursor: 'pointer',
     border: 'none',
-    padding: '8px 16px',
-    borderRadius: '6px',
+    padding: '10px 20px',
+    borderRadius: '8px',
     fontWeight: '500',
     fontSize: '14px',
-    lineHeight: '1',
+    lineHeight: '20px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '6px',
-    minHeight: '36px',
+    gap: '8px',
     textAlign: 'center',
+    whiteSpace: 'nowrap',
+    letterSpacing: '-0.006em',
+    transition: 'background 0.15s, box-shadow 0.15s',
   },
   input: {
-    padding: '8px 12px',
+    padding: '10px 12px',
     border: '1px solid #d1d5db',
-    borderRadius: '6px',
+    borderRadius: '8px',
     outline: 'none',
     width: '100%',
-    height: '38px',
-    lineHeight: '1.4',
+    fontSize: '14px',
+    lineHeight: '20px',
     background: 'white',
     color: '#111827',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   },
   textarea: {
-    padding: '8px 12px',
+    padding: '10px 12px',
     border: '1px solid #d1d5db',
-    borderRadius: '6px',
+    borderRadius: '8px',
     outline: 'none',
     width: '100%',
     fontFamily: 'inherit',
+    fontSize: '14px',
     resize: 'vertical',
-    lineHeight: '1.4',
+    lineHeight: '20px',
     background: 'white',
     color: '#111827',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   },
   select: {
-    padding: '8px 12px',
+    padding: '10px 12px',
     border: '1px solid #d1d5db',
-    borderRadius: '6px',
+    borderRadius: '8px',
     outline: 'none',
     width: '100%',
-    height: '38px',
-    lineHeight: '1.4',
+    fontSize: '14px',
+    lineHeight: '20px',
     background: 'white',
     color: '#111827',
     appearance: 'none',
+    transition: 'border-color 0.15s',
   },
   checkbox: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' },
   radio: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' },
@@ -132,9 +143,9 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   navbar: {
     display: 'flex',
     alignItems: 'center',
-    padding: '12px 24px',
+    padding: '14px 24px',
     borderBottom: '1px solid #e5e7eb',
-    gap: '12px',
+    gap: '16px',
   },
   sidebar: {
     borderRight: '1px solid #e5e7eb',
@@ -153,15 +164,22 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
 
   // Feedback
   alert: {
-    padding: '12px 16px',
-    borderRadius: '8px',
+    padding: '14px 16px',
+    borderRadius: '10px',
     border: '1px solid',
+    fontSize: '14px',
+    lineHeight: '20px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
   },
   toast: {
-    padding: '12px 16px',
-    borderRadius: '8px',
+    padding: '14px 16px',
+    borderRadius: '10px',
     border: '1px solid',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.06)',
+    fontSize: '14px',
+    lineHeight: '20px',
   },
   progress: {
     width: '100%',
@@ -192,10 +210,10 @@ const DEFAULT_STYLES: Partial<Record<ComponentNodeType, Record<string, string>>>
   table: { width: '100%', borderCollapse: 'collapse' },
   card: {
     border: '1px solid #e5e7eb',
-    borderRadius: '8px',
-    padding: '16px',
+    borderRadius: '12px',
+    padding: '20px',
     background: 'white',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
     overflow: 'hidden',
   },
   list: { listStyle: 'none', padding: '0', margin: '0' },
@@ -378,8 +396,12 @@ function renderNode(node: ComponentNode): string {
     case 'heading': {
       const level = Math.min(6, Math.max(1, Number(props.level) || 2));
       const tag = `h${level}`;
-      const sizeByLevel: Record<number, string> = { 1: '2em', 2: '1.5em', 3: '1.25em', 4: '1.1em', 5: '1em', 6: '0.875em' };
-      const levelDefaults: Record<string, string> = { fontSize: sizeByLevel[level] || '1em' };
+      const sizeByLevel: Record<number, string> = { 1: '2.25em', 2: '1.75em', 3: '1.375em', 4: '1.125em', 5: '1em', 6: '0.875em' };
+      const trackingByLevel: Record<number, string> = { 1: '-0.025em', 2: '-0.02em', 3: '-0.015em', 4: '-0.01em', 5: '0', 6: '0.02em' };
+      const levelDefaults: Record<string, string> = {
+        fontSize: sizeByLevel[level] || '1em',
+        letterSpacing: trackingByLevel[level] || '0',
+      };
       const css = stylesToCSS(mergeStyles({ ...defaults, ...levelDefaults }, node.styles));
       return `<${tag}${da} style="${css}">${renderChildren(children)}</${tag}>`;
     }
@@ -771,9 +793,10 @@ function renderNode(node: ComponentNode): string {
       if (change !== undefined && change !== null) {
         const isPositive = String(change).startsWith('+') || (!String(change).startsWith('-') && Number(change) >= 0);
         const changeColor = isPositive ? '#16a34a' : '#dc2626';
-        changeHTML = `<div style="font-size: 13px; color: ${changeColor}; margin-top: 2px;">${escapeHTML(String(change))}</div>`;
+        const arrow = isPositive ? '↑' : '↓';
+        changeHTML = `<div style="font-size: 13px; font-weight: 500; color: ${changeColor}; margin-top: 4px; display: flex; align-items: center; gap: 2px;"><span>${arrow}</span> ${escapeHTML(String(change))}</div>`;
       }
-      return `<div${da} style="${css}"><div style="font-size: 28px; font-weight: 700; line-height: 1.2;">${escapeHTML(value)}</div><div style="font-size: 13px; color: #6b7280; margin-top: 4px;">${escapeHTML(label)}</div>${changeHTML}</div>`;
+      return `<div${da} style="${css}"><div style="font-size: 30px; font-weight: 700; line-height: 1.15; letter-spacing: -0.025em;">${escapeHTML(value)}</div><div style="font-size: 13px; color: #6b7280; margin-top: 6px; letter-spacing: 0.01em;">${escapeHTML(label)}</div>${changeHTML}</div>`;
     }
 
     case 'chart': {
@@ -818,24 +841,104 @@ export function renderNodeToHTML(node: ComponentNode): string {
  */
 // ── Design System Base Styles ───────────────────────────
 
+/** Google Fonts URL fragments for each design system */
+const DESIGN_SYSTEM_FONTS: Record<string, string> = {
+  'material ui 3': 'family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500',
+  'shadcn/ui': 'family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500',
+  'ant design': 'family=Inter:wght@400;500;600;700',
+  'fluent ui': 'family=Segoe+UI:wght@400;600;700',
+  'radix ui': 'family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400',
+  'apple liquid glass': '',
+};
+
 const DESIGN_SYSTEM_CSS: Record<string, string> = {
-  'material ui 3': `body { font-family: 'Roboto', 'Noto Sans', sans-serif; color: #1C1B1F; background: #fafafa; }
-    button { border-radius: 20px; font-weight: 500; letter-spacing: 0.01em; }
-    input, select, textarea { border-radius: 4px; border: 1px solid #79747E; }`,
-  'apple liquid glass': `body { font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; color: #ffffff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); letter-spacing: -0.01em; }
-    button { border-radius: 12px; font-weight: 500; }`,
-  'ant design': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: rgba(0,0,0,0.88); background: #ffffff; font-size: 14px; }
-    button { border-radius: 6px; font-weight: 400; }
-    input, select, textarea { border-radius: 6px; border: 1px solid #d9d9d9; }`,
-  'fluent ui': `body { font-family: 'Segoe UI', 'Segoe UI Web', sans-serif; color: #242424; background: #fafafa; }
-    button { border-radius: 4px; font-weight: 600; }
-    input, select, textarea { border-radius: 4px; border: 1px solid #d1d1d1; }`,
-  'shadcn/ui': `body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #fafafa; background: #09090b; font-size: 14px; }
-    button { border-radius: 6px; font-weight: 500; font-size: 14px; }
-    input, select, textarea { border-radius: 6px; border: 1px solid #27272a; color: #fafafa; background: #18181b; }`,
-  'radix ui': `body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #eeeef0; background: #111113; }
-    button { border-radius: 6px; font-weight: 500; }
-    input, select, textarea { border-radius: 6px; border: 1px solid #2b2c2f; color: #eeeef0; background: #18191b; }`,
+  'material ui 3': `
+    body { font-family: 'Roboto', 'Noto Sans', sans-serif; color: #1D1B20; background: #FEF7FF; font-size: 14px; letter-spacing: 0.01em; }
+    h1, h2, h3 { letter-spacing: -0.015em; }
+    h1 { font-size: 2.25em; font-weight: 400; line-height: 1.15; }
+    h2 { font-size: 1.75em; font-weight: 400; line-height: 1.2; }
+    h3 { font-size: 1.375em; font-weight: 500; line-height: 1.25; }
+    button { border-radius: 20px; padding: 10px 24px; font-weight: 500; font-size: 14px; letter-spacing: 0.02em; line-height: 20px; min-height: 40px; }
+    input, select, textarea { border-radius: 4px; border: 1px solid #79747E; padding: 12px 16px; font-size: 16px; line-height: 24px; caret-color: #6750A4; }
+    input:focus, textarea:focus { border-color: #6750A4; border-width: 2px; padding: 11px 15px; outline: none; }
+    ::placeholder { color: #49454F; }
+    [data-type="card"] { border-radius: 12px; border: none; background: #F3EDF7; box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15); }
+    [data-type="badge"] { border-radius: 8px; font-weight: 500; letter-spacing: 0.02em; }
+    [data-type="divider"] { border-color: #CAC4D0; }
+    [data-type="navbar"] { background: #F3EDF7; border-bottom: none; }`,
+
+  'apple liquid glass': `
+    body { font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif; color: #ffffff; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); letter-spacing: -0.01em; font-size: 15px; }
+    h1 { font-size: 2.5em; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+    h2 { font-size: 1.75em; font-weight: 600; letter-spacing: -0.025em; line-height: 1.15; }
+    h3 { font-size: 1.25em; font-weight: 600; letter-spacing: -0.02em; }
+    button { border-radius: 14px; font-weight: 500; padding: 11px 22px; backdrop-filter: blur(12px) saturate(1.5); -webkit-backdrop-filter: blur(12px) saturate(1.5); background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.2); color: #fff; line-height: 20px; }
+    input, select, textarea { border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #fff; padding: 11px 14px; font-size: 15px; line-height: 22px; }
+    ::placeholder { color: rgba(255,255,255,0.45); }
+    input:focus, textarea:focus { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); }
+    [data-type="card"] { backdrop-filter: blur(20px) saturate(1.8); -webkit-backdrop-filter: blur(20px) saturate(1.8); background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 22px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
+    [data-type="navbar"] { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); background: rgba(255,255,255,0.1); border-bottom: 1px solid rgba(255,255,255,0.12); }
+    [data-type="badge"] { backdrop-filter: blur(8px); background: rgba(255,255,255,0.15); border-radius: 12px; color: #fff; }
+    [data-type="divider"] { border-color: rgba(255,255,255,0.12); }`,
+
+  'ant design': `
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: rgba(0,0,0,0.88); background: #ffffff; font-size: 14px; line-height: 1.5714; }
+    h1 { font-size: 38px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; }
+    h2 { font-size: 30px; font-weight: 600; line-height: 1.27; letter-spacing: -0.015em; }
+    h3 { font-size: 24px; font-weight: 600; line-height: 1.33; }
+    button { border-radius: 8px; font-weight: 400; font-size: 14px; padding: 8px 16px; line-height: 22px; min-height: 32px; box-shadow: 0 2px 0 rgba(0,0,0,0.02); }
+    input, select, textarea { border-radius: 6px; border: 1px solid #d9d9d9; padding: 8px 12px; font-size: 14px; line-height: 22px; }
+    input:focus, textarea:focus { border-color: #1677ff; box-shadow: 0 0 0 2px rgba(22,119,255,0.08); }
+    ::placeholder { color: rgba(0,0,0,0.25); }
+    [data-type="card"] { border-radius: 8px; border: 1px solid #f0f0f0; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03), 0 1px 6px -1px rgba(0,0,0,0.02), 0 2px 4px 0 rgba(0,0,0,0.02); }
+    [data-type="badge"] { border-radius: 4px; padding: 0 8px; font-size: 12px; line-height: 20px; }
+    [data-type="table"] th { background: #fafafa; font-weight: 600; }`,
+
+  'fluent ui': `
+    body { font-family: 'Segoe UI', 'Segoe UI Web', -apple-system, sans-serif; color: #242424; background: #fafafa; font-size: 14px; line-height: 1.43; }
+    h1 { font-size: 28px; font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; }
+    h2 { font-size: 24px; font-weight: 600; line-height: 1.17; letter-spacing: -0.01em; }
+    h3 { font-size: 20px; font-weight: 600; line-height: 1.2; }
+    button { border-radius: 4px; font-weight: 600; font-size: 14px; padding: 8px 16px; line-height: 20px; min-height: 32px; }
+    input, select, textarea { border-radius: 4px; border-bottom: 2px solid #616161; border-top: 1px solid #d1d1d1; border-left: 1px solid #d1d1d1; border-right: 1px solid #d1d1d1; padding: 7px 12px; font-size: 14px; line-height: 20px; }
+    input:focus, textarea:focus { border-bottom-color: #0078d4; }
+    ::placeholder { color: #707070; }
+    [data-type="card"] { border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.04); background: #fff; }
+    [data-type="navbar"] { background: #fff; border-bottom: 1px solid #e0e0e0; }
+    [data-type="badge"] { border-radius: 4px; font-weight: 600; font-size: 12px; }
+    [data-type="divider"] { border-color: #e0e0e0; }`,
+
+  'shadcn/ui': `
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #fafafa; background: #09090b; font-size: 14px; line-height: 1.5; letter-spacing: -0.006em; }
+    h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.025em; }
+    h2 { font-size: 1.875rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
+    h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; }
+    button { border-radius: 6px; font-weight: 500; font-size: 14px; padding: 10px 16px; line-height: 20px; min-height: 36px; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #27272a; color: #fafafa; background: #09090b; padding: 9px 12px; font-size: 14px; line-height: 20px; }
+    input:focus, textarea:focus { border-color: #a1a1aa; box-shadow: 0 0 0 2px rgba(161,161,170,0.15); }
+    ::placeholder { color: #71717a; }
+    [data-type="card"] { border-radius: 8px; border: 1px solid #27272a; background: #09090b; box-shadow: none; }
+    [data-type="navbar"] { background: #09090b; border-bottom: 1px solid #27272a; }
+    [data-type="badge"] { border-radius: 9999px; font-weight: 500; font-size: 12px; background: #27272a; color: #fafafa; border: 1px solid #3f3f46; }
+    [data-type="divider"] { border-color: #27272a; }
+    [data-type="table"] th { background: #18181b; color: #a1a1aa; font-weight: 500; font-size: 12px; letter-spacing: 0.02em; }
+    [data-type="code"] { background: #18181b; border: 1px solid #27272a; color: #fafafa; font-family: 'JetBrains Mono', 'Fira Code', monospace; }`,
+
+  'radix ui': `
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #eeeef0; background: #111113; font-size: 14px; line-height: 1.5; letter-spacing: -0.006em; }
+    h1 { font-size: 2.25rem; font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
+    h2 { font-size: 1.75rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
+    h3 { font-size: 1.375rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; }
+    button { border-radius: 6px; font-weight: 500; font-size: 14px; padding: 9px 16px; line-height: 20px; min-height: 36px; }
+    input, select, textarea { border-radius: 6px; border: 1px solid #2b2c2f; color: #eeeef0; background: #18191b; padding: 9px 12px; font-size: 14px; line-height: 20px; }
+    input:focus, textarea:focus { border-color: #3e63dd; box-shadow: 0 0 0 1px #3e63dd; }
+    ::placeholder { color: #63636e; }
+    [data-type="card"] { border-radius: 8px; border: 1px solid #2b2c2f; background: #18191b; box-shadow: none; }
+    [data-type="navbar"] { background: #18191b; border-bottom: 1px solid #2b2c2f; }
+    [data-type="badge"] { border-radius: 9999px; font-weight: 500; background: #2b2c2f; color: #b0b4ba; }
+    [data-type="divider"] { border-color: #2b2c2f; }
+    [data-type="table"] th { background: #18191b; color: #9b9ba7; font-weight: 500; }
+    [data-type="code"] { background: #18191b; border: 1px solid #2b2c2f; color: #eeeef0; }`,
 };
 
 export function renderTreeToHTML(tree: ComponentTree): string {
@@ -843,25 +946,41 @@ export function renderTreeToHTML(tree: ComponentTree): string {
   const body = renderNode(tree.root);
   const ds = tree.metadata.designSystem?.toLowerCase() ?? '';
   const dsCSS = DESIGN_SYSTEM_CSS[ds] ?? '';
+  const fontParam = DESIGN_SYSTEM_FONTS[ds] ?? '';
+  const fontLink = fontParam
+    ? `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?${fontParam}&display=swap" rel="stylesheet">`
+    : '';
 
   return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${fontLink}
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: ${width}px; height: ${height}px; overflow: hidden; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #111827; background: #ffffff; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    color: #111827;
+    background: #ffffff;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+  }
   h1, h2, h3, h4, h5, h6 { margin: 0; font-size: inherit; font-weight: inherit; }
   p { margin: 0; }
   a { color: inherit; text-decoration: none; }
-  button { font: inherit; cursor: pointer; border: none; background: none; padding: 0; }
-  input, select, textarea { font: inherit; line-height: 1.4; }
+  button { font: inherit; cursor: pointer; border: none; background: none; padding: 0; line-height: 1.5; }
+  input, select, textarea { font: inherit; line-height: 1.43; }
   ::placeholder { color: #9ca3af; opacity: 1; }
   hr { border: none; margin: 0; }
   ul, ol { list-style: none; margin: 0; padding: 0; }
   img { display: block; max-width: 100%; }
+  svg { flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes shimmer { to { background-position: -200% 0; } }
   ${dsCSS}
