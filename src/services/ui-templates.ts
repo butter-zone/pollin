@@ -230,6 +230,7 @@ function getTheme(libraryName?: string): ThemeTokens {
 type UIType =
   | 'login'
   | 'signup'
+  | 'finance'
   | 'dashboard'
   | 'settings'
   | 'profile'
@@ -256,6 +257,7 @@ type UIType =
 const UI_PATTERNS: [RegExp, UIType][] = [
   [/\b(log\s*in|sign\s*in|auth(?:entication)?)\b/i, 'login'],
   [/\b(sign\s*up|register|create\s*account|onboard)\b/i, 'signup'],
+  [/\b(finance|financial|bank(?:ing)?|wallet|budget(?:ing)?|expense(?:s)?|transaction(?:s)?|portfolio|investment(?:s)?|wealth|cash\s*flow|balance\s*sheet)\b/i, 'finance'],
   [/\b(dashboard|analytics|metrics|stats|overview)\b/i, 'dashboard'],
   [/\b(settings?|preferences?|config(?:uration)?)\b/i, 'settings'],
   [/\b(profile|account|user\s*page)\b/i, 'profile'],
@@ -610,6 +612,96 @@ function dashboardTemplate(t: ThemeTokens, _prompt: string, glass: boolean): str
                 <div class="text-sm" style="font-weight:500;">+$${(Math.random() * 2000 + 100).toFixed(0)}</div>
               </div>`
             ).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function financeTemplate(t: ThemeTokens, _prompt: string, glass: boolean): string {
+  const gs = glass ? glassStyles(t) : '';
+  const cardStyle = glass
+    ? `${gs} padding:18px; border-radius:${t.radiusLg};`
+    : `background:${t.surface}; border:1px solid ${t.border}; padding:18px; border-radius:${t.radius};`;
+
+  return `
+    <div class="container container--full" style="padding:20px;">
+      <div class="flex justify-between items-center" style="margin-bottom:18px;">
+        <div>
+          <div class="text-xl">Finance Home</div>
+          <div class="text-sm text-muted">Track balances, spending, and goals in one place</div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn-secondary" style="width:auto;padding:8px 14px;">${icon('search', 14, t.textMuted)} Insights</button>
+          <button class="btn-primary" style="width:auto;padding:8px 14px;">${icon('plus', 14, t.primaryText)} Add transaction</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:2fr 1fr; gap:14px; margin-bottom:14px;">
+        <div style="${cardStyle}">
+          <div class="text-xs text-muted" style="margin-bottom:8px;">Total balance</div>
+          <div style="font-size:34px; font-weight:700; letter-spacing:-0.02em;">$128,430.24</div>
+          <div class="flex items-center gap-2" style="margin-top:8px; font-size:12px; color:${t.success};">
+            ${icon('trending-up', 12, t.success)} +2.8% this month
+          </div>
+          <div style="display:flex; gap:8px; margin-top:14px;">
+            <span class="chip">Cash $18,210</span>
+            <span class="chip">Investments $92,040</span>
+            <span class="chip">Savings $18,180</span>
+          </div>
+        </div>
+        <div style="${cardStyle}">
+          <div class="text-sm" style="font-weight:600; margin-bottom:10px;">Quick Actions</div>
+          <div class="flex flex-col gap-2">
+            <button class="btn-secondary" style="text-align:left; justify-content:flex-start;">${icon('arrow-right-left', 14, t.text)} Transfer</button>
+            <button class="btn-secondary" style="text-align:left; justify-content:flex-start;">${icon('wallet', 14, t.text)} Pay bill</button>
+            <button class="btn-secondary" style="text-align:left; justify-content:flex-start;">${icon('target', 14, t.text)} Create goal</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:14px;">
+        <div style="${cardStyle}">
+          <div class="text-sm" style="font-weight:600; margin-bottom:10px;">Spending Overview</div>
+          <div style="display:flex; gap:4px; align-items:flex-end; height:130px; margin-bottom:8px;">
+            ${[35, 52, 46, 64, 60, 58, 72, 67, 74, 68, 76, 83].map((h, i) =>
+              `<div style="flex:1;background:${i > 9 ? t.primary : t.border};height:${h}%;border-radius:3px 3px 0 0;"></div>`
+            ).join('')}
+          </div>
+          <div class="flex justify-between text-xs text-muted"><span>Jan</span><span>Jun</span><span>Dec</span></div>
+        </div>
+
+        <div style="${cardStyle}">
+          <div class="text-sm" style="font-weight:600; margin-bottom:10px;">Budget Health</div>
+          ${[
+            ['Housing', '74%'],
+            ['Food', '58%'],
+            ['Transport', '42%'],
+            ['Entertainment', '65%'],
+          ].map(([k, v]) => `
+            <div style="margin-bottom:10px;">
+              <div class="flex justify-between text-xs" style="margin-bottom:4px;"><span>${k}</span><span class="text-muted">${v}</span></div>
+              <div style="height:7px;background:${t.border};border-radius:9999px;overflow:hidden;"><div style="height:100%;width:${v};background:${t.primary};"></div></div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="${cardStyle}">
+          <div class="text-sm" style="font-weight:600; margin-bottom:10px;">Recent Transactions</div>
+          <div class="flex flex-col gap-10">
+            ${[
+              ['Salary', '+$4,200', t.success],
+              ['Rent', '-$1,450', t.danger],
+              ['Coffee Shop', '-$12.40', t.textMuted],
+              ['ETF Buy', '-$600', t.warning],
+              ['Dividend', '+$84', t.success],
+            ].map(([name, value, color]) => `
+              <div class="flex justify-between items-center text-sm">
+                <span>${name}</span>
+                <span style="color:${color};font-weight:600;">${value}</span>
+              </div>
+            `).join('')}
           </div>
         </div>
       </div>
@@ -1837,6 +1929,7 @@ function genericTemplate(t: ThemeTokens, prompt: string, glass: boolean): string
 const TEMPLATE_MAP: Record<UIType, (t: ThemeTokens, prompt: string, glass: boolean) => string> = {
   login: loginTemplate,
   signup: signupTemplate,
+  finance: financeTemplate,
   dashboard: dashboardTemplate,
   settings: settingsTemplate,
   profile: profileTemplate,
@@ -1915,8 +2008,8 @@ export function generateUIHTML(
   const css = baseCSS(finalTheme);
 
   // Determine dimensions
-  const isWide = ['dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
-  const isFull = ['dashboard', 'kanban'].includes(uiType);
+  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
+  const isFull = ['finance', 'dashboard', 'kanban'].includes(uiType);
   const width = isFull ? 900 : isWide ? 780 : 420;
   const height = isFull ? 620 : isWide ? 580 : 580;
 

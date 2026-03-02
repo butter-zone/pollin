@@ -115,6 +115,62 @@ function dashboardTree(_prompt: string): ComponentNode {
   ]);
 }
 
+function financeTree(_prompt: string): ComponentNode {
+  return n('container', { display: 'flex', flexDirection: 'column', minHeight: '100%' }, {}, [
+    n('navbar', { padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, {}, [
+      n('container', { display: 'flex', flexDirection: 'column', gap: '2px' }, {}, [
+        n('heading', { fontSize: '20px', fontWeight: '700' }, { level: 1 }, ['Finance Home']),
+        n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Your personal money snapshot']),
+      ]),
+      n('container', { display: 'flex', gap: '10px' }, {}, [
+        n('button', { width: 'auto', padding: '8px 12px' }, { variant: 'secondary' }, ['Insights']),
+        n('button', { width: 'auto', padding: '8px 12px' }, { variant: 'primary' }, ['Add transaction']),
+      ]),
+    ]),
+    n('divider', {}, {}),
+    n('container', { display: 'flex', flexDirection: 'column', gap: '16px', padding: '20px', flex: '1' }, {}, [
+      n('grid', { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }, {}, [
+        n('card', { padding: '20px' }, { title: 'Total Balance' }, [
+          n('text', { fontSize: '12px', color: '#6b7280' }, {}, ['Total balance']),
+          n('heading', { fontSize: '34px', fontWeight: '700', letterSpacing: '-0.02em', marginTop: '8px' }, { level: 2 }, ['$128,430.24']),
+          n('badge', { marginTop: '10px' }, { variant: 'primary' }, ['+2.8% this month']),
+          n('container', { display: 'flex', gap: '8px', marginTop: '12px' }, {}, [
+            n('badge', {}, { variant: 'secondary' }, ['Cash $18,210']),
+            n('badge', {}, { variant: 'secondary' }, ['Investments $92,040']),
+          ]),
+        ]),
+        n('card', { padding: '20px' }, { title: 'Quick Actions' }, [
+          n('list', {}, {}, [
+            n('listItem', {}, {}, ['Transfer funds']),
+            n('listItem', {}, {}, ['Pay bill']),
+            n('listItem', {}, {}, ['Create savings goal']),
+          ]),
+        ]),
+      ]),
+      n('grid', { display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '16px' }, {}, [
+        n('card', { padding: '20px' }, { title: 'Spending Trend' }, [
+          n('chart', { width: '100%', height: '170px' }, { chartType: 'bar', data: [35, 52, 46, 64, 60, 58, 72, 67, 74, 68, 76, 83] }),
+        ]),
+        n('card', { padding: '20px' }, { title: 'Budget Health' }, [
+          n('progress', {}, { value: 74, label: 'Housing' }),
+          n('progress', {}, { value: 58, label: 'Food' }),
+          n('progress', {}, { value: 42, label: 'Transport' }),
+          n('progress', {}, { value: 65, label: 'Entertainment' }),
+        ]),
+        n('card', { padding: '20px' }, { title: 'Recent Transactions' }, [
+          n('list', {}, {}, [
+            n('listItem', {}, {}, ['Salary +$4,200']),
+            n('listItem', {}, {}, ['Rent -$1,450']),
+            n('listItem', {}, {}, ['Coffee Shop -$12.40']),
+            n('listItem', {}, {}, ['ETF Buy -$600']),
+            n('listItem', {}, {}, ['Dividend +$84']),
+          ]),
+        ]),
+      ]),
+    ]),
+  ]);
+}
+
 function settingsTree(_prompt: string): ComponentNode {
   return n('container', { display: 'flex', minHeight: '100%' }, {}, [
     // Sidebar nav
@@ -855,7 +911,7 @@ function genericTree(prompt: string): ComponentNode {
 /* ─── Template map ──────────────────────────────────────── */
 
 type UIType =
-  | 'login' | 'signup' | 'dashboard' | 'settings' | 'profile' | 'pricing'
+  | 'login' | 'signup' | 'finance' | 'dashboard' | 'settings' | 'profile' | 'pricing'
   | 'landing' | 'navbar' | 'sidebar' | 'card' | 'form' | 'table' | 'chat'
   | 'modal' | 'notification' | 'onboarding' | 'search' | 'media-player'
   | 'calendar' | 'email' | 'ecommerce' | 'kanban' | 'todo' | 'generic';
@@ -863,6 +919,7 @@ type UIType =
 const TREE_BUILDERS: Record<UIType, (prompt: string) => ComponentNode> = {
   login: loginTree,
   signup: signupTree,
+  finance: financeTree,
   dashboard: dashboardTree,
   settings: settingsTree,
   profile: profileTree,
@@ -907,8 +964,8 @@ export function buildMockComponentTree(
   const root = builder(prompt);
 
   // Determine viewport dimensions
-  const isWide = ['dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
-  const isFull = ['dashboard', 'kanban'].includes(uiType);
+  const isWide = ['finance', 'dashboard', 'settings', 'table', 'landing', 'ecommerce', 'pricing', 'navbar', 'sidebar', 'email', 'search', 'kanban'].includes(uiType);
+  const isFull = ['finance', 'dashboard', 'kanban'].includes(uiType);
   const width = options.width ?? (isFull ? 900 : isWide ? 780 : 420);
   const height = options.height ?? (isFull ? 620 : isWide ? 580 : 580);
 
