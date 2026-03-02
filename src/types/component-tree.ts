@@ -112,6 +112,10 @@ export interface ComponentTreeMetadata {
   adapterMode?: 'strict' | 'assist';
   /** Adapter quality alignment score (0-100) */
   adapterScore?: number;
+  /** Detected domain intent used for contextualization */
+  domainIntent?: string;
+  /** Confidence score for domain detection (0-1) */
+  domainConfidence?: number;
 }
 
 // ── JSON Schema for LLM structured output ───────────────
@@ -149,6 +153,8 @@ export const COMPONENT_TREE_JSON_SCHEMA = {
         adapterPack: { type: 'string' },
         adapterMode: { type: 'string', enum: ['strict', 'assist'] },
         adapterScore: { type: 'number' },
+        domainIntent: { type: 'string' },
+        domainConfidence: { type: 'number' },
       },
     },
   },

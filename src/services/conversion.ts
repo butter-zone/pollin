@@ -16,6 +16,7 @@ import { getBuiltInEntries } from '@/services/library-registry';
 import { buildAdapterPromptSection, resolveAdapterPack } from '@/services/adapters/resolver';
 import { auditTreeAgainstAdapter } from '@/services/adapters/quality';
 import { applyAdapterPackToTree } from '@/services/adapters/transform';
+import { applyDomainIntentToTree, buildDomainPromptSection, detectDomainIntent } from '@/services/domain-intent';
 
 /* ─── Response types ────────────────────────────────────── */
 
@@ -128,6 +129,8 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
     const libraryName = await getLibraryName(payload.libraryId);
     const adapterPack = resolveAdapterPack(libraryName);
     const adapterPrompt = adapterPack ? buildAdapterPromptSection(adapterPack) : undefined;
+    const domainIntent = detectDomainIntent(payload.prompt);
+    const domainPrompt = domainIntent ? buildDomainPromptSection(domainIntent) : undefined;
 
     // Generate ComponentTree via LLM
     let tree = await generateComponentTree(payload.prompt, {
@@ -137,6 +140,7 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
       model: payload.model,
       adapterPack,
       adapterPrompt,
+      domainPrompt,
       onStep,
     });
 
@@ -150,6 +154,10 @@ async function llmGeneration(payload: GenerationPayload): Promise<ConversionResu
           adapterScore: report.score,
         },
       };
+    }
+
+    if (domainIntent) {
+      tree = applyDomainIntentToTree(tree, domainIntent);
     }
 
     // Render ComponentTree → HTML → bitmap
@@ -195,6 +203,7 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
     // Step 2: Classifying UI type
     const uiType = classifyPrompt(payload.prompt);
     const uiLabel = uiType.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()).trim();
+    const domainIntent = detectDomainIntent(payload.prompt);
     await new Promise((r) => setTimeout(r, 350));
 
     // Step 3: Selecting design system
@@ -226,6 +235,10 @@ async function mockGeneration(payload: GenerationPayload): Promise<ConversionRes
           adapterScore: report.score,
         },
       };
+    }
+
+    if (domainIntent) {
+      tree = applyDomainIntentToTree(tree, domainIntent);
     }
 
     tree = {
@@ -322,6 +335,7 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
 
   try {
     const uiType = classifyPrompt(desc);
+    const domainIntent = detectDomainIntent(desc);
     const libraryName = await getLibraryName(payload.libraryId ?? undefined);
     const adapterPack = resolveAdapterPack(libraryName);
 
@@ -346,6 +360,10 @@ async function mockConversion(payload: ConversionPayload): Promise<ConversionRes
           adapterScore: report.score,
         },
       };
+    }
+
+    if (domainIntent) {
+      tree = applyDomainIntentToTree(tree, domainIntent);
     }
 
     // Render to bitmap
@@ -683,6 +701,7 @@ export async function generateVariations(
   const { renderHTMLToImage } = await import('./ui-renderer');
 
   const uiType = classifyPrompt(payload.prompt);
+  const domainIntent = detectDomainIntent(payload.prompt);
 
   const results: ConversionResult[] = [];
 
@@ -706,6 +725,10 @@ export async function generateVariations(
             adapterScore: report.score,
           },
         };
+      }
+
+      if (domainIntent) {
+        tree = applyDomainIntentToTree(tree, domainIntent);
       }
 
       tree = {

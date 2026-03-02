@@ -258,6 +258,7 @@ const UI_PATTERNS: [RegExp, UIType][] = [
   [/\b(log\s*in|sign\s*in|auth(?:entication)?)\b/i, 'login'],
   [/\b(sign\s*up|register|create\s*account|onboard)\b/i, 'signup'],
   [/\b(finance|financial|bank(?:ing)?|wallet|budget(?:ing)?|expense(?:s)?|transaction(?:s)?|portfolio|investment(?:s)?|wealth|cash\s*flow|balance\s*sheet)\b/i, 'finance'],
+  [/\b(weather|forecast|climate|temperature|rain|snow|storm|cook(?:ing)?|recipe|meal\s*plan|kitchen|car|cars|auto|automotive|vehicle|travel|trip|itinerary|flight|hotel|fitness|workout|gym|health|healthcare|medical|doctor|education|course|learning|school|task\s*manager|productivity|e-?commerce|shop|store|checkout|inventory)\b/i, 'dashboard'],
   [/\b(dashboard|analytics|metrics|stats|overview)\b/i, 'dashboard'],
   [/\b(settings?|preferences?|config(?:uration)?)\b/i, 'settings'],
   [/\b(profile|account|user\s*page)\b/i, 'profile'],

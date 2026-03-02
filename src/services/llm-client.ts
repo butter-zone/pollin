@@ -379,11 +379,12 @@ export async function generateComponentTree(
     model?: string;
     adapterPack?: AdapterPack | null;
     adapterPrompt?: string;
+    domainPrompt?: string;
     viewport?: { width: number; height: number };
     onStep?: (step: { id: string; label: string; detail?: string }) => void;
   },
 ): Promise<ComponentTree> {
-  const { imageRefs, designSystem, viewport, onStep, model, adapterPack, adapterPrompt } = options ?? {};
+  const { imageRefs, designSystem, viewport, onStep, model, adapterPack, adapterPrompt, domainPrompt } = options ?? {};
 
   // Step 1 — Init
   onStep?.({ id: 'llm-init', label: 'Connecting to LLM' });
@@ -415,6 +416,9 @@ export async function generateComponentTree(
   }
   if (adapterPack) {
     userText += `\n\nUse adapter pack: ${adapterPack.name} (${adapterPack.id}) with strict adherence to its token and variant constraints.`;
+  }
+  if (domainPrompt) {
+    userText += `\n\n## Domain Context\n${domainPrompt}`;
   }
 
   const userContent: Array<{ type: string; [key: string]: unknown }> = [
